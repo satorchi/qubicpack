@@ -1,0 +1,6 @@
+- add your favorite binary files that you want to analyse in dataFiles_Fibres.py (dictionnary)
+- then run_AnaFiber.py, this will add the signals to obtain a better S/N ratio,
+  output are saved to bin files: allTimeLines.bin.npy, plot_dataFibre.bin.npy, minmax_dataFibre.bin.npy
+- then proceed with what you want to extract:
+  -> view of bad pixel in the focal plane: plot_Fibers_FP.py
+  -> ana of time Constant: ana_Fiber_TimeConstant.py

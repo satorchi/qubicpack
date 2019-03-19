@@ -1,0 +1,7 @@
+/build
+build.log
+error.log
+/dist
+/qubicpack/deprecated*
+*.pyc
+*~

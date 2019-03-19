@@ -34,7 +34,7 @@ with open('README.md') as f:
 setup(install_requires=['numpy'],
       name=DISTNAME,
       version=VERSION,
-      packages=[DISTNAME, DISTNAME+'/hk'],
+      packages=[DISTNAME],
       package_data={DISTNAME: ['data/*']},
       zip_safe=False,
       author=AUTHOR,
@@ -54,27 +54,4 @@ setup(install_requires=['numpy'],
           'License :: OSI Approved :: GNU General Public License (GPL)',
           'Topic :: Scientific/Engineering'],
 )
-
-# install the executable scripts
-exec_dir = '/usr/local/bin'
-scripts = ['scripts/calsource_commander.py',
-           'calsource_set_frequency.py',
-           'calsource_step_frequency.py',
-           'qubicpack/hk/powersupply.py',
-           'qubicpack/copy_data.py',
-           'scripts/make_hk_fits.py',
-           'scripts/modulator_commander.py',
-           'scripts/run_bot.py',
-           'scripts/run_hkserver.py',
-           'scripts/copy2cc.py',
-           'scripts/copy2jupyter.py']
-if len(sys.argv)>1 and sys.argv[1]=='install':
-    print('installing executable scripts...')
-    for F in scripts:
-        basename = os.path.basename(F)
-        cmd = 'rm -f %s/%s; cp -puv %s %s;chmod +x %s/%s' % (exec_dir,basename,F,exec_dir,exec_dir,basename)
-        proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        out,err=proc.communicate()
-        if out:print(out.strip())
-        if err:print(err.strip())
 

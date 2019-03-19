@@ -865,7 +865,10 @@ def gps(self,hk=None):
         print('No GPS in %s' % hk)
         return None
 
-    return self.hk[hk]['GPSDate']
+    gps = self.hk[hk]['GPSDate']
+    if gps.max() == 0.0:
+        print('Bad GPS Data!')
+    return gps
 
 def pps(self,hk=None):
     '''
@@ -885,4 +888,43 @@ def pps(self,hk=None):
         print('No PPS in %s' % hk)
         return None
 
-    return self.hk[hk]['PPS']
+    pps = self.hk[hk]['PPS']
+    if pps.max() == 0:
+        print('Bad PPS Data!')
+    return pps
+
+def azimuth(self):
+    '''
+    return the Azimuth data timeline
+    '''
+    hktype = 'INTERN_HK'
+    if hktype not in self.hk.keys():
+        print('No platform data!')
+        return None
+
+    azkey = 'Platform-Azimut'
+    if azkey not in self.hk[hktype].keys():
+        print('No Azimuth data!')
+        return None
+
+    azRaw = self.hk[hktype][azkey]
+    az = (azRaw.astype(np.int) - 2**15) * 360.0/2**16
+    return az
+
+def elevation(self):
+    '''
+    return the Elevation data timeline
+    '''
+    hktype = 'INTERN_HK'
+    if hktype not in self.hk.keys():
+        print('No platform data!')
+        return None
+
+    elkey = 'Platform-Elevation'
+    if elkey not in self.hk[hktype].keys():
+        print('No Elevation data!')
+        return None
+
+    elRaw = self.hk[hktype][elkey]
+    el = (elRaw.astype(np.int) - 2**15) * 360.0/2**16
+    return el

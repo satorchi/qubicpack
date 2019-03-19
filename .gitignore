@@ -3,5 +3,6 @@ build.log
 error.log
 /dist
 /qubicpack/deprecated*
+/qubicpack.egg-info
 *.pyc
 *~

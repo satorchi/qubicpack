@@ -208,7 +208,7 @@ def timeaxis(self,datatype=None,axistype='pps'):
     gps = self.gps(hk=hktype)
     if gps is None: return None
 
-    tstamp = pps2date(pps,gps)
+    tstamp = self.pps2date(pps,gps)
     if axistype=='index':
         return tstamp - tstamp[0]
     return tstamp

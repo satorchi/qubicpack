@@ -13,8 +13,7 @@ setup.py for qubicpack only.
 Use this to install qubicpack without pystudio
 '''
 from __future__ import division, print_function
-import os,sys,subprocess
-from numpy.distutils.core import setup
+from setuptools import setup
 
 DISTNAME         = 'qubicpack'
 DESCRIPTION      = 'Utilities for QUBIC detector data visualization'
@@ -22,9 +21,9 @@ AUTHOR           = 'Steve Torchinsky'
 AUTHOR_EMAIL     = 'satorchi@apc.in2p3.fr'
 MAINTAINER       = 'Steve Torchinsky'
 MAINTAINER_EMAIL = 'satorchi@apc.in2p3.fr'
-URL              = 'https://github.com/satorchi/pystudio'
+URL              = 'https://github.com/satorchi/qubicpack'
 LICENSE          = 'GPL'
-DOWNLOAD_URL     = 'https://github.com/satorchi/pystudio'
+DOWNLOAD_URL     = 'https://github.com/satorchi/qubicpack'
 VERSION          = '2.0.0'
 
 with open('README.md') as f:
@@ -35,6 +34,7 @@ setup(install_requires=['numpy'],
       name=DISTNAME,
       version=VERSION,
       packages=[DISTNAME],
+      zip_safe=False,
       package_data={DISTNAME: ['data/*']},
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,

@@ -192,6 +192,28 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
 
     return time_axis_index
 
+def timeaxis(self,datatype=None,axistype='pps'):
+    '''
+    wrapper to return the time axis for data.
+    the two datatypes are: hk or scientific
+    '''
+    if datatype is None: datatype = 'sci'
+    if datatype.lower()[0:3]=='sci':
+        return self.timeline_timeaxis(axistype=axistype)
+
+    # otherwise, return the platform time axis
+    hktype = 'INTERN_HK'
+    pps = self.pps(hk=hktype)
+    if pps is None: return None    
+    gps = self.gps(hk=hktype)
+    if gps is None: return None
+
+    tstamp = pps2date(pps,gps)
+    if axistype=='index':
+        return tstamp - tstamp[0]
+    return tstamp
+    
+
 def determine_bias_modulation(self,TES,timeline_index=None):
     '''
     determine the modulation of the bias voltage

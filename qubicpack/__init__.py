@@ -147,6 +147,7 @@ class qubicpack:
         sample_period,\
         timeline_npts,\
         timeline_timeaxis,\
+        timeaxis,\
         determine_bias_modulation,\
         timeline2adu,\
         plot_timeline,\

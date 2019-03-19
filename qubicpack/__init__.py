@@ -70,7 +70,9 @@ class qubicpack:
         writelog,\
         pps2date,\
         gps,\
-        pps
+        pps,\
+        azimuth,\
+        elevation
 
     from .iv import\
         exist_iv_data,\

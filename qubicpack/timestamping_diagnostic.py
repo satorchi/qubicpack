@@ -42,9 +42,19 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
         print('Please give a valid HK.  Valid names are: %s' % ', '.join(self.hk.keys()))
         return None
               
+    if hk=='ASIC_SUMS':
+        pps_title = 'PPS Scientific Data'
+    elif hk=='INTERN_HK':
+        pps_title = 'PPS Platform'
+    else:
+        pps_title = 'PPS %s' % hk
+        
     
-    pps = self.hk[hk]['PPS']
-    gps = self.hk[hk]['GPSDate']
+    pps = self.pps(hk=hk)
+    if pps is None: return 
+    gps = self.gps(hk=hk)
+    if gps is None: return
+    
     compstamps  = self.hk[hk]['ComputerDate']
     npts = len(pps)
     if hk=='ASIC_SUMS':
@@ -105,7 +115,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
 
     plt.ion()
     ##### plot the scientific PPS
-    ttl = 'PPS Science Data'
+    ttl = pps_title
     png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))
     fig0 = plt.figure(figsize=(16,8))
     fig0.canvas.set_window_title('plt: %s' % ttl)

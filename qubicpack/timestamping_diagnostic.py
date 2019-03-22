@@ -32,11 +32,8 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     '''
     make a diagnostic plot of the derived timestamps
     '''
+    hk = self.qubicstudio_filetype_truename(hk)
     if hk is None: hk = 'ASIC_SUMS'
-    if hk.upper() == 'PLATFORM': hk = 'INTERN_HK'
-    if hk.upper() == 'ASIC': hk = 'CONF_ASIC1'
-    if hk.upper() == 'EXTERN': hk = 'EXTERN_HK'
-    if hk.upper().find('SCI')==0: hk = 'ASIC_SUMS'
     
     if not hk in self.hk.keys():
         print('Please give a valid HK.  Valid names are: %s' % ', '.join(self.hk.keys()))

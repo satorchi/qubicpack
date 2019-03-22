@@ -72,7 +72,8 @@ class qubicpack:
         gps,\
         pps,\
         azimuth,\
-        elevation
+        elevation,\
+        infotext
 
     from .iv import\
         exist_iv_data,\

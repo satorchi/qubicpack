@@ -850,11 +850,8 @@ def gps(self,hk=None):
     '''
     return the GPS readings for a given housekeeping
     '''
+    hk = self.qubicstudio_filetype_truename(hk)
     if hk is None: hk = 'INTERN_HK'
-    if hk.upper() == 'PLATFORM': hk = 'INTERN_HK'
-    if hk.upper() == 'ASIC': hk = 'CONF_ASIC1'
-    if hk.upper() == 'EXTERN': hk = 'EXTERN_HK'
-    if hk.upper().find('SCI')==0: hk = 'ASIC_SUMS'
 
     if hk not in self.hk.keys():
         print('Not a valid housekeeping ID: %s' % hk)
@@ -873,11 +870,8 @@ def pps(self,hk=None):
     '''
     return the PPS for a given housekeeping
     '''
+    hk = self.qubicstudio_filetype_truename(hk)
     if hk is None: hk = 'INTERN_HK'
-    if hk.upper() == 'PLATFORM': hk = 'INTERN_HK'
-    if hk.upper() == 'ASIC': hk = 'CONF_ASIC1'
-    if hk.upper() == 'EXTERN': hk = 'EXTERN_HK'
-    if hk.upper().find('SCI')==0: hk = 'ASIC_SUMS'
     
     if hk not in self.hk.keys():
         print('Not a valid housekeeping ID: %s' % hk)
@@ -950,3 +944,14 @@ def infotext(self,TES=None):
     return ttl
 
         
+def qubicstudio_filetype_truename(self,ftype):
+    '''
+    return the valid key name given a nickname for the QubicStudio
+    filetype within the dataset
+    '''
+    if ftype is None: return None
+    if ftype.upper() == 'PLATFORM': return 'INTERN_HK'
+    if ftype.upper() == 'ASIC': return 'CONF_ASIC1'
+    if ftype.upper() == 'EXTERN': return 'EXTERN_HK'
+    if ftype.upper().find('SCI')==0: return 'ASIC_SUMS'
+    return ftype.upper()

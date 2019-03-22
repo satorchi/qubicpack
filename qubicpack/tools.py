@@ -9,7 +9,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
           redistribute it.  There is NO WARRANTY, to the extent
           permitted by law.
 
-tools which are generally useful for scripts using pystudio
+tools for reading/writing and organizing data
 
 """
 from __future__ import division, print_function
@@ -243,7 +243,6 @@ def read_fits(self,filename):
     
     print('Reading QubicStudio FITS file: %s' % filename)
     return self.read_qubicstudio_fits(hdulist)
-    return False
 
 def read_fits_field(self,hdu,fieldname):
     '''
@@ -817,8 +816,8 @@ def pps2date(self,pps,gps):
     for idx in pps_indexes:
         gps_at_pps = gps[idx]
 
-        # we use the GPS timestamp from 2 samples later
-        offset_idx = idx + 2
+        # we use the GPS timestamp from 4 samples later
+        offset_idx = idx + 4
         if offset_idx>=npts:offset_idx=npts-1
         next_gps = gps[offset_idx]
         tstamp[idx] = next_gps
@@ -928,3 +927,26 @@ def elevation(self):
     elRaw = self.hk[hktype][elkey]
     el = (elRaw.astype(np.int) - 2**15) * 360.0/2**16
     return el
+
+def infotext(self,TES=None):
+    '''
+    information to put on plots as a subtitle
+    '''
+    ttl = self.obsdate.strftime('%Y-%m-%d %H:%M:%S')
+    if self.detector_name!='undefined':
+        ttl += ' Array %s' % self.detector_name
+
+    ttl += ' ASIC#%i' % self.asic
+
+    if TES is not None:
+        ttl += ' TES#%03i' % TES
+
+    ttl += ' T$_\mathrm{bath}$='
+    if self.temperature is None or self.temperature<0:
+        ttl += 'unknown'
+    else:
+        ttl += '%.1fmK' % (1000*self.temperature)
+
+    return ttl
+
+        

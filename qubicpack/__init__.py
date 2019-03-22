@@ -73,7 +73,8 @@ class qubicpack:
         pps,\
         azimuth,\
         elevation,\
-        infotext
+        infotext,\
+        qubicstudio_filetype_truename
 
     from .iv import\
         exist_iv_data,\

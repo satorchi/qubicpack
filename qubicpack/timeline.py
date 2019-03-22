@@ -195,22 +195,46 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
 def timeaxis(self,datatype=None,axistype='pps'):
     '''
     wrapper to return the time axis for data.
-    the two datatypes are: hk or scientific
+    the datatypes are the various hk or scientific
     '''
-    if datatype is None: datatype = 'sci'
-    if datatype.lower()[0:3]=='sci':
+    
+    valid_axistypes = ['pps','index','computertime']
+    if axistype.lower() not in valid_axistypes:
+        print('Invalid axistype request.  Please choose one of: %s' % ', '.join(valid_axistypes))
+        return None
+    
+    datatype = self.qubicstudio_filetype_truename(datatype)
+    if datatype is None: datatype = 'ASIC_SUMS'
+
+    if datatype not in self.hk.keys():
+        print('No data for %s!' % datatype)
+        return None
+
+    if datatype=='ASIC_SUMS':
         return self.timeline_timeaxis(axistype=axistype)
 
-    # otherwise, return the platform time axis
-    hktype = 'INTERN_HK'
-    pps = self.pps(hk=hktype)
-    if pps is None: return None    
-    gps = self.gps(hk=hktype)
+    # otherwise, return the time axis from one of the housekeeping sections
+    if axistype.lower()=='index':
+        tstart = self.hk[datatype]['ComputerDate'][0]
+        tend   = self.hk[datatype]['ComputerDate'][-1]
+        span = tend - tstart
+        npts = len(self.hk[datatype]['ComputerDate'])
+        taxis = (span/npts)*np.arange(npts)
+        return taxis
+
+    if axistype.lower()=='computertime':
+        return self.hk[datatype]['ComputerDate']
+
+    # the only remaining option is pps
+    pps = self.pps(hk=datatype)
+    if pps is None: return None
+    if pps.max() == 0: return None
+
+    gps = self.gps(hk=datatype)
     if gps is None: return None
+    if gps.max() == 0.0: return None
 
     tstamp = self.pps2date(pps,gps)
-    if axistype=='index':
-        return tstamp - tstamp[0]
     return tstamp
     
 

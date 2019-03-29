@@ -955,6 +955,8 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype is None: return None
     if ftype.upper() == 'PLATFORM': return 'INTERN_HK'
     if ftype.upper() == 'HK': return 'INTERN_HK'
+    if ftype.upper().find('AZ')==0: return 'INTERN_HK'
+    if ftype.upper().find('EL')==0: return 'INTERN_HK'
     if ftype.upper() == 'ASIC': return 'CONF_ASIC1'
     if ftype.upper() == 'EXTERN': return 'EXTERN_HK'
     if ftype.upper().find('SCI')==0: return 'ASIC_SUMS'

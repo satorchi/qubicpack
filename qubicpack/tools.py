@@ -799,25 +799,27 @@ def pps2date(self,pps,gps):
     for idx in pps_high:
         if (idx>0 and pps[idx-1]==0)\
            or (idx<npts-1 and pps[idx+1]==0):
-            pps_indexes.append(idx)    
-            separations.append(gps[idx] - prev)
-            prev = gps[idx]            
+            sep = gps[idx] - prev
+            if sep <> 0: # next PPS valid only if we have a non-zero step (modif by MP)
+                pps_indexes.append(idx)    
+                separations.append(sep)
+                prev = gps[idx]
 
     separations = np.array(separations[1:])
 
-    mean_separation = separations.mean()
-    int_separation = int(mean_separation)
-    print('setting pps interval to %i second' % int_separation)
-    pps_separation = int_separation
+    print('mean pps interval is %.4f second' % separations.mean())
+    print('max pps interval is  %.4f second' % separations.max())
+    print('min pps interval is  %.4f second' % separations.min())
             
     # find the GPS date corresponding to the PPS
     tstamp = -np.ones(npts)
     prev_gps = gps[0]
+    offset = 50 # delay after PPS for valid GPS (this should be different for scientific and housekeeping) 
     for idx in pps_indexes:
         gps_at_pps = gps[idx]
 
-        # we use the GPS timestamp from 4 samples later
-        offset_idx = idx + 4
+        # we use the GPS timestamp from a bit later
+        offset_idx = idx + offset
         if offset_idx>=npts:offset_idx=npts-1
         next_gps = gps[offset_idx]
         tstamp[idx] = next_gps
@@ -826,7 +828,8 @@ def pps2date(self,pps,gps):
     first_sample_period = None    
     for idx in range(len(pps_indexes)-1):
         diff_idx = pps_indexes[idx+1] - pps_indexes[idx]
-        sample_period = float(pps_separation)/diff_idx
+        pps_separation = tstamp[pps_indexes[idx+1]]-tstamp[pps_indexes[idx]]
+        sample_period = pps_separation/diff_idx
         if first_sample_period is None:
             first_sample_period = sample_period
         for idx_offset in range(diff_idx):
@@ -951,6 +954,7 @@ def qubicstudio_filetype_truename(self,ftype):
     '''
     if ftype is None: return None
     if ftype.upper() == 'PLATFORM': return 'INTERN_HK'
+    if ftype.upper() == 'HK': return 'INTERN_HK'
     if ftype.upper() == 'ASIC': return 'CONF_ASIC1'
     if ftype.upper() == 'EXTERN': return 'EXTERN_HK'
     if ftype.upper().find('SCI')==0: return 'ASIC_SUMS'

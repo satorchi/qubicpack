@@ -41,10 +41,13 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
               
     if hk=='ASIC_SUMS':
         pps_title = 'PPS Scientific Data'
+        tstamps_title = 'Timestamps diagnostic for Scientific Data'
     elif hk=='INTERN_HK':
         pps_title = 'PPS Platform'
+        tstamps_title = 'Timestamps diagnostic for Platform Data'
     else:
         pps_title = 'PPS %s' % hk
+        tstamps_title = 'Timestamps diagnostic for %s' % hk
         
     
     pps = self.pps(hk=hk)
@@ -71,10 +74,12 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     prev = gps[0]
     for idx in pps_high:
         if (idx>0 and pps[idx-1]==0) or (idx<npts-1 and pps[idx+1]==0):
-            pps_indexes.append(idx)
-            separations.append(gps[idx] - prev)
-            separations_idx.append(idx)
-            prev = gps[idx]            
+            sep = gps[idx] - prev
+            if sep <> 0:
+                pps_indexes.append(idx)
+                separations.append(sep)
+                separations_idx.append(idx)
+                prev = gps[idx]            
 
     separations = np.array(separations[1:])
     separations_idx = np.array(separations_idx[1:])
@@ -82,11 +87,11 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     print('number of samples: %i' % len(pps))
 
     mean_separation = separations.mean()
-    print('mean separation between pulses is %.3f second' % mean_separation)
+    print('mean separation between pulses is %.4f second' % mean_separation)
     max_separation = separations.max()
-    print('max separation between pulses is %.3f second' % max_separation)
+    print('max separation between pulses is %.4f second' % max_separation)
     min_separation = separations.min()
-    print('min separation between pulses is %.3f second' % min_separation)
+    print('min separation between pulses is %.4f second' % min_separation)
 
     jump_indexes = np.where(separations>1+epsilon)[0]
     print('there are %i jumps at:  %s' % (len(jump_indexes),separations_idx[jump_indexes]))
@@ -132,7 +137,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     
     
     ##### plot diagnostic #1
-    ttl = 'Timestamps diagnostic'
+    ttl = tstamps_title
     png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))
     fig1 = plt.figure(figsize=(16,8))
     fig1.canvas.set_window_title('plt: %s' % ttl)
@@ -165,7 +170,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
         plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
 
     #### second plot: slope removed
-    ttl = '%s horizontal' % ttl
+    ttl = '%s horizontal' % tstamps_title
     png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))
     fig2 = plt.figure(figsize=(16,8))
     fig2.canvas.set_window_title('plt: %s' % ttl)

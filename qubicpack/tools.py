@@ -814,16 +814,23 @@ def pps2date(self,pps,gps):
     # find the GPS date corresponding to the PPS
     tstamp = -np.ones(npts)
     prev_gps = gps[0]
-    offset = 50 # delay after PPS for valid GPS (this should be different for scientific and housekeeping) 
+    #offset = 50 # delay after PPS for valid GPS (this should be different for scientific and housekeeping) 
     for idx in pps_indexes:
         gps_at_pps = gps[idx]
 
+        # the pps arrives just before the corresponding gps
+        # so we simply add 1 second to current gps value (gps increments in steps of 1 second exactly)
+        # (modification by MP & JCH)
+        tstamp[idx] = gps_at_pps + 1
+
+        ''' this is  replaced by the above (MP & JCH)
         # we use the GPS timestamp from a bit later
         offset_idx = idx + offset
         if offset_idx>=npts:offset_idx=npts-1
         next_gps = gps[offset_idx]
         tstamp[idx] = next_gps
-
+        '''
+        
     # now finally do the interpolation for the time axis
     first_sample_period = None    
     for idx in range(len(pps_indexes)-1):

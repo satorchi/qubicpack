@@ -57,8 +57,11 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     
     compstamps  = self.hk[hk]['ComputerDate']
     npts = len(pps)
+    lost_txt = None
     if hk=='ASIC_SUMS':
         sample_period = self.sample_period()
+        lost_idx = self.lost_packets()
+        lost_txt = '%i lost packets' % len(lost_idx)
     else:
         sample_period = float(compstamps.max() - compstamps.min())/len(compstamps)
 
@@ -125,6 +128,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     fig0.text(0.9,0.9,sample_period_txt,ha='right')
     plt.suptitle(ttl)
     plt.title(datainfo)
+    if lost_txt is not None: fig0.text(0.5,0.91,lost_txt,ha='center')
     plt.plot(pps)
     ax0 = fig0.axes[0]
     ax0.set_ylabel('PPS Level')
@@ -146,6 +150,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     plt.suptitle(ttl)
     plt.title(datainfo)
     fig1.text(0.9,0.9,sample_period_txt,ha='right')
+    if lost_txt is not None: fig1.text(0.5,0.91,lost_txt,ha='center')
     plt.plot(indextime,                       ls='none',marker='d',label='index time')
     plt.plot(tstamps,                         ls='none',marker='o',label='derived timestamps')
     plt.plot(compstamps,                      ls='none',marker='*',label='computer time')
@@ -179,6 +184,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     plt.suptitle(ttl)
     plt.title(datainfo)
     fig2.text(0.9,0.9,sample_period_txt,ha='right')
+    if lost_txt is not None: fig2.text(0.5,0.91,lost_txt,ha='center')
     
     plt.plot([0,len(indextime)],[0,0],                       label='index time')
     plt.plot(tstamps-indextime,         ls='none',marker='o',label='derived timestamps')
@@ -241,5 +247,10 @@ def lost_packets(self):
         
     delta = cn - generated_cn
     idx_lost = np.where(delta<>0)[0]
+
+    if len(idx_lost)==0:
+        print('No lost packets!')
+    else:
+        print('%i lost packets.' % len(idx_lost))
     
     return idx_lost

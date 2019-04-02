@@ -213,3 +213,33 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     return
 
 
+def lost_packets(self):
+    '''
+    check the QubicStudio science data for lost packets
+    '''
+    if not self.exist_timeline_data():
+        print('No timeline data!')
+        return None
+
+    datatype = 'ASIC_SUMS'
+    if datatype not in self.hk.keys():
+        print('No QubicStudio data!')
+        return None
+
+    if 'CN' not in self.hk[datatype]:
+        print('No Chronological Number data!')
+        return None
+
+    cn = self.hk[datatype]['CN']
+    npts = len(cn)
+    counter = cn[0]
+    generated_cn = np.zeros(npts)
+    for idx in range(npts):
+        if counter==128: counter = 0
+        generated_cn[idx] = counter
+        counter += 1
+        
+    delta = cn - generated_cn
+    idx_lost = np.where(delta<>0)[0]
+    
+    return idx_lost

@@ -375,6 +375,9 @@ def read_qubicstudio_science_fits(self,hdu):
         print(msg)
         self.asic = asic
 
+    # save PPS/GPS etc as we do for HK files
+    extname = hdu.header['EXTNAME'].strip()
+    self.hk[extname] = {}
 
     # read the science data
     npts = hdu.header['NAXIS2']
@@ -400,6 +403,7 @@ def read_qubicstudio_science_fits(self,hdu):
     #################################################################
     nbsamplespersum_list  =  self.read_fits_field(hdu,'NbSamplesPerSum')
     tdata['NSAMSUM_LST'] = nbsamplespersum_list
+    self.hk[extname]['NbSamplesPerSum'] = nbsamplespersum_list
     NbSamplesPerSum = nbsamplespersum_list[-1]
     tdata['NbSamplesPerSum'] = NbSamplesPerSum
     ## check if they're all the same
@@ -413,9 +417,15 @@ def read_qubicstudio_science_fits(self,hdu):
     # get the time axis
     computertime_idx = 0
     gpstime_idx = 1
+    self.hk[extname]['GPSDate'] = 1e-3*hdu.data.field(gpstime_idx)
+
     ppstime_idx = 2
+    self.hk[extname]['PPS'] = hdu.data.field(ppstime_idx)
+
     dateobs = []
     timestamp = 1e-3*hdu.data.field(computertime_idx)
+    self.hk[extname]['ComputerDate'] = timestamp
+
     for tstamp in timestamp:
         dateobs.append(dt.datetime.fromtimestamp(tstamp))
     tdata['DATE-OBS'] = dateobs
@@ -423,12 +433,12 @@ def read_qubicstudio_science_fits(self,hdu):
     self.obsdate = tdata['BEG-OBS']
     tdata['END-OBS'] = dateobs[-1]
 
-    # save PPS/GPS as we do for HK files
-    extname = hdu.header['EXTNAME'].strip()
-    self.hk[extname] = {}
-    self.hk[extname]['GPSDate'] = 1e-3*hdu.data.field(gpstime_idx)
-    self.hk[extname]['PPS'] = hdu.data.field(ppstime_idx)
-    self.hk[extname]['ComputerDate'] = timestamp
+    # other info in the science file
+    # CN is the "chronological number" counter tag for each sample so we can see if we lost packets
+    # Sine phase is the phase of the bias voltage
+    keys = ['CN','TES Sinus phase']
+    for key in keys:
+        self.hk[extname][key] = self.read_fits_field(hdu,key) 
     
     return
 

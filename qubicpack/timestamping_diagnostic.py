@@ -61,7 +61,6 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
         sample_period = self.sample_period()
     else:
         sample_period = float(compstamps.max() - compstamps.min())/len(compstamps)
-    indextime = sample_period*np.arange(npts)
 
     datainfo = self.infotext()
     
@@ -102,15 +101,17 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     tstamps = self.pps2date(pps,gps)
     t0 = tstamps[0]
 
-    if indextime is not None:
-        slope = indextime[-1]/(len(tstamps)-1)
-    else:
-        slope = (tstamps[-1] - tstamps[0])/(len(tstamps)-1)
-    offset = t0
+    # do a line fit to get drift of the sampling clock
+    xpts = np.arange(len(tstamps))
+    linefit = np.polyfit(xpts,tstamps,1,full=True)
+    slope = linefit[0][0]
+    offset = linefit[0][1]
+    derived_sample_period = slope
+    sample_period_txt = 'expected sample period: %.6f msec\nderived sample period: %.6f msec' % (sample_period*1000,slope*1000)
+    print(sample_period_txt)
 
     # subtract the progression to view only the residues (horizontal line)
-    xpts = np.arange(len(tstamps))
-    ypts = slope*xpts + offset
+    indextime = slope*xpts + offset
 
     # mark problems with a vertical line
     yminmax = (compstamps.min(),compstamps.max())
@@ -121,6 +122,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))
     fig0 = plt.figure(figsize=(16,8))
     fig0.canvas.set_window_title('plt: %s' % ttl)
+    fig0.text(0.9,0.9,sample_period_txt,ha='right')
     plt.suptitle(ttl)
     plt.title(datainfo)
     plt.plot(pps)
@@ -143,8 +145,8 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     fig1.canvas.set_window_title('plt: %s' % ttl)
     plt.suptitle(ttl)
     plt.title(datainfo)
-    if indextime is not None:
-        plt.plot(indextime+t0,                ls='none',marker='d',label='index time')
+    fig1.text(0.9,0.9,sample_period_txt,ha='right')
+    plt.plot(indextime,                       ls='none',marker='d',label='index time')
     plt.plot(tstamps,                         ls='none',marker='o',label='derived timestamps')
     plt.plot(compstamps,                      ls='none',marker='*',label='computer time')
     plt.plot(gps,                             ls='none',marker='x',label='GPS date')
@@ -176,16 +178,17 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     fig2.canvas.set_window_title('plt: %s' % ttl)
     plt.suptitle(ttl)
     plt.title(datainfo)
-    if indextime is not None:
-        plt.plot(indextime-ypts+t0,                ls='none',marker='d',label='index time')
-    plt.plot(tstamps-ypts,                         ls='none',marker='o',label='derived timestamps')
-    plt.plot(compstamps-ypts,                      ls='none',marker='*',label='computer time')
-    plt.plot(gps-ypts,                             ls='none',marker='x',label='GPS date')
+    fig2.text(0.9,0.9,sample_period_txt,ha='right')
+    
+    plt.plot([0,len(indextime)],[0,0],                       label='index time')
+    plt.plot(tstamps-indextime,         ls='none',marker='o',label='derived timestamps')
+    plt.plot(compstamps-indextime,      ls='none',marker='*',label='computer time')
+    plt.plot(gps-indextime,             ls='none',marker='x',label='GPS date')
 
     ax2 = fig2.axes[0]
     ax2.set_ylabel('seconds')
     ax2.set_xlabel('sample number')
-    horiz_y = tstamps - ypts
+    horiz_y = tstamps - indextime
     #yminmax = (horiz_y.min(),horiz_y,max())
     yminmax = (-0.5,0.015)
     ax2.set_ylim(yminmax)

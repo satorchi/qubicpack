@@ -6,3 +6,4 @@ error.log
 /qubicpack.egg-info
 *.pyc
 *~
+/.pytest_cache

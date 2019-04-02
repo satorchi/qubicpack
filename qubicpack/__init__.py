@@ -184,7 +184,8 @@ class qubicpack:
         oxford_increase_heater_range
     
     from .timestamping_diagnostic import\
-        plot_timestamp_diagnostic
+        plot_timestamp_diagnostic,\
+        lost_packets
     
     if with_pystudio:
         '''

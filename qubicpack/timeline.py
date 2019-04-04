@@ -56,6 +56,13 @@ def timeline(self,TES,timeline_index=0):
     timeline=self.tdata[timeline_index]['TIMELINE'][TES_index,:]
     return timeline
 
+def timeline_array(self,timeline_index=0):
+    '''
+    return an array with the timelines for all the TES
+    '''
+    if not self.exist_timeline_data():return None    
+    return self.tdata[timeline_index]['TIMELINE']
+
 def amplitude2DAC(self,amplitude):
     '''
     convert bias voltage amplitude in Volts to DAC to send to QubicStudio

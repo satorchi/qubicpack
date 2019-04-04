@@ -146,6 +146,7 @@ class qubicpack:
         exist_timeline_data,\
         ntimelines,\
         timeline,\
+        timeline_array,\
         amplitude2DAC,\
         bias_offset2DAC,\
         sample_period,\

@@ -217,7 +217,6 @@ def read_fits(self,filename):
         print('ERROR! file not found: %s' % filename)
         return None
 
-    print('reading fits file: %s' % filename)
     hdulist=pyfits.open(filename)
     nhdu=len(hdulist)
 
@@ -274,6 +273,12 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         print('If you would like to read data for a specific ASIC, please include the keyword asic=<N>')
     print('Reading data for ASIC %i' % asic)
 
+    # if directory name ends with a slash, remove it
+    if datadir[-1]==os.sep: datadir = datadir[:-1]
+
+    # calsource directory is normally two up
+    calsource_dir = '%s/calsource' % os.path.dirname(os.path.dirname(datadir))
+        
     scidir = '%s/Sums' % datadir
     hkdir = '%s/Hks' % datadir
     subdir = {}
@@ -309,7 +314,25 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         chk = self.read_fits(filename)
         # try to guess the name of the detector array (P87, or whatever)
         self.guess_detector_name()
-    
+
+    # now try to find the corresponding calsource file
+    print('trying to find calsource data')
+    filetype = 'calsource'
+    datadir = calsource_dir
+    data_time = dt.datetime.utcfromtimestamp(self.hk['ASIC_SUMS']['ComputerDate'][0])
+    pattern[filetype] = '%s/calsource_%s*.dat' % (calsource_dir,data_time.strftime('%Y%m%dT%H%M'))
+    files = glob(pattern[filetype])
+    if len(files)==0:
+        print('No %s data found in directory: %s' % (filetype,datadir))
+        return
+
+    filename = files[0]
+    print('reading calsource file: %s' % filename)
+    caldat = np.loadtxt(filename).T # it is more convenient to have the data in this order
+    self.hk['CALSOURCE'] = {}
+    self.hk['CALSOURCE']['ComputerDate'] = caldat[0]
+    self.hk['CALSOURCE']['amplitude'] = caldat[1]
+                
     return
 
 def read_qubicstudio_fits(self,hdulist):
@@ -427,7 +450,7 @@ def read_qubicstudio_science_fits(self,hdu):
     self.hk[extname]['ComputerDate'] = timestamp
 
     for tstamp in timestamp:
-        dateobs.append(dt.datetime.fromtimestamp(tstamp))
+        dateobs.append(dt.datetime.utcfromtimestamp(tstamp))
     tdata['DATE-OBS'] = dateobs
     tdata['BEG-OBS'] = dateobs[0]
     self.obsdate = tdata['BEG-OBS']
@@ -470,7 +493,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     timestamp = 1e-3*hdu.data.field(computertime_idx)
     npts = len(timestamp)
     for tstamp in timestamp:
-        dateobs.append(dt.datetime.fromtimestamp(tstamp))
+        dateobs.append(dt.datetime.utcfromtimestamp(tstamp))
     tdata['ASICDATE'] = dateobs
     tdata['BEGASIC%i' % asic] = dateobs[0]
     tdata['ENDASIC%i' % asic] = dateobs[-1]
@@ -942,6 +965,17 @@ def elevation(self):
     el = (elRaw.astype(np.int) - 2**15) * 360.0/2**16
     return el
 
+def calsource(self):
+    '''
+    return the calibration source data
+    '''
+    if 'CALSOURCE' in self.hk.keys():
+        t_src = self.hk['CALSOURCE']['ComputerDate']
+        data_src = self.hk['CALSOURCE']['amplitude']
+        return t_src,data_src
+
+    return None
+
 def infotext(self,TES=None):
     '''
     information to put on plots as a subtitle
@@ -978,3 +1012,37 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper() == 'EXTERN': return 'EXTERN_HK'
     if ftype.upper().find('SCI')==0: return 'ASIC_SUMS'
     return ftype.upper()
+
+
+def azel_etc(self,TES=None):
+    '''
+    return Az/El and data in a dictionary for the convenience of JCH
+    '''
+    if TES:
+        data = self.timeline(TES=TES)
+    else:
+        data = self.timeline_array()
+
+    t_data = self.timeline_timeaxis(axistype='pps')
+    az = self.azimuth()
+    el = self.elevation()
+    t_azel = self.timeaxis(datatype='hk',axistype='pps')
+
+    calsource = self.calsource()
+    if calsource is None:
+        t_src = -1
+        data_src = -1
+    else:
+        t_src = calsource[0]
+        data_src = calsource[1]
+
+    retval = {}
+    retval['t_data'] = t_data
+    retval['data'] = data
+    retval['t_azel'] = t_azel
+    retval['az'] = az
+    retval['el'] = el
+    retval['t_src'] = t_src
+    retval['data_src'] = data_src
+    return retval
+    

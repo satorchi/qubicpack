@@ -338,10 +338,13 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.dat')
         delta = tot_seconds(self.obsdate - file_date)
         if np.abs(delta)<file_delta:
-            file_delta = delta
+            file_delta = np.abs(delta)
             filename = f
 
-
+    if file_delta>30:
+        print('Did not find a corresponding calsource file.')
+        return
+    
     print('found calsource file which started %.1f seconds before the data acquisition' % file_delta)
     print('reading calsource file: %s' % filename)
     caldat = np.loadtxt(filename).T # it is more convenient to have the data in this order

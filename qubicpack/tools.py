@@ -20,6 +20,7 @@ from glob import glob
 import pickle
 from astropy.io import fits as pyfits
 
+from satorchipy.datefunctions import tot_seconds
 
 def read_date_from_filename(self,filename):
     '''
@@ -316,17 +317,32 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         self.guess_detector_name()
 
     # now try to find the corresponding calsource file
+    # look for files within the last hour, and then take the closest one to the start time
     print('trying to find calsource data')
     filetype = 'calsource'
     datadir = calsource_dir
-    data_time = dt.datetime.utcfromtimestamp(self.hk['ASIC_SUMS']['ComputerDate'][0])
-    pattern[filetype] = '%s/calsource_%s*.dat' % (calsource_dir,data_time.strftime('%Y%m%dT%H%M'))
-    files = glob(pattern[filetype])
+    search_start = self.obsdate - dt.timedelta(minutes=30)
+    pattern1 = '%s/calsource_%s*.dat' % (calsource_dir,search_start.strftime('%Y%m%dT%H'))
+    pattern2 = '%s/calsource_%s*.dat' % (calsource_dir,self.obsdate.strftime('%Y%m%dT%H'))
+    files = glob(pattern1) + glob(pattern2)
     if len(files)==0:
         print('No %s data found in directory: %s' % (filetype,datadir))
         return
 
-    filename = files[0]
+    # find the file which starts before and nearest to obsdate
+    files.sort()
+    filename = None
+    file_delta = 1e6
+    for f in files:
+        basename = os.path.basename(f)
+        file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.dat')
+        delta = tot_seconds(self.obsdate - file_date)
+        if np.abs(delta)<file_delta:
+            file_delta = delta
+            filename = f
+
+
+    print('found calsource file which started %.1f seconds before the data acquisition' % file_delta)
     print('reading calsource file: %s' % filename)
     caldat = np.loadtxt(filename).T # it is more convenient to have the data in this order
     self.hk['CALSOURCE'] = {}

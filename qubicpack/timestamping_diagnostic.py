@@ -57,13 +57,15 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     
     compstamps  = self.hk[hk]['ComputerDate']
     npts = len(pps)
-    lost_txt = None
     if hk=='ASIC_SUMS':
         sample_period = self.sample_period()
-        lost_idx = self.lost_packets()
-        lost_txt = '%i lost packets' % len(lost_idx)
     else:
         sample_period = float(compstamps.max() - compstamps.min())/len(compstamps)
+
+    lost_txt = None
+    lost_idx = self.lost_packets(hk=hk)
+    if lost_idx is not None:
+        lost_txt = '%i lost packets' % len(lost_idx)
 
     datainfo = self.infotext()
     
@@ -120,7 +122,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     yminmax = (compstamps.min(),compstamps.max())
 
     plt.ion()
-    ##### plot the scientific PPS
+    ##### plot the  PPS
     ttl = pps_title
     png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))
     fig0 = plt.figure(figsize=(16,8))
@@ -128,7 +130,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     fig0.text(0.9,0.9,sample_period_txt,ha='right')
     plt.suptitle(ttl)
     plt.title(datainfo)
-    if lost_txt is not None: fig0.text(0.5,0.91,lost_txt,ha='center')
+    if lost_txt is not None: fig0.text(0.5,0.92,lost_txt,ha='center')
     plt.plot(pps)
     ax0 = fig0.axes[0]
     ax0.set_ylabel('PPS Level')
@@ -150,7 +152,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     plt.suptitle(ttl)
     plt.title(datainfo)
     fig1.text(0.9,0.9,sample_period_txt,ha='right')
-    if lost_txt is not None: fig1.text(0.5,0.91,lost_txt,ha='center')
+    if lost_txt is not None: fig1.text(0.5,0.92,lost_txt,ha='center')
     plt.plot(indextime,                       ls='none',marker='d',label='index time')
     plt.plot(tstamps,                         ls='none',marker='o',label='derived timestamps')
     plt.plot(compstamps,                      ls='none',marker='*',label='computer time')
@@ -184,7 +186,17 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     plt.suptitle(ttl)
     plt.title(datainfo)
     fig2.text(0.9,0.9,sample_period_txt,ha='right')
-    if lost_txt is not None: fig2.text(0.5,0.91,lost_txt,ha='center')
+    if lost_txt is not None: fig2.text(0.5,0.92,lost_txt,ha='center')
+
+    tstamps_horiz = tstamps - indextime
+    #yminmax = (-0.5,0.015)
+    yminmax = (tstamps_horiz.min(),tstamps_horiz.max())
+    # measure the peak to peak between the first and last PPS
+    tstamps_horiz_between_pps = tstamps_horiz[pps_indexes[0]:pps_indexes[-1]]
+    peak2peak = tstamps_horiz_between_pps.max() - tstamps_horiz_between_pps.min()
+    peak2peak_txt = 'peak to peak variation: %.2f msec' % (1000*peak2peak)
+    print(peak2peak_txt)
+    fig2.text(0.1,0.92,peak2peak_txt,ha='left')
     
     plt.plot([0,len(indextime)],[0,0],                       label='index time')
     plt.plot(tstamps-indextime,         ls='none',marker='o',label='derived timestamps')
@@ -194,9 +206,6 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     ax2 = fig2.axes[0]
     ax2.set_ylabel('seconds')
     ax2.set_xlabel('sample number')
-    horiz_y = tstamps - indextime
-    #yminmax = (horiz_y.min(),horiz_y,max())
-    yminmax = (-0.5,0.015)
     ax2.set_ylim(yminmax)
     for idx in jump_indexes:
         plt.plot((separations_idx[idx],separations_idx[idx]),yminmax,color='red',ls='dashed')
@@ -219,29 +228,39 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     return
 
 
-def lost_packets(self):
+def lost_packets(self,hk='sci'):
     '''
     check the QubicStudio science data for lost packets
     '''
-    if not self.exist_timeline_data():
-        print('No timeline data!')
-        return None
+    datatype = self.qubicstudio_filetype_truename(hk)
 
-    datatype = 'ASIC_SUMS'
     if datatype not in self.hk.keys():
-        print('No QubicStudio data!')
+        print('No QubicStudio data of type %s!' % datatype)
         return None
 
-    if 'CN' not in self.hk[datatype]:
-        print('No Chronological Number data!')
+    counter_key = None
+    counter_max = None
+    if datatype=='ASIC_SUMS':
+        counter_key = 'CN'
+        counter_max = 2**7
+    if datatype=='INTERN_HK':
+        counter_key = 'Platform-acqCount'
+        counter_max = 2**16
+        
+    if counter_key is None:
+        print('No sample counter.')
+        return None
+        
+    if  counter_key not in self.hk[datatype].keys():
+        print('Missing sample counter!')
         return None
 
-    cn = self.hk[datatype]['CN']
+    cn = self.hk[datatype][counter_key]
     npts = len(cn)
     counter = cn[0]
     generated_cn = np.zeros(npts)
     for idx in range(npts):
-        if counter==128: counter = 0
+        if counter==counter_max: counter = 0
         generated_cn[idx] = counter
         counter += 1
         

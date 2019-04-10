@@ -58,6 +58,7 @@ class qubicpack:
         read_fits,\
         read_qubicpack_fits,\
         read_qubicstudio_dataset,\
+        read_calsource_fits,\
         read_qubicstudio_fits,\
         read_qubicstudio_science_fits,\
         read_qubicstudio_asic_fits,\

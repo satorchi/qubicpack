@@ -318,24 +318,27 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
 
     # now try to find the corresponding calsource file
     # look for files within the last hour, and then take the closest one to the start time
+    # the files are in FITS format as of Wed 10 Apr 2019 10:21:35 CEST
     print('trying to find calsource data')
     filetype = 'calsource'
     datadir = calsource_dir
     search_start = self.obsdate - dt.timedelta(minutes=30)
-    pattern1 = '%s/calsource_%s*.dat' % (calsource_dir,search_start.strftime('%Y%m%dT%H'))
-    pattern2 = '%s/calsource_%s*.dat' % (calsource_dir,self.obsdate.strftime('%Y%m%dT%H'))
-    files = glob(pattern1) + glob(pattern2)
+    pattern = []
+    pattern.append('%s/calsource_%s*.fits' % (calsource_dir,search_start.strftime('%Y%m%dT%H')))
+    pattern.append('%s/calsource_%s*.fits' % (calsource_dir,self.obsdate.strftime('%Y%m%dT%H')))
+    files = []
+    for p in pattern:
+        files += glob(p)
     if len(files)==0:
         print('No %s data found in directory: %s' % (filetype,datadir))
         return
 
     # find the file which starts before and nearest to obsdate
-    files.sort()
     filename = None
     file_delta = 1e6
     for f in files:
         basename = os.path.basename(f)
-        file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.dat')
+        file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.fits')
         delta = tot_seconds(self.obsdate - file_date)
         if np.abs(delta)<file_delta:
             file_delta = np.abs(delta)
@@ -347,11 +350,32 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     
     print('found calsource file which started %.1f seconds before the data acquisition' % file_delta)
     print('reading calsource file: %s' % filename)
-    caldat = np.loadtxt(filename).T # it is more convenient to have the data in this order
+    hdulist=pyfits.open(filename)
+    nhdu=len(hdulist)
+    if nhdu<>2:
+        print("This doesn't look like a calsource file!")
+        hdulist.close()
+        return
+    hdu = hdulist[1]
+    if 'EXTNAME' not in hdu.header.keys()\
+       and hdu.header['EXTNAME']<>'CALSOURCE':
+        print("This is not a calsource FITS file!")
+        hdulist.close()
+        return
+
+    self.read_calsource_fits(hdu)
+    hdulist.close()
+    return 
+
+def read_calsource_fits(self,hdu):
+    '''
+    read the calibration source data from the given HDU of a fits file
+    '''
+    
     self.hk['CALSOURCE'] = {}
-    self.hk['CALSOURCE']['ComputerDate'] = caldat[0]
-    self.hk['CALSOURCE']['amplitude'] = caldat[1]
-                
+    self.hk['CALSOURCE']['ComputerDate'] = hdu.data.field(0)
+    self.hk['CALSOURCE']['amplitude'] = hdu.data.field(1)
+    
     return
 
 def read_qubicstudio_fits(self,hdulist):
@@ -366,7 +390,7 @@ def read_qubicstudio_fits(self,hdulist):
     keys = hdu.header.keys()
 
     # what kind of QubicStudio file?
-    QS_filetypes = ['ASIC_SUMS','CONF_ASIC1','EXTERN_HK','ASIC_RAW','INTERN_HK','MMR_HK']
+    QS_filetypes = ['ASIC_SUMS','CONF_ASIC1','EXTERN_HK','ASIC_RAW','INTERN_HK','MMR_HK','CALSOURCE']
     extname = hdu.header['EXTNAME'].strip()
     if extname not in QS_filetypes:
         print('ERROR! Unrecognized QubicStudio FITS file: %s' % extname)
@@ -393,6 +417,11 @@ def read_qubicstudio_fits(self,hdulist):
 
     if extname=='EXTERN_HK':
         self.read_qubicstudio_hkextern_fits(hdu)
+        hdulist.close()
+        return
+
+    if extname=='CALSOURCE':
+        self.read_calsource_fits(hdu)
         hdulist.close()
         return
 

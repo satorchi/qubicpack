@@ -42,12 +42,15 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     if hk=='ASIC_SUMS':
         pps_title = 'PPS Scientific Data'
         tstamps_title = 'Timestamps diagnostic for Scientific Data'
+        nsamples_title = 'Number of samples between PPS events for Scientific Data'
     elif hk=='INTERN_HK':
         pps_title = 'PPS Platform'
         tstamps_title = 'Timestamps diagnostic for Platform Data'
+        nsamples_title = 'Number of samples between PPS events for Platform Data'
     else:
         pps_title = 'PPS %s' % hk
         tstamps_title = 'Timestamps diagnostic for %s' % hk
+        nsamples_title = 'Number of samples between PPS events for %s' % hk
         
     
     pps = self.pps(hk=hk)
@@ -70,7 +73,6 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     datainfo = self.infotext()
     
     ########## find where we have potential problems
-    epsilon = 0.1
     separations = []
     separations_idx = []
     pps_high = np.where(pps==1)[0]
@@ -83,12 +85,33 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
                 pps_indexes.append(idx)
                 separations.append(sep)
                 separations_idx.append(idx)
-                prev = gps[idx]            
+                prev = gps[idx]
 
     separations = np.array(separations[1:])
     separations_idx = np.array(separations_idx[1:])
     print('number of separations: %i' % len(separations))
     print('number of samples: %i' % len(pps))
+
+    samples_per_pps = []
+    idx_prev = pps_indexes[0]
+    for idx in pps_indexes[1:]:
+        nsamples = idx - idx_prev
+        samples_per_pps.append(nsamples)
+        idx_prev = idx
+    samples_per_pps = np.array(samples_per_pps,dtype=np.float)
+    mean_samples_per_pps = samples_per_pps.mean()
+    sigma_samples_per_pps = samples_per_pps.std()
+    print('mean number of samples between pulses: %i' % mean_samples_per_pps)
+    print('expected number of samples between pulses: %.1f' % (float(len(pps))/len(separations)))
+    print('sigma samples between pulses: %.1f' % sigma_samples_per_pps)
+    weird_event = []
+    weird_idx = []
+    for idx,val in enumerate(samples_per_pps):
+        sigma = np.abs(val-mean_samples_per_pps)/sigma_samples_per_pps
+        if sigma > 2.0:
+            weird_event.append(idx)
+            weird_idx.append(pps_indexes[idx])
+    print('number of anomolous events: %i' % len(weird_event))
 
     mean_separation = separations.mean()
     print('mean separation between pulses is %.4f second' % mean_separation)
@@ -96,12 +119,6 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     print('max separation between pulses is %.4f second' % max_separation)
     min_separation = separations.min()
     print('min separation between pulses is %.4f second' % min_separation)
-
-    jump_indexes = np.where(separations>1+epsilon)[0]
-    print('there are %i jumps at:  %s' % (len(jump_indexes),separations_idx[jump_indexes]))
-
-    stick_indexes = np.where(separations<1-epsilon)[0]
-    print('there are %i sticks at: %s' % (len(jump_indexes),separations_idx[stick_indexes]))
 
     tstamps = self.pps2date(pps,gps)
     t0 = tstamps[0]
@@ -135,6 +152,8 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     ax0 = fig0.axes[0]
     ax0.set_ylabel('PPS Level')
     ax0.set_xlabel('sample number')
+    for idx in weird_idx:
+        plt.plot((idx,idx),(0,1),color='red',ls='dashed')    
     pngname = '%s_full.png' % png_rootname
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
 
@@ -142,7 +161,33 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
         ax0.set_xlim(zoomx)
         pngname = '%s_zoom.png' % png_rootname
         plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+
+
+    ##### plot number of samples between each PPS event #####
+    ttl = nsamples_title
+    png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))
+    fig = plt.figure(figsize=(16,8))
+    fig.canvas.set_window_title('plt: %s' % ttl)
+    fig.text(0.9,0.9,sample_period_txt,ha='right')
+    fig.text(0.1,0.9,'avg number of samples between events: %.2f' % samples_per_pps.mean())
+    plt.suptitle(ttl)
+    plt.title(datainfo)
+    if lost_txt is not None: fig.text(0.5,0.92,lost_txt,ha='center')
+    plt.plot(samples_per_pps)
+    ax = fig.axes[0]
+    ax.set_ylabel('Number of samples per PPS event')
+    ax.set_xlabel('PPS event number')
+    for idx in weird_event:
+        ax.plot((idx,idx),(samples_per_pps.min(),samples_per_pps.max()),color='red',ls='dashed')
+    pngname = '%s_full.png' % png_rootname
+    plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+
+    if zoomx is not None:
+        ax.set_xlim(zoomx)
+        pngname = '%s_zoom.png' % png_rootname
+        plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     
+        
     
     ##### plot diagnostic #1
     ttl = tstamps_title
@@ -159,10 +204,8 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     plt.plot(gps,                             ls='none',marker='x',label='GPS date')
     plt.plot(pps_high,tstamps[pps_high],      ls='none',marker='^',label='pps high')
     plt.plot(pps_indexes,tstamps[pps_indexes],ls='none',marker='o',label='pps indexes',markerfacecolor='none',markersize=16,color='black')
-    for idx in jump_indexes:
-        plt.plot((separations_idx[idx],separations_idx[idx]),yminmax,color='red',ls='dashed')
-    for idx in stick_indexes:
-        plt.plot((separations_idx[idx],separations_idx[idx]),yminmax,color='magenta',ls='dotted')
+    for idx in weird_idx:
+        plt.plot((idx,idx),yminmax,color='red',ls='dashed')
     
     ax1 = fig1.axes[0]
     ax1.set_ylabel('seconds')
@@ -207,10 +250,8 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     ax2.set_ylabel('seconds')
     ax2.set_xlabel('sample number')
     ax2.set_ylim(yminmax)
-    for idx in jump_indexes:
-        plt.plot((separations_idx[idx],separations_idx[idx]),yminmax,color='red',ls='dashed')
-    for idx in stick_indexes:
-        plt.plot((separations_idx[idx],separations_idx[idx]),yminmax,color='magenta',ls='dotted')
+    for idx in weird_idx:
+        plt.plot((idx,idx),yminmax,color='red',ls='dashed')
     plt.legend()
     pngname = '%s_full.png' % png_rootname
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')

@@ -18,6 +18,7 @@ import sys,os,time,subprocess,struct
 import datetime as dt
 from glob import glob
 import pickle
+from collections import OrderedDict
 from astropy.io import fits as pyfits
 
 from satorchipy.datefunctions import tot_seconds
@@ -282,7 +283,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         
     scidir = '%s/Sums' % datadir
     hkdir = '%s/Hks' % datadir
-    subdir = {}
+    subdir = OrderedDict()
     subdir['science'] = 'Sums'
     subdir['asic'] = 'Hks'
     subdir['hkextern'] = 'Hks'
@@ -290,7 +291,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     subdir['MMR'] = 'Hks'
     subdir['hkintern'] = 'Hks'
     
-    pattern = {}
+    pattern = OrderedDict()
     pattern['science'] = '%s/%s/science-asic%i-*.fits' % (datadir,subdir['science'],asic)
     pattern['asic'] = '%s/%s/conf-asics-*.fits' % (datadir,subdir['asic'])
     pattern['hkextern'] = '%s/%s/hk-extern-*.fits' % (datadir,subdir['hkextern'])

@@ -79,9 +79,10 @@ def ADU2I(self,ADU, offset=None, R1adjust=1.0):
     q_ADC = 20./(2**16-1)
     G_FLL = (10.4 / 0.2) * self.Rfeedback
     n_masked=self.n_masked()
-    
-    I = 1e6 * (ADU / 2**7) * (q_ADC/G_FLL) * (self.nsamples - n_masked) * R1adjust
 
+    # since QubicStudio 3.5 (2019-01-29), and perhaps before, the masking is taken into account by QubicStudio
+    # I = 1e6 * (ADU / 2**7) * (q_ADC/G_FLL) * (self.nsamples - n_masked) * R1adjust
+    I = 1e6 * (ADU / 2**7) * (q_ADC/G_FLL) * R1adjust
     if not offset is None: return I+offset
     return I
 

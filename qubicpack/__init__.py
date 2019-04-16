@@ -74,6 +74,7 @@ class qubicpack:
         pps,\
         azimuth,\
         elevation,\
+        bias_phase,\
         calsource,\
         infotext,\
         qubicstudio_filetype_truename,\

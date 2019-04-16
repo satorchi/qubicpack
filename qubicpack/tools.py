@@ -1014,6 +1014,29 @@ def elevation(self):
     el = (elRaw.astype(np.int) - 2**15) * 360.0/2**16
     return el
 
+def bias_phase(self):
+    '''
+    return the bias voltage phase when in Sine mode
+    '''
+    hktype = 'ASIC_SUMS'
+    
+    if hktype not in self.hk.keys():
+        print('No scientific housekeeping data!')
+        return None
+
+    sinekey = 'TES Sinus phase'
+    if sinekey not in self.hk[hktype].keys():
+        print('No bias sine data!')
+        return None
+
+    # convert uint to +/- float
+    sineraw = self.hk[hktype][sinekey]
+    sinephase = np.array(sineraw,dtype=np.float)
+    idx_neg = np.where(sineraw > 32767)
+    sinephase[idx_neg] -= 65536.0
+
+    return sinephase
+
 def calsource(self):
     '''
     return the calibration source data

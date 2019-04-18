@@ -70,6 +70,7 @@ class qubicpack:
         get_from_keyboard,\
         writelog,\
         pps2date,\
+        RawMask,\
         gps,\
         pps,\
         azimuth,\

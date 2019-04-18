@@ -277,6 +277,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
 
     # if directory name ends with a slash, remove it
     if datadir[-1]==os.sep: datadir = datadir[:-1]
+    self.dataset_name = os.path.basename(datadir)
 
     # calsource directory is normally two up
     calsource_dir = '%s/calsource' % os.path.dirname(os.path.dirname(datadir))
@@ -554,11 +555,14 @@ def read_qubicstudio_asic_fits(self,hdulist):
     
     # get the Raw Mask
     rawmask_lst = self.read_fits_field(hdu,'Raw-mask')
-    tdata['RAW-MASK_LST'] = rawmask_lst
     tdata['RAW-MASK'] = rawmask_lst[0]
-    print('WARNING!  Assuming Raw-mask did not change during the measurement.')
-    print("          You can check by looking at .tdata[0]['RAW-MASK_LST']")    
     self.rawmask = tdata['RAW-MASK']
+    for idx in range(rawmask_lst.shape[0]):
+        if not np.array_equal(self.rawmask,rawmask_lst[idx]):
+            msg = 'WARNING! Raw-mask varies during the measurement!'
+            print(msg)
+            tdata['WARNING'].append(msg)
+            break
 
     # get bias level (this is given directly in Volts.  No need to translate from DAC values)
     # TESAmplitude is in fact, peak-to-peak, so multiply by 0.5
@@ -567,7 +571,6 @@ def read_qubicstudio_asic_fits(self,hdulist):
 
     ## check if they're all the same
     bias_min = offset-amplitude
-    tdata['BIAS_MIN_LST']=bias_min
     difflist = np.unique(bias_min)
     if len(difflist)!=1:
         msg = 'WARNING! Minimum Bias changed during the measurement!'
@@ -577,7 +580,6 @@ def read_qubicstudio_asic_fits(self,hdulist):
     self.min_bias = tdata['BIAS_MIN']
     
     bias_max = offset+amplitude
-    tdata['BIAS_MAX_LST']=bias_max
     difflist = np.unique(bias_max)
     if len(difflist)!=1:
         msg = 'WARNING! Maximum Bias changed during the measurement!'
@@ -937,6 +939,27 @@ def pps2date(self,pps,gps):
         tstamp[pps_indexes[-1] + idx] = tstampF + idx*last_sample_period
 
     return tstamp
+
+########################################################################
+###### convenient wrappers for returning data ##########################
+########################################################################
+
+def RawMask(self):
+    '''
+    return the Raw Mask from the Housekeeping data
+    '''
+    hktype = 'CONF_ASIC%i' % self.asic
+    if hktype not in self.hk.keys():
+        print('No ASIC housekeeping data!')
+        return None
+
+    keyname = 'Raw-mask'
+    if keyname not in self.hk[hktype].keys():
+        print('No Raw Mask data!')
+        return None
+    
+    rawmask = self.hk[hktype][keyname]
+    return rawmask
 
 def gps(self,hk=None):
     '''

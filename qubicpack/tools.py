@@ -291,6 +291,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     subdir['raw'] = 'Raws'
     subdir['MMR'] = 'Hks'
     subdir['hkintern'] = 'Hks'
+    subdir['MGC'] = 'Hks'
     
     pattern = OrderedDict()
     pattern['science'] = '%s/%s/science-asic%i-*.fits' % (datadir,subdir['science'],asic)
@@ -298,6 +299,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     pattern['hkextern'] = '%s/%s/hk-extern-*.fits' % (datadir,subdir['hkextern'])
     pattern['hkintern'] = '%s/%s/hk-intern-*.fits' % (datadir,subdir['hkintern'])
     pattern['MMR'] = '%s/%s/hk-MMR-*.fits' % (datadir,subdir['MMR'])
+    pattern['MGC'] = '%s/%s/hk-MGC-*.fits' % (datadir,subdir['MGC'])
 
     # check for files, and read if found
     for filetype in pattern.keys():
@@ -392,7 +394,7 @@ def read_qubicstudio_fits(self,hdulist):
     keys = hdu.header.keys()
 
     # what kind of QubicStudio file?
-    QS_filetypes = ['ASIC_SUMS','CONF_ASIC1','EXTERN_HK','ASIC_RAW','INTERN_HK','MMR_HK','CALSOURCE']
+    QS_filetypes = ['ASIC_SUMS','CONF_ASIC1','EXTERN_HK','ASIC_RAW','INTERN_HK','MMR_HK','MGC_HK','CALSOURCE']
     extname = hdu.header['EXTNAME'].strip()
     if extname not in QS_filetypes:
         print('ERROR! Unrecognized QubicStudio FITS file: %s' % extname)

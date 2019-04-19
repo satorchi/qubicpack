@@ -1054,12 +1054,20 @@ def bias_phase(self):
         print('No bias sine data!')
         return None
 
-    # convert uint to +/- float
+    # convert uint to +/- float, and normalize to amplitude +/- 1
     sineraw = self.hk[hktype][sinekey]
     sinephase = np.array(sineraw,dtype=np.float)
     idx_neg = np.where(sineraw > 32767)
     sinephase[idx_neg] -= 65536.0
+    norm = max(abs(sinephase.max()),abs(sinephase.min()))
+    sinephase = sinephase/norm
 
+    # assign the vbias
+    if self.max_bias is not None and self.min_bias is not None:
+        amplitude = 0.5*(self.max_bias - self.min_bias)
+        offset = self.min_bias + amplitude
+        self.vbias = amplitude*sinephase + offset
+    
     return sinephase
 
 def calsource(self):

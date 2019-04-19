@@ -264,6 +264,20 @@ def determine_bias_modulation(self,TES,timeline_index=None):
     sample_period=self.sample_period(timeline_index)
     time_axis=self.timeline_timeaxis(timeline_index)
 
+    # use the bias_phase if it exists
+    bias_phase = self.bias_phase()
+    if bias_phase is not None:
+        print('getting bias variation from the saved data')
+        imin = np.argmin(bias_phase)
+        imax = np.argmax(bias_phase)
+        iperiod = 2*abs(imax-imin)
+        ipeak0 = imin
+        ipeak1 = imin + iperiod
+        peak0 = time_axis[ipeak0]
+        peak1 = time_axis[ipeak1]
+        self.bias_period = peak1-peak0
+        return (ipeak0,ipeak1)
+
     # the so-called frequency of the bias modulation is, in fact, the period
     # In QubicStudio the selection of bias_frequency=99 changes the significance from frequency to period (confusing)
     if self.bias_frequency is None:
@@ -343,7 +357,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     if 'BIAS_MAX' in keys:
         self.max_bias=tdata['BIAS_MAX']
 
-    
+    biasphase = self.bias_phase()
         
     ttl=str('QUBIC Timeline curve for TES#%3i (%s)' % (TES,timeline_start.strftime('%Y-%b-%d %H:%M UTC')))
 
@@ -376,17 +390,17 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     fitparms=None
     if fit:
         fitparms=self.fit_timeline(TES,timeline_index,ipeak0,ipeak1)
+        
 
     ipeak0=0
     ipeak1=timeline_npts-1
     if plot_sine:
         if self.timeline_conversion is None:
-            try:
-                self.timeline2adu(TES=TES,timeline_index=timeline_index)
+            if self.timeline2adu(TES=TES,timeline_index=timeline_index):
                 ipeak0=self.timeline_conversion['ipeak0']
                 ipeak1=self.timeline_conversion['ipeak1']
                 shift=self.timeline_conversion['shift']
-            except:
+            else:
                 plot_sine=False
         else:
             ipeak0=self.timeline_conversion['ipeak0']
@@ -398,7 +412,10 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     peak1=time_axis[ipeak1]
 
     if plot_sine:
-        if fitparms is None:
+        if biasphase is not None:
+            ysine = self.vbias
+            sinelabel = 'V$_\mathrm{bias}$ from QubicStudio FITS file'
+        elif fitparms is None:
             bias_period=peak1-peak0
             amplitude=0.5*(self.max_bias-self.min_bias)
             offset=self.min_bias+amplitude
@@ -610,8 +627,9 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
     if not isinstance(TES,int):
         print('Please enter a TES which is the reference for extracting the bias timeline')
         return None
-    
+
     ip0,ip1=self.determine_bias_modulation(TES,timeline_index)
+        
     if not isinstance(ipeak0,int):ipeak0=ip0
     if not isinstance(ipeak1,int):ipeak1=ip1
     self.debugmsg('timeline2adu: ipeak0=%i' % ipeak0)
@@ -643,9 +661,17 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
     amplitude=0.5*(self.max_bias-self.min_bias)
     offset=self.min_bias+amplitude
 
-    # the last term is if we're applying a shift in terms of period
-    ysine=offset+amplitude*np.sin((time_axis-peak0)*2*np.pi/bias_period + 0.5*np.pi + shift*2*np.pi)
-    self.vbias=ysine[ipeak0:ipeak1]
+    # if bias phase was saved by QubicStudio then we use the vbias calculated by bias_phase()
+    biasphase = self.bias_phase()
+    if biasphase is None:
+        # the last term is if we're applying a shift in terms of period
+        ysine=offset+amplitude*np.sin((time_axis-peak0)*2*np.pi/bias_period + 0.5*np.pi + shift*2*np.pi)
+        self.vbias=ysine[ipeak0:ipeak1]
+    else:
+        ipeak0 = 0
+        ipeak1 = self.vbias.shape[0]
+        
+        
     self.min_bias=min(self.vbias)
     self.max_bias=max(self.vbias)
     if 'BEG-OBS' in self.tdata[timeline_index].keys():

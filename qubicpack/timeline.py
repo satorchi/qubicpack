@@ -49,7 +49,7 @@ def timeline(self,TES,timeline_index=0):
     if not self.exist_timeline_data():return None
     ntimelines=self.ntimelines()
     if timeline_index>=ntimelines:
-        print('ERROR! timeline index out of range.  Enter an index between 0 and %i' % (ntimelines-1))
+        self.printmsg('ERROR! timeline index out of range.  Enter an index between 0 and %i' % (ntimelines-1))
         return None
     TES_index=self.TES_index(TES)
     if TES_index is None:return None
@@ -113,12 +113,12 @@ def bias_offset2DAC(self,bias):
     '''
     max_offset=self.DAC2V * 2**15
     if abs(bias)>max_offset:
-        print('WARNING! Cannot set bias offset greater than %.3fV.' % max_offset)
+        self.printmsg('WARNING! Cannot set bias offset greater than %.3fV.' % max_offset)
         if bias<0.0:
             bias=-max_offset
         else:
             bias= max_offset
-        print('Setting bias to %.3fV' % bias)
+        self.printmsg('Setting bias to %.3fV' % bias)
 
 
     DACoffset = abs(bias) / self.DAC2V
@@ -182,11 +182,11 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
             pps = self.pps(hk='ASIC_SUMS')
             gps = self.gps(hk='ASIC_SUMS')
             if gps is None or gps.min()<1494486000 or gps.max()<1494486000:
-                print('ERROR! Bad GPS data.  Using sample rate to make a time axis.')
+                self.printmsg('ERROR! Bad GPS data.  Using sample rate to make a time axis.')
                 return time_axis_index
             time_axis = self.pps2date(pps,gps)
             return time_axis
-        print('ERROR! No PPS data.')
+        self.printmsg('ERROR! No PPS data.')
         return time_axis_index
 
     if axistype.lower()=='computertime':
@@ -194,7 +194,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
             time_axis = np.array([ eval(t.strftime('%s.%f')) for t in timeline_date ])
             t0 = time_axis[0]
             return time_axis
-        print('ERROR! No Computer Time.')
+        self.printmsg('ERROR! No Computer Time.')
         return time_axis_index
 
     return time_axis_index
@@ -207,14 +207,14 @@ def timeaxis(self,datatype=None,axistype='pps'):
     
     valid_axistypes = ['pps','index','computertime']
     if axistype.lower() not in valid_axistypes:
-        print('Invalid axistype request.  Please choose one of: %s' % ', '.join(valid_axistypes))
+        self.printmsg('Invalid axistype request.  Please choose one of: %s' % ', '.join(valid_axistypes))
         return None
     
     datatype = self.qubicstudio_filetype_truename(datatype)
     if datatype is None: datatype = 'ASIC_SUMS'
 
     if datatype not in self.hk.keys():
-        print('No data for %s!' % datatype)
+        self.printmsg('No data for %s!' % datatype)
         return None
 
     if datatype=='ASIC_SUMS':
@@ -254,7 +254,7 @@ def determine_bias_modulation(self,TES,timeline_index=None):
     if not isinstance(timeline_index,int):timeline_index=0
     ntimelines=self.ntimelines()
     if timeline_index>=ntimelines:
-        print('Please enter a timeline between 0 and %i' % (ntimelines-1))
+        self.printmsg('Please enter a timeline between 0 and %i' % (ntimelines-1))
         return None
     
     TES_index=self.TES_index(TES)
@@ -267,7 +267,7 @@ def determine_bias_modulation(self,TES,timeline_index=None):
     # use the bias_phase if it exists
     bias_phase = self.bias_phase()
     if bias_phase is not None:
-        print('getting bias variation from the saved data')
+        self.printmsg('getting bias variation from the saved data')
         imin = np.argmin(bias_phase)
         imax = np.argmax(bias_phase)
         iperiod = 2*abs(imax-imin)
@@ -320,7 +320,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     plot the timeline
     '''
     if not self.exist_timeline_data():
-        print('ERROR! No timeline data.')
+        self.printmsg('ERROR! No timeline data.')
         return None
 
     if timeline_index is None:
@@ -329,7 +329,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     ntimelines=self.ntimelines()
     if timeline_index>=ntimelines:
-        print('Please enter a timeline between 0 and %i' % (ntimelines-1))
+        self.printmsg('Please enter a timeline between 0 and %i' % (ntimelines-1))
         return None
 
     tdata = self.tdata[timeline_index]
@@ -488,7 +488,7 @@ def plot_timeline_physical_layout(self,
         timeline_index=0
     
     if timeline_index>=ntimelines:
-        print('Please enter a timeline between 0 and %i' % (ntimelines-1))
+        self.printmsg('Please enter a timeline between 0 and %i' % (ntimelines-1))
         return None
 
     tdata = self.tdata[timeline_index]
@@ -621,11 +621,11 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
     if not self.exist_timeline_data():return None
     ntimelines=self.ntimelines()
     if timeline_index>=ntimelines:
-        print('Please enter a timeline between 0 and %i' % (ntimelines-1))
+        self.printmsg('Please enter a timeline between 0 and %i' % (ntimelines-1))
         return None
 
     if not isinstance(TES,int):
-        print('Please enter a TES which is the reference for extracting the bias timeline')
+        self.printmsg('Please enter a TES which is the reference for extracting the bias timeline')
         return None
 
     ip0,ip1=self.determine_bias_modulation(TES,timeline_index)
@@ -713,7 +713,7 @@ def fit_timeline(self,TES,timeline_index=None,ipeak0=None,ipeak1=None):
     if timeline_index is None:timeline_index=0    
     ntimelines=self.ntimelines()
     if timeline_index>=ntimelines:
-        print('Please enter a timeline between 0 and %i' % (ntimelines-1))
+        self.printmsg('Please enter a timeline between 0 and %i' % (ntimelines-1))
         return None
     fit['timeline_index']=timeline_index
     fit['date']=self.tdata[timeline_index]['DATE-OBS']

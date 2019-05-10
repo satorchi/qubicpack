@@ -21,7 +21,6 @@ try:
     with_pystudio=True
 except:
     with_pystudio=False
-    print('importing qubicpack without pystudio')
 
     
 class qubicpack:
@@ -221,6 +220,9 @@ class qubicpack:
         from .squids import\
             squid_test
 
+    else:
+        def connect_QubicStudio(self,silent=True):
+            return None
 
     def __init__(self):
         self.assign_defaults()
@@ -233,4 +235,14 @@ class qubicpack:
             else:
                 self.writelog('DEBUG: %s' % msg)
         return
+
+    def printmsg(self,msg,verbosity=1):
+        '''
+        print a message to screen
+        '''
+        if self.verbosity>=verbosity:
+            print(msg)
+        return
+    
+    
     

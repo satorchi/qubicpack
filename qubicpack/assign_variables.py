@@ -17,6 +17,7 @@ import os,subprocess
 import datetime as dt
 
 def assign_defaults(self):
+    self.verbosity=1
     self.debuglevel=0
     self.AVOID_HANGUP=False # this is to avoid the hangup of communication with QubicStudio.  See acquisition.py
     self.logfile=None
@@ -122,7 +123,7 @@ def assign_observer(self,observer='APC LaboMM'):
 def assign_asic(self,asic=1):
     if asic is None:asic=self.asic
     if not isinstance(asic,int) or asic<1 or asic>2:
-        print('asic should have an integer value: 1 or 2.  assigning default asic=1')
+        self.printmsg('asic should have an integer value: 1 or 2.  assigning default asic=1')
         self.asic=1
     else:
         self.asic=asic
@@ -160,7 +161,7 @@ def TES_index(self,TES):
     if (not isinstance(TES,int))\
        or TES<1\
        or TES>self.NPIXELS:
-        print('TES should have a value between 1 and %i' % self.NPIXELS)
+        self.printmsg('TES should have a value between 1 and %i' % self.NPIXELS)
         return None
     TES_idx=TES-1
     return TES_idx
@@ -169,7 +170,7 @@ def TES_index(self,TES):
 def assign_integration_time(self,tinteg=0.1):
     if tinteg is None:tinteg=self.tinteg
     if tinteg is None or tinteg<0.0:
-        print('integration time should be a positive number of seconds.  Assigning default Tinteg=0.1')
+        self.printmsg('integration time should be a positive number of seconds.  Assigning default Tinteg=0.1')
         self.tinteg=0.1
     else:
         self.tinteg=tinteg
@@ -177,14 +178,14 @@ def assign_integration_time(self,tinteg=0.1):
 
 def assign_ADU(self,adu):
     if (not isinstance(adu,np.ndarray)):
-        print('Please enter a 2 dimensional numpy array with the first dimension=%i' % self.NPIXELS)
+        self.printmsg('Please enter a 2 dimensional numpy array with the first dimension=%i' % self.NPIXELS)
         return None
     self.adu=adu
     return
 
 def assign_pausetime(self,pausetime):
     if (not isinstance(pausetime,int)) and (not isinstance(pausetime,float)):
-        print('pause time should be a number of seconds.  Assigning default pausetime=%.3f seconds' % self.pausetime)
+        self.printmsg('pause time should be a number of seconds.  Assigning default pausetime=%.3f seconds' % self.pausetime)
     else:
         self.pausetime=pausetime
     return
@@ -192,8 +193,8 @@ def assign_pausetime(self,pausetime):
     
 def assign_ip(self,ip):
     if (not isinstance(ip,str)):
-        print('please give an IP address for QubicStudio in the form xxx.xxx.xxx.xxx:')
-        print('assigning default IP address: %s' % self.QubicStudio_ip)
+        self.printmsg('please give an IP address for QubicStudio in the form xxx.xxx.xxx.xxx:')
+        self.printmsg('assigning default IP address: %s' % self.QubicStudio_ip)
         return None
     self.QubicStudio_ip=ip
     return
@@ -201,7 +202,7 @@ def assign_ip(self,ip):
 
 def assign_temperature(self,temp):
     if (not isinstance(temp,int)) and (not isinstance(temp,float)):
-        print('ERROR! Temperature should be a number in Kelvin (not milliKelvin)')
+        self.printmsg('ERROR! Temperature should be a number in Kelvin (not milliKelvin)')
         self.temperature=None
         return None
     else:
@@ -273,7 +274,7 @@ def assign_datadir(self,d=None):
             tmpdir_ok=True
             self.datadir=datadir
         except:
-            print('ERROR! Could not find a suitable data directory!')
+            self.printmsg('ERROR! Could not find a suitable data directory!')
             return None
 
     msg='Data will be written to directory: %s' % self.datadir
@@ -286,7 +287,7 @@ def assign_datadir(self,d=None):
         out,err=proc.communicate()
         gigs_available=eval(str(out).split('\n')[1].split()[3])/float(1024**2)
         if gigs_available<1:
-            print('WARNING! running out of disk space.  Only %.1f GiB space left on disk' % gigs_available)
+            self.printmsg('WARNING! running out of disk space.  Only %.1f GiB space left on disk' % gigs_available)
     except:
         self.debugmsg('WARNING! Could not determine disk space available.')
         
@@ -299,7 +300,7 @@ def assign_bias_factor(self,factor):
     assign the multiplicative factor for the bias voltage
     '''
     if not (isinstance(factor,float) or isinstance(factor,int)):
-        print('ERROR! Bias factor should be a number.  Assigning default: 1.0')
+        self.printmsg('ERROR! Bias factor should be a number.  Assigning default: 1.0')
         self.bias_factor=1.0
         return
     self.bias_factor=factor
@@ -312,7 +313,7 @@ def assign_detector_name(self,det_name):
               P82 (tested October-November 2017)
     '''
     if not isinstance(det_name,str):
-        print('ERROR! Please enter a valid name of the detector array (eg. P73, P82)')
+        self.printmsg('ERROR! Please enter a valid name of the detector array (eg. P73, P82)')
         self.detector_name='undefined'
         return
     self.detector_name=det_name
@@ -342,7 +343,7 @@ def guess_detector_name(self):
             if self.asic==1 or self.asic==2:
                 self.detector_name='P87'
 
-    print('Guessing the detector array is: %s' % self.detector_name)
+    self.printmsg('Guessing the detector array is: %s' % self.detector_name)
     return self.detector_name
 
 def assign_logfile(self,rootname=None):

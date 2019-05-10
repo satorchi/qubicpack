@@ -40,7 +40,7 @@ def data_subdir(self):
     make a subdirectory for output files based on the date of the data acquisition
     '''
     if not isinstance(self.obsdate,dt.datetime):
-        print('ERROR! No date for this data.')
+        self.printmsg('ERROR! No date for this data.')
         return None
 
     if not isinstance(self.datadir,str):
@@ -56,7 +56,7 @@ def data_subdir(self):
         out,err=proc.communicate()
 
     if not os.path.exists(fullpath):
-        print('ERROR! Could not create subdirectory: %s' % fullpath)
+        self.printmsg('ERROR! Could not create subdirectory: %s' % fullpath)
         return None
     
     return subdir
@@ -72,7 +72,7 @@ def output_filename(self,rootname):
         self.assign_datadir()
 
     if not isinstance(self.datadir,str):
-        print('ERROR! no appropriate location for file save.')
+        self.printmsg('ERROR! no appropriate location for file save.')
         return None
 
     subdir=self.data_subdir()
@@ -146,15 +146,15 @@ def write_fits(self):
         fitsfile=str('QUBIC_TES_%s.fits' % datestr)
         fitsfile_fullpath=self.output_filename(fitsfile)
         if os.path.exists(fitsfile_fullpath):
-            print('file already exists! %s' % fitsfile_fullpath)
+            self.printmsg('file already exists! %s' % fitsfile_fullpath)
             fitsfile=dt.datetime.utcnow().strftime('resaved-%Y%m%dT%H%M%SUTC__')+fitsfile
             fitsfile_fullpath=self.output_filename(fitsfile)
-            print('instead, saving to file: %s' % fitsfile_fullpath)
+            self.printmsg('instead, saving to file: %s' % fitsfile_fullpath)
 
         fmtstr=str('%iD' % self.adu.shape[1])
         dimstr=str('%i' % self.adu.shape[0])
-        #print('format=',fmtstr)
-        #print('dim=',dimstr)
+        #self.printmsg('format=',fmtstr)
+        #self.printmsg('dim=',dimstr)
         col1  = pyfits.Column(name='V_tes', format=fmtstr, dim=dimstr, unit='ADU', array=self.adu)
         cols  = pyfits.ColDefs([col1])
         tbhdu1 = pyfits.BinTableHDU.from_columns(cols)
@@ -168,16 +168,16 @@ def write_fits(self):
         else:
             thdulist = pyfits.HDUList([prihdu, tbhdu0, tbhdu1, tbhdu2])
         thdulist.writeto(fitsfile_fullpath)
-        print('FITS file written: %s' % fitsfile_fullpath)
+        self.printmsg('FITS file written: %s' % fitsfile_fullpath)
 
     if self.exist_timeline_data():
         fitsfile=str('QUBIC_timeline_%s.fits' % datestr)
         fitsfile_fullpath=self.output_filename(fitsfile)
         if os.path.exists(fitsfile_fullpath):
-            print('file already exists! %s' % fitsfile_fullpath)
+            self.printmsg('file already exists! %s' % fitsfile_fullpath)
             fitsfile=dt.datetime.utcnow().strftime('resaved-%Y%m%dT%H%M%SUTC__')+fitsfile
             fitsfile_fullpath=self.output_filename(fitsfile)
-            print('instead, saving to file: %s' % fitsfile_fullpath)
+            self.printmsg('instead, saving to file: %s' % fitsfile_fullpath)
 
         ntimelines=self.ntimelines()
 
@@ -203,7 +203,7 @@ def write_fits(self):
             
         thdulist = pyfits.HDUList(hdulist)
         thdulist.writeto(fitsfile_fullpath)
-        print('FITS file written: %s' % fitsfile_fullpath)
+        self.printmsg('FITS file written: %s' % fitsfile_fullpath)
 
     return
 
@@ -212,11 +212,11 @@ def read_fits(self,filename):
     open a FITS file and determine whether it is QubicStudio or QubicPack
     '''
     if not isinstance(filename,str):
-        print('ERROR! please enter a valid filename.')
+        self.printmsg('ERROR! please enter a valid filename.')
         return None
     
     if not os.path.exists(filename):
-        print('ERROR! file not found: %s' % filename)
+        self.printmsg('ERROR! file not found: %s' % filename)
         return None
 
     hdulist=pyfits.open(filename)
@@ -226,23 +226,23 @@ def read_fits(self,filename):
     if nhdu>1\
        and ('TELESCOP' in hdulist[0].header.keys())\
        and (hdulist[0].header['TELESCOP'].strip()=='QUBIC'):
-        print('Reading QubicPack file: %s' % filename)
+        self.printmsg('Reading QubicPack file: %s' % filename)
         return self.read_qubicpack_fits(hdulist)
 
     # check if it's a QubicStudio file
     # QubicStudio FITS files always have at least 2 HDUs, with nothing in the primary header
     nogood_msg = 'Unrecognized FITS file!'
     if 'INSTRUME' not in hdulist[1].header.keys():
-        print("'INSTRUME' keyword not found\n%s" % nogood_msg)
+        self.printmsg("'INSTRUME' keyword not found\n%s" % nogood_msg)
         return False
     if hdulist[1].header['INSTRUME'].strip() !=  'QUBIC':
-        print('Instrument is not QUBIC\n%s' % nogood_msg)
+        self.printmsg('Instrument is not QUBIC\n%s' % nogood_msg)
         return False
     if 'EXTNAME' not in hdulist[1].header.keys():
-        print("'EXTNAME' keyword not found\n%s" % nogood_msg)
+        self.printmsg("'EXTNAME' keyword not found\n%s" % nogood_msg)
         return False
     
-    print('Reading QubicStudio FITS file: %s' % filename)
+    self.printmsg('Reading QubicStudio FITS file: %s' % filename)
     return self.read_qubicstudio_fits(hdulist)
 
 def read_fits_field(self,hdu,fieldname):
@@ -267,13 +267,13 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     read a QubicStudio data set which consists of a number of FITS files in a directory
     '''
     if not os.path.isdir(datadir):
-        print('Please enter a valid directory.')
+        self.printmsg('Please enter a valid directory.')
         return None
 
     if asic is None:
         asic = 1
-        print('If you would like to read data for a specific ASIC, please include the keyword asic=<N>')
-    print('Reading data for ASIC %i' % asic)
+        self.printmsg('If you would like to read data for a specific ASIC, please include the keyword asic=<N>')
+    self.printmsg('Reading data for ASIC %i' % asic)
 
     # if directory name ends with a slash, remove it
     if datadir[-1]==os.sep: datadir = datadir[:-1]
@@ -305,15 +305,15 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     for filetype in pattern.keys():
         files = glob(pattern[filetype])
         if len(files)==0:
-            print('No %s data found in directory: %s/%s' % (filetype,datadir,subdir[filetype]))
+            self.printmsg('No %s data found in directory: %s/%s' % (filetype,datadir,subdir[filetype]))
             continue
 
         filename = files[0]
     
         # we expect only one file of each type (per ASIC)
         if len(files)>1:
-            print('WARNING! There are %i %s data files!' % (len(files),filetype))
-            print('         There should only be 1 file.')
+            self.printmsg('WARNING! There are %i %s data files!' % (len(files),filetype))
+            self.printmsg('         There should only be 1 file.')
 
         
         chk = self.read_fits(filename)
@@ -323,7 +323,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     # now try to find the corresponding calsource file
     # look for files within the last hour, and then take the closest one to the start time
     # the files are in FITS format as of Wed 10 Apr 2019 10:21:35 CEST
-    print('trying to find calsource data')
+    self.printmsg('trying to find calsource data')
     filetype = 'calsource'
     datadir = calsource_dir
     search_start = self.obsdate - dt.timedelta(minutes=30)
@@ -334,7 +334,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     for p in pattern:
         files += glob(p)
     if len(files)==0:
-        print('No %s data found in directory: %s' % (filetype,datadir))
+        self.printmsg('No %s data found in directory: %s' % (filetype,datadir))
         return
 
     # find the file which starts before and nearest to obsdate
@@ -349,21 +349,21 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
             filename = f
 
     if file_delta>30:
-        print('Did not find a corresponding calsource file.')
+        self.printmsg('Did not find a corresponding calsource file.')
         return
     
-    print('found calsource file which started %.1f seconds before the data acquisition' % file_delta)
-    print('reading calsource file: %s' % filename)
+    self.printmsg('found calsource file which started %.1f seconds before the data acquisition' % file_delta)
+    self.printmsg('reading calsource file: %s' % filename)
     hdulist=pyfits.open(filename)
     nhdu=len(hdulist)
     if nhdu<>2:
-        print("This doesn't look like a calsource file!")
+        self.printmsg("This doesn't look like a calsource file!")
         hdulist.close()
         return
     hdu = hdulist[1]
     if 'EXTNAME' not in hdu.header.keys()\
        and hdu.header['EXTNAME']<>'CALSOURCE':
-        print("This is not a calsource FITS file!")
+        self.printmsg("This is not a calsource FITS file!")
         hdulist.close()
         return
 
@@ -397,7 +397,7 @@ def read_qubicstudio_fits(self,hdulist):
     QS_filetypes = ['ASIC_SUMS','CONF_ASIC1','EXTERN_HK','ASIC_RAW','INTERN_HK','MMR_HK','MGC_HK','CALSOURCE']
     extname = hdu.header['EXTNAME'].strip()
     if extname not in QS_filetypes:
-        print('ERROR! Unrecognized QubicStudio FITS file: %s' % extname)
+        self.printmsg('ERROR! Unrecognized QubicStudio FITS file: %s' % extname)
         return None
 
     self.datafiletype = extname
@@ -447,7 +447,7 @@ def read_qubicstudio_science_fits(self,hdu):
     elif self.asic != asic:
         msg='ERROR! ASIC Id does not match: previous=%i, current=%i' % (self.asic, asic)
         tdata['WARNING'].append(msg)
-        print(msg)
+        self.printmsg(msg)
         self.asic = asic
 
     # save PPS/GPS etc as we do for HK files
@@ -485,7 +485,7 @@ def read_qubicstudio_science_fits(self,hdu):
     difflist = np.unique(nbsamplespersum_list)
     if len(difflist)!=1:
         msg = 'WARNING! nsamples per sum changed during the measurement!'
-        print(msg)
+        self.printmsg(msg)
         tdata['WARNING'].append(msg)
 
 
@@ -525,7 +525,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     we should read the science data first, and then read the corresponding ASIC table
     '''
     if self.asic is None:
-        print('ERROR! Please read the science data first (asic is unknown)')
+        self.printmsg('ERROR! Please read the science data first (asic is unknown)')
         return None
     
     tdata = self.tdata[-1]
@@ -536,7 +536,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     if self.asic != asic:
         msg="ERROR! I'm reading the wrong ASIC table!  want %i, found %i" % (self.asic, asic)
         tdata['WARNING'].append(msg)
-        print(msg)
+        self.printmsg(msg)
             
     # get the time axis
     computertime_idx = 0
@@ -552,7 +552,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
 
     # print some info
     datefmt = '%Y-%m-%d %H:%M:%S'
-    print('There are %i housekeeping measurements in the period %s to %s'\
+    self.printmsg('There are %i housekeeping measurements in the period %s to %s'\
           % (npts,dateobs[0].strftime(datefmt),dateobs[-1].strftime(datefmt)))
     
     # get the Raw Mask
@@ -562,7 +562,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     for idx in range(rawmask_lst.shape[0]):
         if not np.array_equal(self.rawmask,rawmask_lst[idx]):
             msg = 'WARNING! Raw-mask varies during the measurement!'
-            print(msg)
+            self.printmsg(msg)
             tdata['WARNING'].append(msg)
             break
 
@@ -576,7 +576,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     difflist = np.unique(bias_min)
     if len(difflist)!=1:
         msg = 'WARNING! Minimum Bias changed during the measurement!'
-        print(msg)
+        self.printmsg(msg)
         tdata['WARNING'].append(msg)
     tdata['BIAS_MIN'] = min(bias_min)
     self.min_bias = tdata['BIAS_MIN']
@@ -585,7 +585,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     difflist = np.unique(bias_max)
     if len(difflist)!=1:
         msg = 'WARNING! Maximum Bias changed during the measurement!'
-        print(msg)
+        self.printmsg(msg)
         tdata['WARNING'].append(msg)
     tdata['BIAS_MAX'] = max(bias_max)
     self.max_bias = tdata['BIAS_MAX']
@@ -632,8 +632,8 @@ def read_qubicstudio_hkextern_fits(self,hdu):
     min_temp = testemp.min()
     max_temp = testemp.max()
     temperature = testemp.mean()
-    print('TES temperatures varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
-    print('Using TES temperature %.1fmK' % (1000*temperature))
+    self.printmsg('TES temperatures varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
+    self.printmsg('Using TES temperature %.1fmK' % (1000*temperature))
     self.tdata[0]['TES_TEMP'] = temperature
     self.temperature = temperature
 
@@ -724,7 +724,7 @@ def read_qubicpack_fits(self,h):
             nvals=hdu.header['NAXIS2']
             self.debugmsg('RawMask: nvals=%i' % nvals)
             if nvals!=125:
-                print('WARNING! RawMask has the wrong number of mask values: %i' % nvals)
+                self.printmsg('WARNING! RawMask has the wrong number of mask values: %i' % nvals)
 
             # read the raw mask
             self.rawmask=np.zeros(nvals,dtype=int)
@@ -766,7 +766,7 @@ def read_qubicpack_fits(self,h):
             '''
             this is the timeline data
             '''
-            print('reading timeline data')
+            self.printmsg('reading timeline data')
             tdata={}
             data=hdu.data
             npts=eval(hdu.header['TFORM1'].strip()[:-1])
@@ -797,14 +797,14 @@ def read_qubicpack_fits(self,h):
 
 def read_bins(self,filename):
     if not isinstance(filename,str):
-        print('ERROR! please enter a valid filename.')
+        self.printmsg('ERROR! please enter a valid filename.')
         return None
             
     if not os.path.exists(filename):
-        print('ERROR! file not found: %s' % filename)
+        self.printmsg('ERROR! file not found: %s' % filename)
         return None
             
-    print('reading binary file: %s, I suppose this is a timeline' % filename)
+    self.printmsg('reading binary file: %s, I suppose this is a timeline' % filename)
 
     data=[]
     with open(filename, "rb") as f:
@@ -843,7 +843,7 @@ def get_from_keyboard(self,msg,default=None):
     try:
         x=eval(ans)
     except:
-        print('invalid response.')
+        self.printmsg('invalid response.')
         return None
     return x
     
@@ -860,7 +860,7 @@ def writelog(self,msg):
     timestamp=dt.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC -- ')
     handle.write(timestamp+msg+'\n')
     handle.close()
-    print(timestamp+msg)
+    self.printmsg(timestamp+msg)
 
     # send it to the QubicStudio logbook, if possible
     client=self.connect_QubicStudio(silent=True)
@@ -893,9 +893,9 @@ def pps2date(self,pps,gps):
 
     separations = np.array(separations[1:])
 
-    print('mean pps interval is %.4f second' % separations.mean())
-    print('max pps interval is  %.4f second' % separations.max())
-    print('min pps interval is  %.4f second' % separations.min())
+    self.printmsg('mean pps interval is %.4f second' % separations.mean())
+    self.printmsg('max pps interval is  %.4f second' % separations.max())
+    self.printmsg('min pps interval is  %.4f second' % separations.min())
             
     # find the GPS date corresponding to the PPS
     tstamp = -np.ones(npts)
@@ -952,12 +952,12 @@ def RawMask(self):
     '''
     hktype = 'CONF_ASIC%i' % self.asic
     if hktype not in self.hk.keys():
-        print('No ASIC housekeeping data!')
+        self.printmsg('No ASIC housekeeping data!')
         return None
 
     keyname = 'Raw-mask'
     if keyname not in self.hk[hktype].keys():
-        print('No Raw Mask data!')
+        self.printmsg('No Raw Mask data!')
         return None
     
     rawmask = self.hk[hktype][keyname]
@@ -971,16 +971,16 @@ def gps(self,hk=None):
     if hk is None: hk = 'INTERN_HK'
 
     if hk not in self.hk.keys():
-        print('Not a valid housekeeping ID: %s' % hk)
+        self.printmsg('Not a valid housekeeping ID: %s' % hk)
         return None
 
     if 'GPSDate' not in self.hk[hk].keys():
-        print('No GPS in %s' % hk)
+        self.printmsg('No GPS in %s' % hk)
         return None
 
     gps = self.hk[hk]['GPSDate']
     if gps.max() == 0.0:
-        print('Bad GPS Data!')
+        self.printmsg('Bad GPS Data!')
     return gps
 
 def pps(self,hk=None):
@@ -991,16 +991,16 @@ def pps(self,hk=None):
     if hk is None: hk = 'INTERN_HK'
     
     if hk not in self.hk.keys():
-        print('Not a valid housekeeping ID: %s' % hk)
+        self.printmsg('Not a valid housekeeping ID: %s' % hk)
         return None
 
     if 'PPS' not in self.hk[hk].keys():
-        print('No PPS in %s' % hk)
+        self.printmsg('No PPS in %s' % hk)
         return None
 
     pps = self.hk[hk]['PPS']
     if pps.max() == 0:
-        print('Bad PPS Data!')
+        self.printmsg('Bad PPS Data!')
     return pps
 
 def azimuth(self):
@@ -1009,12 +1009,12 @@ def azimuth(self):
     '''
     hktype = 'INTERN_HK'
     if hktype not in self.hk.keys():
-        print('No platform data!')
+        self.printmsg('No platform data!')
         return None
 
     azkey = 'Platform-Azimut'
     if azkey not in self.hk[hktype].keys():
-        print('No Azimuth data!')
+        self.printmsg('No Azimuth data!')
         return None
 
     azRaw = self.hk[hktype][azkey]
@@ -1027,12 +1027,12 @@ def elevation(self):
     '''
     hktype = 'INTERN_HK'
     if hktype not in self.hk.keys():
-        print('No platform data!')
+        self.printmsg('No platform data!')
         return None
 
     elkey = 'Platform-Elevation'
     if elkey not in self.hk[hktype].keys():
-        print('No Elevation data!')
+        self.printmsg('No Elevation data!')
         return None
 
     elRaw = self.hk[hktype][elkey]
@@ -1046,12 +1046,12 @@ def bias_phase(self):
     hktype = 'ASIC_SUMS'
     
     if hktype not in self.hk.keys():
-        print('No scientific housekeeping data!')
+        self.printmsg('No scientific housekeeping data!')
         return None
 
     sinekey = 'TES Sinus phase'
     if sinekey not in self.hk[hktype].keys():
-        print('No bias sine data!')
+        self.printmsg('No bias sine data!')
         return None
 
     # convert uint to +/- float, and normalize to amplitude +/- 1

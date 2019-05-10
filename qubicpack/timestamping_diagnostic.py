@@ -36,7 +36,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     if hk is None: hk = 'ASIC_SUMS'
     
     if not hk in self.hk.keys():
-        print('Please give a valid HK.  Valid names are: %s' % ', '.join(self.hk.keys()))
+        self.printmsg('Please give a valid HK.  Valid names are: %s' % ', '.join(self.hk.keys()))
         return None
               
     if hk=='ASIC_SUMS':
@@ -89,8 +89,8 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
 
     separations = np.array(separations[1:])
     separations_idx = np.array(separations_idx[1:])
-    print('number of separations: %i' % len(separations))
-    print('number of samples: %i' % len(pps))
+    self.printmsg('number of separations: %i' % len(separations))
+    self.printmsg('number of samples: %i' % len(pps))
 
     samples_per_pps = []
     idx_prev = pps_indexes[0]
@@ -101,9 +101,9 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     samples_per_pps = np.array(samples_per_pps,dtype=np.float)
     mean_samples_per_pps = samples_per_pps.mean()
     sigma_samples_per_pps = samples_per_pps.std()
-    print('mean number of samples between pulses: %i' % mean_samples_per_pps)
-    print('expected number of samples between pulses: %.1f' % (float(len(pps))/len(separations)))
-    print('sigma samples between pulses: %.1f' % sigma_samples_per_pps)
+    self.printmsg('mean number of samples between pulses: %i' % mean_samples_per_pps)
+    self.printmsg('expected number of samples between pulses: %.1f' % (float(len(pps))/len(separations)))
+    self.printmsg('sigma samples between pulses: %.1f' % sigma_samples_per_pps)
     weird_event = []
     weird_idx = []
     for idx,val in enumerate(samples_per_pps):
@@ -111,14 +111,14 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
         if sigma > 2.0:
             weird_event.append(idx)
             weird_idx.append(pps_indexes[idx])
-    print('number of anomolous events: %i' % len(weird_event))
+    self.printmsg('number of anomolous events: %i' % len(weird_event))
 
     mean_separation = separations.mean()
-    print('mean separation between pulses is %.4f second' % mean_separation)
+    self.printmsg('mean separation between pulses is %.4f second' % mean_separation)
     max_separation = separations.max()
-    print('max separation between pulses is %.4f second' % max_separation)
+    self.printmsg('max separation between pulses is %.4f second' % max_separation)
     min_separation = separations.min()
-    print('min separation between pulses is %.4f second' % min_separation)
+    self.printmsg('min separation between pulses is %.4f second' % min_separation)
 
     tstamps = self.pps2date(pps,gps)
     t0 = tstamps[0]
@@ -130,7 +130,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     offset = linefit[0][1]
     derived_sample_period = slope
     sample_period_txt = 'expected sample period: %.6f msec\nderived sample period: %.6f msec' % (sample_period*1000,slope*1000)
-    print(sample_period_txt)
+    self.printmsg(sample_period_txt)
 
     # subtract the progression to view only the residues (horizontal line)
     indextime = slope*xpts + offset
@@ -238,7 +238,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     tstamps_horiz_between_pps = tstamps_horiz[pps_indexes[0]:pps_indexes[-1]]
     peak2peak = tstamps_horiz_between_pps.max() - tstamps_horiz_between_pps.min()
     peak2peak_txt = 'peak to peak variation: %.2f msec' % (1000*peak2peak)
-    print(peak2peak_txt)
+    self.printmsg(peak2peak_txt)
     fig2.text(0.1,0.92,peak2peak_txt,ha='left')
     
     plt.plot([0,len(indextime)],[0,0],                       label='index time')
@@ -276,7 +276,7 @@ def lost_packets(self,hk='sci'):
     datatype = self.qubicstudio_filetype_truename(hk)
 
     if datatype not in self.hk.keys():
-        print('No QubicStudio data of type %s!' % datatype)
+        self.printmsg('No QubicStudio data of type %s!' % datatype)
         return None
 
     counter_key = None
@@ -289,11 +289,11 @@ def lost_packets(self,hk='sci'):
         counter_max = 2**16
         
     if counter_key is None:
-        print('No sample counter.')
+        self.printmsg('No sample counter.')
         return None
         
     if  counter_key not in self.hk[datatype].keys():
-        print('Missing sample counter!')
+        self.printmsg('Missing sample counter!')
         return None
 
     cn = self.hk[datatype][counter_key]
@@ -309,8 +309,8 @@ def lost_packets(self,hk='sci'):
     idx_lost = np.where(delta<>0)[0]
 
     if len(idx_lost)==0:
-        print('No lost packets!')
+        self.printmsg('No lost packets!')
     else:
-        print('%i lost packets.' % len(idx_lost))
+        self.printmsg('%i lost packets.' % len(idx_lost))
     
     return idx_lost

@@ -10,6 +10,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 translate the TES number to the physical location on focal plane grid
 '''
+from __future__ import division, print_function
 import numpy as np
 import os
 import pickle
@@ -79,7 +80,7 @@ def tes2pix(self,TES):
 def pix2tes(self,PIX):
     pix_index=PIX-1
     if not PIX in self.TES2PIX[self.asic_index(),:]:
-        print('ERROR! invalid Pixel number request: %i' % PIX)
+        self.printmsg('ERROR! invalid Pixel number request: %i' % PIX)
         return None
 
     TES_index=-1
@@ -91,7 +92,7 @@ def pix2tes(self,PIX):
             gotit=True
 
     if not gotit:
-        print('ERROR! how did we get here? PIX=%i' % PIX)
+        self.printmsg('ERROR! how did we get here? PIX=%i' % PIX)
         return None
     
     TES=TES_index+1
@@ -119,8 +120,8 @@ def assign_lookup_table(self):
             break
     if not gotit:
         if self.detector_name=='P73':
-            print('WARNING! Cannot find translation table file: %s' % filename_fullpath)
-            print('Open loop and Room Temperature tests will not be noted in plots etc.')
+            self.printmsg('WARNING! Cannot find translation table file: %s' % filename_fullpath,verbosity=2)
+            self.printmsg('Open loop and Room Temperature tests will not be noted in plots etc.',verbosity=2)
         self.transdic=None
         return None
 
@@ -131,11 +132,11 @@ def assign_lookup_table(self):
 
 def lookup_TEStable(self,key='PIX',value=100):
     if self.transdic is None:
-        print('No translation table.  Please load.')
+        self.printmsg('No translation table.  Please load.')
         return None
     
     if not key in self.transdic[0].keys():
-        print('Please enter a valid key.  Choose from:')
+        self.printmsg('Please enter a valid key.  Choose from:',verbosity=0)
         for k in transdic[0].keys():
             print('    %s' % k)
         return None

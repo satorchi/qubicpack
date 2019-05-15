@@ -39,8 +39,8 @@ def read_bath_temperature(qpobject):
 
 # create the  qubicpack object
 go=qp()
-# set debuglevel to 1 if you want lots of messages on the screen
-go.debuglevel=0
+# set verbosity to 2 if you want lots of messages on the screen
+go.verbosity=2
 
 # set TESTMODE to False for a real measurement (default)
 TESTMODE=False
@@ -269,7 +269,7 @@ if meastype=='BOTH':
     params=params_IV # first measurement is I-V
     meastype_str='I-V and R-T'
     go2=qp()
-    go2.debuglevel=1
+    go2.verbosity=2
     go2.assign_asic(go.asic)
     go2.assign_detector_name(go.detector_name)
     go2.min_bias=params_RT['min_bias']

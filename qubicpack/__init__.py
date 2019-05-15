@@ -228,8 +228,8 @@ class qubicpack:
         self.assign_defaults()
         return
 
-    def debugmsg(self,msg,level=1):
-        if self.debuglevel>=level:
+    def debugmsg(self,msg,level=2):
+        if level<=self.verbosity:
             if self.logfile is None:
                 print('DEBUG %s : %s' % (dt.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),msg))
             else:

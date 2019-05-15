@@ -22,7 +22,7 @@ sys.setdefaultencoding('utf8')
 from satorchipy.datefunctions import *
 
 go=qp()
-go.debuglevel=1
+go.verbosity=2
 
 detname=go.get_from_keyboard('Which array is it? ','P90')
 go.assign_detector_name(detname)

@@ -18,7 +18,6 @@ import datetime as dt
 
 def assign_defaults(self):
     self.verbosity=1
-    self.debuglevel=0
     self.AVOID_HANGUP=False # this is to avoid the hangup of communication with QubicStudio.  See acquisition.py
     self.logfile=None
     # on 6 Feb 2018, we reversed the wires for the ASICs

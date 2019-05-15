@@ -48,18 +48,18 @@ else:
     wait_msg='waiting %.1f minutes for temperature to settle' % (tot_seconds(temp_wait)/60.)
 
 
-def read_bath_temperature(qpobject,logfile):
+def read_bath_temperature(qpobject):
     Tbath=qpobject.oxford_read_bath_temperature()
     if Tbath is None:
-        qpobject.writelog(logfile,'ERROR! Could not read bath temperature.')
+        qpobject.writelog('ERROR! Could not read bath temperature.')
         Tbath=qpobject.temperature
     return Tbath
 
 go=qp()
 figsize=go.figsize
 
-# set debuglevel to 1 if you want lots of messages on the screen
-# go.debuglevel=1
+# set verbosity to 2 if you want lots of messages on the screen
+# go.verbosity=2
 
 
 '''
@@ -129,23 +129,22 @@ if TESTMODE:
     go.OxfordInstruments_ip='127.0.0.1'
 
 # make a log file
-logfile=dt.datetime.utcnow().strftime('temperature_IV_logfile_%Y%m%dT%H%M%SUTC.txt')
-logfile_fullpath=go.output_filename(logfile)
+go.assign_logfile(rootname='temperature_IV_logfile')
 
-go.writelog(logfile_fullpath,'starting I-V measurements at different temperatures using the stepped bias (slow) method')
-go.writelog(logfile_fullpath,'ASIC=%i' % go.asic)
-go.writelog(logfile_fullpath,'minimum bias=%.2f V' % min_bias)
-go.writelog(logfile_fullpath,'maximum bias=%.2f V' % max_bias)
-go.writelog(logfile_fullpath,'start temperature=%.3f K' % start_temp)
-go.writelog(logfile_fullpath,'end temperature=%.3f K' % end_temp)
-go.writelog(logfile_fullpath,'temperature step=%.3f K' % step_temp)
+go.writelog('starting I-V measurements at different temperatures using the stepped bias (slow) method')
+go.writelog('ASIC=%i' % go.asic)
+go.writelog('minimum bias=%.2f V' % min_bias)
+go.writelog('maximum bias=%.2f V' % max_bias)
+go.writelog('start temperature=%.3f K' % start_temp)
+go.writelog('end temperature=%.3f K' % end_temp)
+go.writelog('temperature step=%.3f K' % step_temp)
 nsteps=len(Tbath_target)
-go.writelog(logfile_fullpath,'number of temperatures=%i' % nsteps)
+go.writelog('number of temperatures=%i' % nsteps)
 
 # estimated time: half hour for temperature to settle, 25 minutes for I-V measurement
 duration_estimate=nsteps*(temp_minwait+dt.timedelta(minutes=25))
 endtime_estimate=dt.datetime.utcnow()+duration_estimate
-go.writelog(logfile_fullpath,endtime_estimate.strftime('estimated end at %Y-%m-%d %H:%M:%S'))
+go.writelog(endtime_estimate.strftime('estimated end at %Y-%m-%d %H:%M:%S'))
 
 
 # run the measurement
@@ -155,10 +154,10 @@ for T in Tbath_target:
     # make sure the set point was accepted
     Tsetpt=go.oxford_read_set_point()
     if Tsetpt is None:
-        go.writelog(logfile_fullpath,'ERROR! Could not read set point temperature.')
+        go.writelog('ERROR! Could not read set point temperature.')
         Tsetpt=T
-    go.writelog(logfile_fullpath,'Temperature set point = %.2f mK' % (1000*Tsetpt))
-    Tbath=read_bath_temperature(go,logfile_fullpath)
+    go.writelog('Temperature set point = %.2f mK' % (1000*Tsetpt))
+    Tbath=read_bath_temperature(go)
     Tbath_previous=Tbath
     delta=np.abs(Tbath - T)
     delta_step=np.abs(Tbath - Tbath_previous)
@@ -171,27 +170,27 @@ for T in Tbath_target:
           or dt.datetime.utcnow()<min_endtime)\
           and dt.datetime.utcnow()<end_waiting:
 
-        go.writelog(logfile_fullpath,wait_msg)
+        go.writelog(wait_msg)
         time.sleep(tot_seconds(temp_wait))
-        go.writelog(logfile_fullpath,'reading temperature')
-        Tbath=read_bath_temperature(go,logfile_fullpath)
+        go.writelog('reading temperature')
+        Tbath=read_bath_temperature(go)
         delta_step=np.abs(Tbath - Tbath_previous)
         Tbath_previous=Tbath
         delta=np.abs(Tbath - T)
-        go.writelog(logfile_fullpath,'Tbath=%0.2f mK' %  (1000*go.temperature))
+        go.writelog('Tbath=%0.2f mK' %  (1000*go.temperature))
 
         # check heater percentage
         heatpercent=go.oxford_read_heater_level()
         if heatpercent>99:
-            go.writelog(logfile_fullpath,'We need to increase the maximum current to the heater')
+            go.writelog('We need to increase the maximum current to the heater')
             cmdret=go.oxford_increase_heater_range()
             heater=go.oxford_read_heater_range()
-            go.writelog(logfile_fullpath,'heater range: %f mA' % heater)
+            go.writelog('heater range: %f mA' % heater)
         
-    go.writelog(logfile_fullpath,'starting I-V measurement')
+    go.writelog('starting I-V measurement')
     if delta>temp_precision:
-        go.writelog(logfile_fullpath,'WARNING! Did not reach target temperature!')
-        go.writelog(logfile_fullpath,'Tbath=%0.2f mK, Tsetpoint=%0.2f mK' % (1000*Tbath,1000*T))
+        go.writelog('WARNING! Did not reach target temperature!')
+        go.writelog('Tbath=%0.2f mK, Tsetpoint=%0.2f mK' % (1000*Tbath,1000*T))
 
     if not TESTMODE:
         # reset FLL before measurement
@@ -206,13 +205,13 @@ for T in Tbath_target:
 
     # get the I-V curve
     go.get_iv_data(TES=monitor_TES,replay=TESTMODE)
-    go.writelog(logfile_fullpath,'end I-V measurement')
+    go.writelog('end I-V measurement')
     plt.close('all')
 
     # generate the test document
-    go.writelog(logfile_fullpath,'generating test document')
+    go.writelog('generating test document')
     if not TESTMODE: pdfname=go.make_iv_report()
-    go.writelog(logfile_fullpath,'test document generated')
+    go.writelog('test document generated')
 
     # reset the plotting figure size
     go.figsize=figsize

@@ -20,8 +20,8 @@ sys.setdefaultencoding('utf8')
 
 go=qp()
 
-# set debuglevel to 1 if you want lots of messages on the screen
-go.debuglevel=1
+# set verbosity to 2 if you want lots of messages on the screen
+go.verbosity=2
 
 detname=go.get_from_keyboard('Which array is it? ','P87')
 go.assign_detector_name(detname)

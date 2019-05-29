@@ -91,5 +91,5 @@ def pix2tes(PIX,asic):
         return None
 
     idx_tuple = np.where(TES2PIX[ASIC_index(asic)]==PIX)
-    return idx_tuple[0][0]
+    return idx_tuple[0][0] + 1
 

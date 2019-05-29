@@ -18,6 +18,9 @@ import datetime as dt
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+from qubicpack.utilities import TES_index
+from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
+
 def exist_timeline_data(self):
     '''
     check if we have timeline data
@@ -51,9 +54,9 @@ def timeline(self,TES,timeline_index=0):
     if timeline_index>=ntimelines:
         self.printmsg('ERROR! timeline index out of range.  Enter an index between 0 and %i' % (ntimelines-1))
         return None
-    TES_index=self.TES_index(TES)
-    if TES_index is None:return None
-    timeline=self.tdata[timeline_index]['TIMELINE'][TES_index,:]
+    TES_idx=TES_index(TES)
+    if TES_idx is None:return None
+    timeline=self.tdata[timeline_index]['TIMELINE'][TES_idx,:]
     return timeline
 
 def timeline_array(self,timeline_index=0):
@@ -199,7 +202,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
 
     return time_axis_index
 
-def timeaxis(self,datatype=None,axistype='pps'):
+def timeaxis(self,datatype=None,axistype='pps',asic=None):
     '''
     wrapper to return the time axis for data.
     the datatypes are the various hk or scientific
@@ -214,6 +217,13 @@ def timeaxis(self,datatype=None,axistype='pps'):
     if datatype is None: datatype = 'ASIC_SUMS'
 
     if datatype not in self.hk.keys():
+        if datatype=='ASIC_SUMS' and self.__object_type__=='qubicfp':
+            if asic is None:
+                self.printmsg('Please enter a valid ASIC number')
+                return None
+            asic_idx = asic - 1
+            return self.asic_list[asic_idx].timeline_timeaxis(axistype=axistype)
+
         self.printmsg('No data for %s!' % datatype)
         return None
 
@@ -257,7 +267,7 @@ def determine_bias_modulation(self,TES,timeline_index=None):
         self.printmsg('Please enter a timeline between 0 and %i' % (ntimelines-1))
         return None
     
-    TES_index=self.TES_index(TES)
+    TES_idx=TES_index(TES)
     timeline=self.timeline(TES,timeline_index)
     timeline_npts=len(timeline)
 
@@ -315,7 +325,7 @@ def determine_bias_modulation(self,TES,timeline_index=None):
     self.bias_period = peak1-peak0
     return (ipeak0,ipeak1)
 
-def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None,plot_sine=True,xwin=True,timeaxis='pps'):
+def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None,plot_bias=True,xwin=True,timeaxis='pps'):
     '''
     plot the timeline
     '''
@@ -368,7 +378,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             tempstr='unknown'
         else:
             tempstr=str('%.0f mK' % (1000*self.temperature))
-    subttl=str('Array %s, ASIC #%i, Pixel #%i, Temperature %s' % (self.detector_name,self.asic,self.tes2pix(TES),tempstr))
+    subttl=str('Array %s, ASIC #%i, Pixel #%i, Temperature %s' % (self.detector_name,self.asic,tes2pix(TES,self.asic),tempstr))
     if warning_str: subttl += '\n'+warning_str
                                 
     if xwin: plt.ion()
@@ -380,7 +390,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     ax.set_xlabel('time  /  seconds')
     ax.set_ylabel('Current  /  $\mu$A')
     
-    TES_index=self.TES_index(TES)
+    TES_idx=TES_index(TES)
     timeline=self.timeline(TES,timeline_index)
     current=self.ADU2I(timeline) # uAmps
     timeline_npts=len(timeline)
@@ -394,14 +404,14 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     ipeak0=0
     ipeak1=timeline_npts-1
-    if plot_sine:
+    if plot_bias:
         if self.timeline_conversion is None:
             if self.timeline2adu(TES=TES,timeline_index=timeline_index):
                 ipeak0=self.timeline_conversion['ipeak0']
                 ipeak1=self.timeline_conversion['ipeak1']
                 shift=self.timeline_conversion['shift']
             else:
-                plot_sine=False
+                plot_bias=False
         else:
             ipeak0=self.timeline_conversion['ipeak0']
             ipeak1=self.timeline_conversion['ipeak1']
@@ -411,7 +421,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     peak0=time_axis[ipeak0]
     peak1=time_axis[ipeak1]
 
-    if plot_sine:
+    if plot_bias:
         if biasphase is not None:
             ysine = self.vbias
             sinelabel = 'V$_\mathrm{bias}$ from QubicStudio FITS file'
@@ -443,7 +453,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     ax.plot([peak1,peak1],yminmax,color='red')
     ax.set_ylim(yminmax)
 
-    if plot_sine:
+    if plot_bias:
         if fitparms is None:
             ax_bias = ax.twinx()
             ax_bias.set_ylabel('Bias / V',rotation=270,va='bottom')
@@ -480,6 +490,8 @@ def plot_timeline_physical_layout(self,
     '''
     plot the timeline curves in thumbnails mapped to the physical location of each detector
     '''
+    TES2PIX = assign_pix2tes(self.obsdate)
+    
     if not self.exist_timeline_data():return None
     ntimelines=self.ntimelines()
     
@@ -536,7 +548,7 @@ def plot_timeline_physical_layout(self,
     
 
     # the pixel number is between 1 and 248
-    TES_translation_table=self.TES2PIX[self.asic_index()]
+    TES_translation_table = TES2PIX[self.asic_index()]
     ilim=[None,None]
     tlim=[0,timeline_npts]
     
@@ -557,11 +569,11 @@ def plot_timeline_physical_layout(self,
                 label_colour = 'black'
                 face_colour = 'black'
             elif physpix in TES_translation_table:
-                TES = self.pix2tes(physpix)
+                TES = pix2tes(physpix,self.asic)
                 pix_label = str('%i' % TES)
                 label_colour = 'black'
                 face_colour = 'white'
-                TES_index = self.TES_index(TES)
+                TES_idx = TES_index(TES)
                 timeline = self.timeline(TES,timeline_index)
                 I = self.ADU2I(timeline)
                 self.debugmsg('plotting TES %i' % TES)
@@ -649,7 +661,11 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
     # find the number of cycles from the bias modulation "frequency" which is the period
     ### what's this? it doesn't make sense.
     # ncycles=int( np.round((peak1-peak0)/self.bias_frequency) )
-    ncycles = int( (time_axis[-1] - time_axis[0])/bias_period )
+
+    if bias_period==0.0:
+        ncycles = 0
+    else:
+        ncycles = int( (time_axis[-1] - time_axis[0])/bias_period )
     if ncycles==0:
         # it's not down/up
         self.nbiascycles=1
@@ -719,7 +735,7 @@ def fit_timeline(self,TES,timeline_index=None,ipeak0=None,ipeak1=None):
     fit['date']=self.tdata[timeline_index]['DATE-OBS']
     fit['Tbath']=self.tdata[timeline_index]['TES_TEMP']
     
-    TES_index=self.TES_index(TES)
+    TES_idx=TES_index(TES)
     timeline=self.timeline(TES,timeline_index)
     current=self.ADU2I(timeline)
     timeline_npts=len(timeline)

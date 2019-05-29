@@ -1,0 +1,94 @@
+'''
+$Id: qubicfp.py
+$auth: Steve Torchinsky <satorchi@apc.in2p3.fr>
+$created: Mon 20 May 2019 19:15:41 CEST
+$license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
+
+          This is free software: you are free to change and
+          redistribute it.  There is NO WARRANTY, to the extent
+          permitted by law.
+
+class to read/plot data from the entire QUBIC focal plane
+'''
+from __future__ import division, print_function
+
+import numpy as np
+import datetime as dt
+import sys,os,time
+
+from qubicpack.qubicasic import qubicasic
+from qubicpack.utilities import NASIC
+
+class qubicfp:
+    verbosity = 0 # class variable.  You can change this before instantiating an object
+    __object_type__ = 'qubicfp'
+
+    from .tools import\
+        debugmsg,\
+        printmsg,\
+        read_fits_field,\
+        read_fits,\
+        read_qubicpack_fits,\
+        read_qubicstudio_dataset,\
+        read_calsource_fits,\
+        read_qubicstudio_fits,\
+        read_qubicstudio_hkextern_fits,\
+        read_qubicstudio_hkfits,\
+        read_bins,\
+        output_filename,\
+        data_subdir,\
+        get_from_keyboard,\
+        writelog,\
+        pps2date,\
+        RawMask,\
+        get_hk,\
+        gps,\
+        pps,\
+        azimuth,\
+        elevation,\
+        bias_phase,\
+        calsource,\
+        infotext,\
+        qubicstudio_filetype_truename
+
+    from .assign_variables import\
+        assign_observer,\
+        assign_temperature,\
+        assign_datadir,\
+        assign_obsdate,\
+        assign_detector_name,\
+        guess_detector_name,\
+        assign_logfile
+
+    from .timeline import\
+        timeaxis
+
+    from .timestamping_diagnostic import\
+        plot_timestamp_diagnostic,\
+        lost_packets
+
+    from .fpmethods import\
+        infotext,\
+        assign_defaults,\
+        read_qubicstudio_science_fits,\
+        read_qubicstudio_asic_fits,\
+        args_ok,\
+        sample_period,\
+        timeline_array,\
+        plot_timeline,\
+        plot_timeline_focalplane,\
+        plot_iv,\
+        plot_iv_focalplane,\
+        filter_iv_all
+
+
+    def __init__(self):
+
+        self.asic_list = []
+        for idx in range(NASIC):
+            self.asic_list.append(None)
+
+        self.assign_defaults()
+        return None
+
+

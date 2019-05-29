@@ -16,13 +16,16 @@ import numpy as np
 import os,subprocess
 import datetime as dt
 
+from qubicpack.utilities import asic_reversal_date, NPIXELS, NASIC, TES_index, ASIC_index
+from qubicpack.pix2tes import assign_pix_grid, assign_pix2tes, tes2pix, pix2tes, TES2PIX
+
+### the rest of the defs are methods of the qubicasic object
+
 def assign_defaults(self):
-    self.verbosity=1
     self.AVOID_HANGUP=False # this is to avoid the hangup of communication with QubicStudio.  See acquisition.py
     self.logfile=None
-    # on 6 Feb 2018, we reversed the wires for the ASICs
-    # so now QubicStudio and the dilution fridge use the same ASIC designation
-    self.asic_reversal_date=dt.datetime.strptime('2018-02-06 18:00','%Y-%m-%d %H:%M')
+    self.asic_reversal_date = asic_reversal_date
+    self.NPIXELS = NPIXELS
     self.assign_obsdate()
     #self.assign_datadir() # already called from assign_obsdate() above
     self.endobs=None
@@ -31,7 +34,6 @@ def assign_defaults(self):
     #self.QubicStudio_ip='134.158.187.21'
     self.QubicStudio_ip='192.168.2.8'
     self.OxfordInstruments_ip='134.158.186.162'
-    self.NPIXELS=128
     self.NPIXELS_requested=False # this is a hack to help with the hangup problem
     self.NPIXELS_sampled=None
     self.detector_name='undefined'
@@ -69,8 +71,7 @@ def assign_defaults(self):
     self.rawmask=None
     self.timeline_conversion=None
     self.tdata=None
-    self.assign_pix_grid()
-    self.assign_pix2tes()
+    self.pix_grid = assign_pix_grid()
     self.filtersummary=[]
     for idx in range(self.NPIXELS): self.filtersummary.append(None)
     self.assign_lookup_table()
@@ -154,17 +155,7 @@ def assign_asic(self,asic=1):
     return
 
 def asic_index(self):
-    return self.asic-1
-
-def TES_index(self,TES):
-    if (not isinstance(TES,int))\
-       or TES<1\
-       or TES>self.NPIXELS:
-        self.printmsg('TES should have a value between 1 and %i' % self.NPIXELS)
-        return None
-    TES_idx=TES-1
-    return TES_idx
-        
+    return ASIC_index(self.asic)
 
 def assign_integration_time(self,tinteg=0.1):
     if tinteg is None:tinteg=self.tinteg
@@ -212,12 +203,14 @@ def assign_obsdate(self,d=None):
     '''
     assign the observation date
     '''
+    global TES2PIX
     if not isinstance(d,dt.datetime):
         self.obsdate=dt.datetime.utcnow()
     else:
         self.obsdate=d
 
     self.assign_datadir()
+    TES2PIX = assign_pix2tes(self.obsdate)
     return self.obsdate
     
 
@@ -355,3 +348,53 @@ def assign_logfile(self,rootname=None):
     logfile_fullpath=self.output_filename(logfile)
     self.logfile=logfile_fullpath
     return self.logfile
+
+
+### lookup table stuff was moved from pix2tes Fri 24 May 2019 12:22:52 CEST
+def assign_lookup_table(self):
+    '''
+    make the lookup table with results for comparison
+
+    this was only done for array P73, so don't ask for this table otherwise
+    '''
+    filename='TES_translation_table.pickle'
+    cwd=os.getcwd()
+    dirs=[cwd]
+    if not isinstance(self.datadir,str):
+        self.assign_datadir()
+    if isinstance(self.datadir,str):
+        dirs.append(self.datadir)
+        
+    gotit=False
+    for d in dirs:
+        filename_fullpath='%s/%s' % (d,filename)
+        if os.path.exists(filename_fullpath):
+            gotit=True
+            break
+    if not gotit:
+        if self.detector_name=='P73':
+            self.printmsg('WARNING! Cannot find translation table file: %s' % filename_fullpath,verbosity=2)
+            self.printmsg('Open loop and Room Temperature tests will not be noted in plots etc.',verbosity=2)
+        self.transdic=None
+        return None
+
+    h=open(filename_fullpath,'r')
+    self.transdic=pickle.load(h)
+    h.close()
+    return self.transdic
+
+def lookup_TEStable(self,key='PIX',value=100):
+    if self.transdic is None:
+        self.printmsg('No translation table.  Please load.',verbosity=2)
+        return None
+    
+    if not key in self.transdic[0].keys():
+        self.printmsg('Please enter a valid key.  Choose from:',verbosity=0)
+        for k in transdic[0].keys():
+            print('    %s' % k)
+        return None
+    
+    ret=[entry for entry in self.transdic if entry[key]==value]
+    if len(ret)==1:
+        ret=ret[0]
+    return ret

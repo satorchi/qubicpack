@@ -60,6 +60,8 @@ import sys,os,time
 import datetime as dt
 import matplotlib.pyplot as plt
 
+from qubicpack.utilities import TES_index
+
 def connect_QubicStudio(self,client=None, ip=None, silent=False):
     if ip is None:
         ip=self.QubicStudio_ip
@@ -532,9 +534,9 @@ def integrate_scientific_data(self,save=True):
     istart = 0
     for i in range(int(np.ceil(timeline_size / chunk_size))):
         delta = min(chunk_size, timeline_size - istart)
-        self.debugmsg('getting next data chunk...',level=2)
+        self.debugmsg('getting next data chunk...',verbosity=2)
         timeline[:, istart:istart+delta] = req.next()[:, :delta]
-        self.debugmsg('got data chunk.',level=2)
+        self.debugmsg('got data chunk.',verbosity=2)
         istart += chunk_size
     req.abort()
     tdata['TIMELINE']=timeline
@@ -593,7 +595,7 @@ def get_iv_data(self,replay=False,TES=None,monitor=False):
 
     monitor_iv=False
     if isinstance(TES,int):
-        monitor_TES_index=self.TES_index(TES)
+        monitor_TES_index=TES_index(TES)
         monitor_iv=True
 
     if replay:
@@ -647,18 +649,18 @@ def get_iv_data(self,replay=False,TES=None,monitor=False):
 
         if monitor:
             # monitor all the I-V curves:  Warning!  Extremely slow!!!
-            TES_index=0
+            TES_idx=0
             for row in range(nrows):
                 for col in range(ncols):
                     axmulti[row,col].get_xaxis().set_visible(False)
                     axmulti[row,col].get_yaxis().set_visible(False)
 
-                    Iadjusted=self.ADU2I(self.adu[TES_index,0:j+1])
+                    Iadjusted=self.ADU2I(self.adu[TES_idx,0:j+1])
                     self.draw_iv(Iadjusted,colour='blue',axis=axmulti[row,col])
                     text_y=min(Iadjusted)
-                    axmulti[row,col].text(max(self.vbias),text_y,str('%i' % (TES_index+1)),va='bottom',ha='right',color='black')
+                    axmulti[row,col].text(max(self.vbias),text_y,str('%i' % (TES_idx+1)),va='bottom',ha='right',color='black')
             
-                    TES_index+=1
+                    TES_idx+=1
         
 
 
@@ -723,7 +725,7 @@ def get_ASD(self,TES=1,tinteg=None,ntimelines=10,nbins=1):
     client = self.connect_QubicStudio()
     if client is None:return None
 
-    TES_index=self.TES_index(TES)
+    TES_idx=TES_index(TES)
     monitor_mode=False
     if not isinstance(ntimelines,int) or ntimelines<=0:
         monitor_mode=True

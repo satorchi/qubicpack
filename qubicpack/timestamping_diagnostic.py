@@ -28,15 +28,27 @@ indextime  = a2.timeline_timeaxis(axistype='index')
 compstamps = a2.timeline_timeaxis(axistype='computertime')
 '''
 
-def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
+def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None,asic=None):
     '''
     make a diagnostic plot of the derived timestamps
     '''
     hk = self.qubicstudio_filetype_truename(hk)
     if hk is None: hk = 'ASIC_SUMS'
     
-    if not hk in self.hk.keys():
-        self.printmsg('Please give a valid HK.  Valid names are: %s' % ', '.join(self.hk.keys()))
+    if self.__object_type__<>'qubicfp':
+        asic = self.asic
+        HK = self.hk
+    else:
+        if hk=='ASIC_SUMS':
+            if asic is None:
+                self.printmsg('Please enter a valid ASIC.')
+                return None
+            HK = self.asic_list[asic-1].hk
+        else:
+            HK = self.hk
+            
+    if not hk in HK.keys():
+        self.printmsg('Please give a valid HK.  Valid names are: %s' % ', '.join(HK.keys()))
         return None
               
     if hk=='ASIC_SUMS':
@@ -53,15 +65,15 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
         nsamples_title = 'Number of samples between PPS events for %s' % hk
         
     
-    pps = self.pps(hk=hk)
+    pps = self.pps(hk=hk,asic=asic)
     if pps is None: return 
-    gps = self.gps(hk=hk)
+    gps = self.gps(hk=hk,asic=asic)
     if gps is None: return
     
-    compstamps  = self.hk[hk]['ComputerDate']
+    compstamps  = HK[hk]['ComputerDate']
     npts = len(pps)
     if hk=='ASIC_SUMS':
-        sample_period = self.sample_period()
+        sample_period = self.sample_period(asic=asic)
     else:
         sample_period = float(compstamps.max() - compstamps.min())/len(compstamps)
 
@@ -269,13 +281,25 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None):
     return
 
 
-def lost_packets(self,hk='sci'):
+def lost_packets(self,hk='sci',asic=None):
     '''
     check the QubicStudio science data for lost packets
     '''
     datatype = self.qubicstudio_filetype_truename(hk)
 
-    if datatype not in self.hk.keys():
+    if self.__object_type__<>'qubicfp':
+        asic = self.asic
+        HK = self.hk
+    else:
+        if asic is None:
+            self.printmsg('Please enter a valid ASIC.')
+            return None
+        if hk=='ASIC_SUMS':
+            HK = self.asic_list[asic-1].hk
+        else:
+            HK = self.hk
+
+    if datatype not in HK.keys():
         self.printmsg('No QubicStudio data of type %s!' % datatype)
         return None
 
@@ -292,11 +316,11 @@ def lost_packets(self,hk='sci'):
         self.printmsg('No sample counter.')
         return None
         
-    if  counter_key not in self.hk[datatype].keys():
+    if  counter_key not in HK[datatype].keys():
         self.printmsg('Missing sample counter!')
         return None
 
-    cn = self.hk[datatype][counter_key]
+    cn = HK[datatype][counter_key]
     npts = len(cn)
     counter = cn[0]
     generated_cn = np.zeros(npts)

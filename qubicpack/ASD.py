@@ -22,6 +22,8 @@ from glob import glob
 import matplotlib.mlab as mlab
 import pickle
 
+from qubicpack.utilities import TES_index
+from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
 
 def plot_ASD(self,TES=None,
              timeline_index=0,
@@ -49,7 +51,7 @@ def plot_ASD(self,TES=None,
     if TES is None:
         print('Please enter a valid TES number, between 1 and %i' % self.NPIXELS)
         return None
-    TES_index=self.TES_index(TES)
+    TES_idx=TES_index(TES)
 
     if nbins is None:nbins=1
     
@@ -176,8 +178,8 @@ def plot_ASD_all(self,timeline_index=0,imin=None,imax=None,amin=None,amax=None,n
     plot all the ASD for all the TES for a given timeline
     '''
     reslist=[]
-    for TES_index in range(self.NPIXELS):
-        TES=TES_index+1
+    for TES_idx in range(self.NPIXELS):
+        TES=TES_idx+1
         result=self.plot_ASD(TES,timeline_index,
                              save=True,ax_timeline=None,ax_asd=None,xwin=False,
                              imin=imin,imax=imax,amin=amin,amax=amax,nbins=nbins)
@@ -334,11 +336,11 @@ def plot_ASD_physical_layout(self,timeline_index=0,xwin=True,amin=None,amax=None
                 label_colour='black'
                 face_colour='black'
             elif physpix in TES_translation_table:
-                TES=self.pix2tes(physpix)
+                TES=pix2tes(physpix,self.asic)
                 pix_label=str('%i' % TES)
                 label_colour='black'
                 face_colour='white'
-                TES_index=self.TES_index(TES)
+                TES_idx=TES_index(TES)
                 timeline=self.timeline(TES,timeline_index)
                 current=self.ADU2I(timeline)
                 timeline_npts=len(timeline)

@@ -23,6 +23,22 @@ from astropy.io import fits as pyfits
 
 from satorchipy.datefunctions import tot_seconds
 
+def debugmsg(self,msg,verbosity=2):
+    if verbosity<=self.verbosity:
+        if self.logfile is None:
+            print('DEBUG %s : %s' % (dt.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),msg))
+        else:
+            self.writelog('DEBUG: %s' % msg)
+    return
+
+def printmsg(self,msg,verbosity=1):
+    '''
+    print a message to screen
+    '''
+    if verbosity<=self.verbosity:
+        print(msg)
+    return
+
 def read_date_from_filename(self,filename):
     '''
     read the date from the filename. 
@@ -270,10 +286,12 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         self.printmsg('Please enter a valid directory.')
         return None
 
+    if self.__object_type__=='qubicfp':
+        asic = 'ALL'
+
     if asic is None:
         asic = 1
         self.printmsg('If you would like to read data for a specific ASIC, please include the keyword asic=<N>')
-    self.printmsg('Reading data for ASIC %i' % asic)
 
     # if directory name ends with a slash, remove it
     if datadir[-1]==os.sep: datadir = datadir[:-1]
@@ -294,7 +312,11 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     subdir['MGC'] = 'Hks'
     
     pattern = OrderedDict()
-    pattern['science'] = '%s/%s/science-asic%i-*.fits' % (datadir,subdir['science'],asic)
+    if asic=='ALL':
+        pattern['science'] = '%s/%s/science-asic*-*.fits' % (datadir,subdir['science'])
+    else:
+        pattern['science'] = '%s/%s/science-asic%i-*.fits' % (datadir,subdir['science'],asic)
+    
     pattern['asic'] = '%s/%s/conf-asics-*.fits' % (datadir,subdir['asic'])
     pattern['hkextern'] = '%s/%s/hk-extern-*.fits' % (datadir,subdir['hkextern'])
     pattern['hkintern'] = '%s/%s/hk-intern-*.fits' % (datadir,subdir['hkintern'])
@@ -308,17 +330,22 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
             self.printmsg('No %s data found in directory: %s/%s' % (filetype,datadir,subdir[filetype]))
             continue
 
-        filename = files[0]
-    
-        # we expect only one file of each type (per ASIC)
-        if len(files)>1:
+        # we expect only one file of each type (per ASIC) unless we're reading all ASIC
+        if asic<>'ALL' and len(files)>1:
             self.printmsg('WARNING! There are %i %s data files!' % (len(files),filetype))
             self.printmsg('         There should only be 1 file.')
 
-        
-        chk = self.read_fits(filename)
-        # try to guess the name of the detector array (P87, or whatever)
-        self.guess_detector_name()
+        for filename in files:
+            chk = self.read_fits(filename)
+
+
+    # assign bath temperature to asic objects.  This is useful for infotext()
+    if self.__object_type__=='qubicfp':
+        for asic_obj in self.asic_list:
+            self.printmsg('assigning bath temperature of %.3fK to asic %i' % (self.temperature,asic_obj.asic),verbosity=2)
+            asic_obj.tdata[-1]['TES_TEMP'] = self.temperature
+            asic_obj.temperature = self.temperature
+            
 
     # now try to find the corresponding calsource file
     # look for files within the last hour, and then take the closest one to the start time
@@ -369,6 +396,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
 
     self.read_calsource_fits(hdu)
     hdulist.close()
+
     return 
 
 def read_calsource_fits(self,hdu):
@@ -438,6 +466,8 @@ def read_qubicstudio_science_fits(self,hdu):
     read the science data
     The HDU passed here as the argument should already have been identified as the Science HDU
     '''
+    self.printmsg('DEBUG: read_qubicstudio_science_fits object type is %s' % self.__object_type__,verbosity=3)
+    if self.tdata is None:self.tdata = [{}]
     tdata = self.tdata[-1]
         
     # check which ASIC
@@ -449,6 +479,7 @@ def read_qubicstudio_science_fits(self,hdu):
         tdata['WARNING'].append(msg)
         self.printmsg(msg)
         self.asic = asic
+    self.printmsg('Reading data for ASIC %i' % asic)
 
     # save PPS/GPS etc as we do for HK files
     extname = hdu.header['EXTNAME'].strip()
@@ -514,7 +545,10 @@ def read_qubicstudio_science_fits(self,hdu):
     keys = ['CN','TES Sinus phase']
     for key in keys:
         self.hk[extname][key] = self.read_fits_field(hdu,key) 
-    
+
+    # try to guess the name of the detector array (P87, or whatever)
+    self.guess_detector_name()
+        
     return
 
 def read_qubicstudio_asic_fits(self,hdulist):
@@ -528,6 +562,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
         self.printmsg('ERROR! Please read the science data first (asic is unknown)')
         return None
     
+    if self.tdata is None:self.tdata = [{}]
     tdata = self.tdata[-1]
 
     # check which ASIC
@@ -627,6 +662,7 @@ def read_qubicstudio_hkextern_fits(self,hdu):
     '''
     read the housekeeping data
     '''
+    if self.tdata is None:self.tdata = [{}]
     tdata = self.tdata[-1]
     testemp = hdu.data.field(5)
     min_temp = testemp.min()
@@ -946,62 +982,79 @@ def pps2date(self,pps,gps):
 ###### convenient wrappers for returning data ##########################
 ########################################################################
 
-def RawMask(self):
+def RawMask(self,asic=None):
     '''
     return the Raw Mask from the Housekeeping data
     '''
-    hktype = 'CONF_ASIC%i' % self.asic
-    if hktype not in self.hk.keys():
+    if self.__object_type__<>'qubicfp':
+        asic = self.asic
+
+    if asic is None:
+        self.printmsg('Please enter a valid ASIC.')
+        return None
+    
+    hktype = 'CONF_ASIC%i' % asic
+
+    if self.__object_type__=='qubicfp':
+        HK = self.asic_list[asic-1].hk
+    else:
+        HK = self.hk
+        
+    if hktype not in HK.keys():
         self.printmsg('No ASIC housekeeping data!')
         return None
 
     keyname = 'Raw-mask'
-    if keyname not in self.hk[hktype].keys():
+    if keyname not in HK[hktype].keys():
         self.printmsg('No Raw Mask data!')
         return None
     
-    rawmask = self.hk[hktype][keyname]
+    rawmask = HK[hktype][keyname]
     return rawmask
 
-def gps(self,hk=None):
+def get_hk(self,data='PPS',hk=None,asic=None):
     '''
-    return the GPS readings for a given housekeeping
+    return the data for a requested housekeeping
     '''
+    
     hk = self.qubicstudio_filetype_truename(hk)
-    if hk is None: hk = 'INTERN_HK'
-
-    if hk not in self.hk.keys():
-        self.printmsg('Not a valid housekeeping ID: %s' % hk)
+    if hk is None:
+        self.printmsg('Please enter a valid hk type, for example "platform" or "sci"')
         return None
-
-    if 'GPSDate' not in self.hk[hk].keys():
-        self.printmsg('No GPS in %s' % hk)
-        return None
-
-    gps = self.hk[hk]['GPSDate']
-    if gps.max() == 0.0:
-        self.printmsg('Bad GPS Data!')
-    return gps
-
-def pps(self,hk=None):
-    '''
-    return the PPS for a given housekeeping
-    '''
-    hk = self.qubicstudio_filetype_truename(hk)
-    if hk is None: hk = 'INTERN_HK'
     
     if hk not in self.hk.keys():
-        self.printmsg('Not a valid housekeeping ID: %s' % hk)
+        if hk=='ASIC_SUMS' and self.__object_type__=='qubicfp':
+            if asic is None:
+                self.printmsg('Please enter a valid ASIC number')
+                return None
+            asic_idx = asic - 1
+            HK = self.asic_list[asic_idx].hk[hk]
+        else:
+            self.printmsg('Not a valid housekeeping ID: %s' % hk)
+            return None
+    else:
+        HK = self.hk[hk]
+
+    if data not in HK.keys():
+        self.printmsg('No %s in %s' % (data,hk))
         return None
 
-    if 'PPS' not in self.hk[hk].keys():
-        self.printmsg('No PPS in %s' % hk)
-        return None
+    val = HK[data]
+    if val.max() == 0:
+        self.printmsg('Bad %s Data!' % data)
+    return val
 
-    pps = self.hk[hk]['PPS']
-    if pps.max() == 0:
-        self.printmsg('Bad PPS Data!')
-    return pps
+def pps(self,hk=None,asic=None):
+    '''
+    return PPS data for a given HK
+    '''
+    return self.get_hk('PPS',hk,asic)
+
+def gps(self,hk=None,asic=None):
+    '''
+    return GPS data for a given HK
+    '''
+    return self.get_hk('GPSDate',hk,asic)
 
 def azimuth(self):
     '''

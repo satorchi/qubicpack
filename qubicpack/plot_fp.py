@@ -85,7 +85,7 @@ def plot_fp(args):
     if 'lutmax' in args.keys():
         lutmax = args['lutmax']
 
-    label_boxprops = dict(boxstyle='round, pad=0.0', facecolor='white', alpha=0.7)
+    label_boxprops = dict(boxstyle='round, pad=0.1', facecolor='white', alpha=1.0)
  
     face_colours = {}
     face_colours['ASIC1'] = 'white'
@@ -158,6 +158,7 @@ def plot_fp(args):
                             ax[row,col].plot(curve_x,curve,color=curve_colour)
 
             ax[row,col].set_facecolor(face_colour)
+            label_boxprops['facecolor'] = face_colour
             ax[row,col].text(text_x,text_y,pix_label,
                              va='bottom',ha='right',color=label_colour,fontsize=labelfontsize,
                              bbox=label_boxprops,transform = ax[row,col].transAxes)

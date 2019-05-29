@@ -22,14 +22,16 @@ try:
 except:
     with_pystudio=False
 
-    
+
 class qubicpack:
+    verbosity=0 # class variable.  You can change this before instantiating an object.
+    __object_type__ = 'qubicpack'
+
     from .assign_variables import\
         assign_defaults,\
         assign_observer,\
         assign_asic,\
         asic_index,\
-        TES_index,\
         assign_integration_time,\
         assign_ADU,\
         assign_pausetime,\
@@ -39,17 +41,14 @@ class qubicpack:
         assign_bias_factor,\
         assign_detector_name,\
         guess_detector_name,\
-        assign_logfile
-
-    from .pix2tes import\
-        assign_pix_grid,\
-        assign_pix2tes,\
-        tes2pix,\
-        pix2tes,\
+        assign_logfile,\
         assign_lookup_table,\
         lookup_TEStable
+
     
     from .tools import\
+        debugmsg,\
+        printmsg,\
         read_date_from_filename,\
         keyvals,\
         write_fits,\
@@ -70,6 +69,7 @@ class qubicpack:
         writelog,\
         pps2date,\
         RawMask,\
+        get_hk,\
         gps,\
         pps,\
         azimuth,\
@@ -228,21 +228,3 @@ class qubicpack:
         self.assign_defaults()
         return
 
-    def debugmsg(self,msg,level=2):
-        if level<=self.verbosity:
-            if self.logfile is None:
-                print('DEBUG %s : %s' % (dt.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),msg))
-            else:
-                self.writelog('DEBUG: %s' % msg)
-        return
-
-    def printmsg(self,msg,verbosity=1):
-        '''
-        print a message to screen
-        '''
-        if self.verbosity>=verbosity:
-            print(msg)
-        return
-    
-    
-    

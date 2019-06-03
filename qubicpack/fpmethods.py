@@ -123,6 +123,20 @@ def timeline_array(self,asic=None):
     return self.asic_list[asic_idx].timeline_array()
     
 
+def timeline(self,TES=None,asic=None):
+    '''
+    wrapper to get a timeline for a TES from an asic object
+    '''
+    if not self.args_ok(TES,asic):return
+    
+    asic_idx = asic - 1
+    if self.asic_list[asic_idx] is None:
+        self.printmsg('No data for ASIC %i' % asic)
+        return
+
+    return self.asic_list[asic_idx].timeline(TES=TES)
+    
+
 def plot_timeline(self,TES=None,asic=None):
     '''
     wrapper to plot timeline of the asic object

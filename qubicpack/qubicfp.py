@@ -74,6 +74,7 @@ class qubicfp:
         read_qubicstudio_asic_fits,\
         args_ok,\
         sample_period,\
+        timeline,\
         timeline_array,\
         plot_timeline,\
         plot_timeline_focalplane,\

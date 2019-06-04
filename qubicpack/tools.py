@@ -258,7 +258,7 @@ def read_fits(self,filename):
         self.printmsg("'EXTNAME' keyword not found\n%s" % nogood_msg)
         return False
     
-    self.printmsg('Reading QubicStudio FITS file: %s' % filename)
+    self.printmsg('Reading QubicStudio FITS file: %s' % filename,verbosity=2)
     return self.read_qubicstudio_fits(hdulist)
 
 def read_fits_field(self,hdu,fieldname):
@@ -298,7 +298,7 @@ def find_calsource(self,datadir):
     for p in pattern:
         files += glob(p)
     if len(files)==0:
-        self.printmsg('No %s data found in directory: %s' % (filetype,datadir))
+        self.printmsg('No %s data found in directory: %s' % (filetype,datadir),verbosity=1)
         return
 
     # find the file which starts before and nearest to obsdate
@@ -356,8 +356,10 @@ def find_hornswitch(self,datadir):
         pattern_time += one_minute
         
     if len(files)==0:
-        self.printmsg('No %s data found in directory: %s' % (filetype,datadir))
+        self.printmsg('No %s data found in directory: %s' % (filetype,datadir),verbosity=1)
         return None
+
+    self.printmsg('found %i hornswitch files' % len(files),verbosity=2)
     
     return files
 
@@ -407,7 +409,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     for filetype in pattern.keys():
         files = glob(pattern[filetype])
         if len(files)==0:
-            self.printmsg('No %s data found in directory: %s/%s' % (filetype,datadir,subdir[filetype]))
+            self.printmsg('No %s data found in directory: %s/%s' % (filetype,datadir,subdir[filetype]),verbosity=1)
             continue
 
         # we expect only one file of each type (per ASIC) unless we're reading all ASIC
@@ -515,7 +517,7 @@ def read_qubicstudio_science_fits(self,hdu):
         tdata['WARNING'].append(msg)
         self.printmsg(msg)
         self.asic = asic
-    self.printmsg('Reading data for ASIC %i' % asic)
+    self.printmsg('Reading science data for ASIC %i' % asic,verbosity=2)
 
     # save PPS/GPS etc as we do for HK files
     extname = hdu.header['EXTNAME'].strip()
@@ -624,8 +626,8 @@ def read_qubicstudio_asic_fits(self,hdulist):
 
     # print some info
     datefmt = '%Y-%m-%d %H:%M:%S'
-    self.printmsg('There are %i housekeeping measurements in the period %s to %s'\
-          % (npts,dateobs[0].strftime(datefmt),dateobs[-1].strftime(datefmt)))
+    self.printmsg('ASIC%i: There are %i housekeeping measurements in the period %s to %s'\
+                  % (asic,npts,dateobs[0].strftime(datefmt),dateobs[-1].strftime(datefmt)),verbosity=2)
     
     # get the Raw Mask
     rawmask_lst = self.read_fits_field(hdu,'Raw-mask')

@@ -336,7 +336,7 @@ def guess_detector_name(self):
             if self.asic==1 or self.asic==2:
                 self.detector_name='P87'
 
-    self.printmsg('Guessing the detector array is: %s' % self.detector_name)
+    self.printmsg('Guessing the detector array is: %s' % self.detector_name,verbosity=2)
     return self.detector_name
 
 def assign_logfile(self,rootname=None):

@@ -51,7 +51,8 @@ class qubicfp:
         bias_phase,\
         calsource,\
         infotext,\
-        qubicstudio_filetype_truename
+        qubicstudio_filetype_truename,\
+        azel_etc
 
     from .assign_variables import\
         assign_observer,\

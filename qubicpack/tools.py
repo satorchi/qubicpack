@@ -1215,15 +1215,17 @@ def azel_etc(self,TES=None):
     '''
     return Az/El and data in a dictionary for the convenience of JCH
     '''
-    if TES:
-        data = self.timeline(TES=TES)
-    else:
-        data = self.timeline_array()
 
-    t_data = self.timeline_timeaxis(axistype='pps')
+    retval = {}
+
     az = self.azimuth()
+    retval['az'] = az
+
     el = self.elevation()
+    retval['el'] = el
+
     t_azel = self.timeaxis(datatype='hk',axistype='pps')
+    retval['t_azel'] = t_azel
 
     calsource = self.calsource()
     if calsource is None:
@@ -1232,14 +1234,30 @@ def azel_etc(self,TES=None):
     else:
         t_src = calsource[0]
         data_src = calsource[1]
-
-    retval = {}
-    retval['t_data'] = t_data
-    retval['data'] = data
-    retval['t_azel'] = t_azel
-    retval['az'] = az
-    retval['el'] = el
     retval['t_src'] = t_src
     retval['data_src'] = data_src
+
+    if self.__object_type__<>'qubicfp':
+        if TES is None:
+            data = self.timeline_array()
+        else:
+            data = self.timeline(TES=TES)
+        t_data = self.timeline_timeaxis(axistype='pps')
+        retval['t_data'] = t_data
+        retval['data'] = data
+        return retval
+
+    
+
+    for idx,asic_obj in enumerate(self.asic_list):
+        asic_no = idx + 1
+        if TES is None:
+            data = self.timeline_array(asic=asic_no)
+        else:
+            data = self.timeline(TES=TES,asic=asic_no)
+        t_data = self.timeaxis(datatype='sci',asic=asic_no)
+        retval['t_data %i' % asic_no] = t_data
+        retval['data %i' % asic_no] = data
+
     return retval
     

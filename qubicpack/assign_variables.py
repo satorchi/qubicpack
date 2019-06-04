@@ -83,6 +83,7 @@ def assign_defaults(self):
     self.modulator=None
     self.datafiletype=None
     self.dataset_name=None
+    self.hornswitch_files = None
     self.hk = {}
 
     # keynames and descriptions for FITS files

@@ -24,6 +24,7 @@ def assign_defaults(self):
     '''default values for object variables
     '''
     self.obsdate = None
+    self.endobs = None
     self.logfile = None
     self.figsize = (12.80,6.40)
     self.colours = ['blue','green','red','cyan','magenta','yellow','black']
@@ -31,6 +32,7 @@ def assign_defaults(self):
     self.tdata = [{}]
     self.temperature = None
     self.hk  =  {}
+    self.hornswitch_files = None
     return
 
 def infotext(self):
@@ -57,17 +59,26 @@ def read_qubicstudio_science_fits(self,hdu):
     qubicasic.verbosity = self.verbosity
     self.asic_list[asic_ctr] = qubicasic()
     self.asic_list[asic_ctr].read_qubicstudio_science_fits(hdu)
+
     obsdate = self.asic_list[asic_ctr].obsdate
+    self.printmsg('ASIC%i Observation date: %s' % (asic_no,obsdate.strftime('%Y-%m-%d %H:%M:%S.%f')))
     if self.obsdate is None:
         self.printmsg('DEBUG: setting obsdate which was None: %s' % obsdate.strftime('%Y-%m-%d %H:%M:%S.%f'),verbosity=3)
         self.obsdate = obsdate
-    if self.obsdate<>obsdate:
-        self.printmsg('PROBLEM! Observation date does not correspond between ASIC data:',verbosity=3)
-        for idx,asic_obj in enumerate(self.asic_list):
-            if asic_obj is not None:
-                self.printmsg('ASIC%i: %s' % (idx+1,asic_obj.obsdate.strftime('%Y-%m-%d %H:%M:%S.%f')),verbosity=3)
+    if self.obsdate>obsdate:
+        self.obsdate = obsdate
+        self.printmsg('Observation date is not the same between ASIC data.  Using the earlier date',verbosity=3)
 
-    self.printmsg('Observation date: %s' % obsdate.strftime('%Y-%m-%d %H:%M:%S.%f'))
+    endobs = self.asic_list[asic_ctr].endobs
+    self.printmsg('ASIC%i Observation end date: %s' % (asic_no,endobs.strftime('%Y-%m-%d %H:%M:%S.%f')))
+    if self.endobs is None:
+        self.printmsg('DEBUG: setting endobs which was None: %s' % endobs.strftime('%Y-%m-%d %H:%M:%S.%f'),verbosity=3)
+        self.endobs = endobs
+    if self.endobs<endobs:
+        self.endobs = endobs
+        self.printmsg('End Observation is not the same between ASIC data.  Using the later date',verbosity=3)
+        
+
     return
 
 def read_qubicstudio_asic_fits(self,hdulist):

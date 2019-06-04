@@ -29,6 +29,8 @@ class qubicfp:
         read_fits_field,\
         read_fits,\
         read_qubicpack_fits,\
+        find_calsource,\
+        find_hornswitch,\
         read_qubicstudio_dataset,\
         read_calsource_fits,\
         read_qubicstudio_fits,\

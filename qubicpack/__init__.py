@@ -56,6 +56,8 @@ class qubicpack:
         read_fits,\
         read_qubicpack_fits,\
         read_qubicstudio_dataset,\
+        find_calsource,\
+        find_hornswitch,\
         read_calsource_fits,\
         read_qubicstudio_fits,\
         read_qubicstudio_science_fits,\

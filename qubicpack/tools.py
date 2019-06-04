@@ -278,6 +278,89 @@ def read_fits_field(self,hdu,fieldname):
     return None
 
 
+def find_calsource(self,datadir):
+    '''
+    try to find, and then read the calsource file corresponding to the dataset
+    '''
+    # look for files within the last hour, and then take the closest one to the start time
+    # the files are in FITS format as of Wed 10 Apr 2019 10:21:35 CEST
+    self.printmsg('trying to find calsource data corresponding to %s' % self.dataset_name,verbosity=2)
+
+    # calsource directory is normally two up
+    calsource_dir = '%s/calsource' % os.path.dirname(os.path.dirname(datadir))
+    filetype = 'calsource'
+    datadir = calsource_dir
+    search_start = self.obsdate - dt.timedelta(minutes=30)
+    pattern = []
+    pattern.append('%s/calsource_%s*.fits' % (calsource_dir,search_start.strftime('%Y%m%dT%H')))
+    pattern.append('%s/calsource_%s*.fits' % (calsource_dir,self.obsdate.strftime('%Y%m%dT%H')))
+    files = []
+    for p in pattern:
+        files += glob(p)
+    if len(files)==0:
+        self.printmsg('No %s data found in directory: %s' % (filetype,datadir))
+        return
+
+    # find the file which starts before and nearest to obsdate
+    filename = None
+    file_delta = 1e6
+    for f in files:
+        basename = os.path.basename(f)
+        file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.fits')
+        delta = tot_seconds(self.obsdate - file_date)
+        if np.abs(delta)<file_delta:
+            file_delta = np.abs(delta)
+            filename = f
+
+    if file_delta>30:
+        self.printmsg('Did not find a corresponding calsource file.')
+        return
+    
+    self.printmsg('found calsource file which started %.1f seconds before the data acquisition' % file_delta)
+    self.printmsg('reading calsource file: %s' % filename)
+    hdulist=pyfits.open(filename)
+    nhdu=len(hdulist)
+    if nhdu<>2:
+        self.printmsg("This doesn't look like a calsource file!")
+        hdulist.close()
+        return
+    hdu = hdulist[1]
+    if 'EXTNAME' not in hdu.header.keys()\
+       and hdu.header['EXTNAME']<>'CALSOURCE':
+        self.printmsg("This is not a calsource FITS file!")
+        hdulist.close()
+        return
+    
+    self.read_calsource_fits(hdu)
+    hdulist.close()
+    return
+
+def find_hornswitch(self,datadir):
+    '''
+    try to find hornswitch files corresponding to the observation date
+    '''
+    self.printmsg('trying to find hornswitch data corresponding to %s' % self.dataset_name,verbosity=2)
+
+    # hornswitch directory is normally two up
+    hornswitch_dir = '%s/hornswitch' % os.path.dirname(os.path.dirname(datadir))
+    filetype = 'hornswitch'
+    datadir = hornswitch_dir
+    search_start = self.obsdate
+    search_end = self.endobs
+    one_minute = dt.timedelta(minutes=1)
+    pattern_time = search_start
+    files = []
+    while pattern_time<=search_end:
+        pattern = '%s/hornswitch_?_%s*.fits' % (hornswitch_dir,pattern_time.strftime('%Y%m%dT%H%M'))
+        files += glob(pattern)
+        pattern_time += one_minute
+        
+    if len(files)==0:
+        self.printmsg('No %s data found in directory: %s' % (filetype,datadir))
+        return None
+    
+    return files
+
 def read_qubicstudio_dataset(self,datadir,asic=None):
     '''
     read a QubicStudio data set which consists of a number of FITS files in a directory
@@ -296,9 +379,6 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     # if directory name ends with a slash, remove it
     if datadir[-1]==os.sep: datadir = datadir[:-1]
     self.dataset_name = os.path.basename(datadir)
-
-    # calsource directory is normally two up
-    calsource_dir = '%s/calsource' % os.path.dirname(os.path.dirname(datadir))
         
     scidir = '%s/Sums' % datadir
     hkdir = '%s/Hks' % datadir
@@ -348,54 +428,10 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
             
 
     # now try to find the corresponding calsource file
-    # look for files within the last hour, and then take the closest one to the start time
-    # the files are in FITS format as of Wed 10 Apr 2019 10:21:35 CEST
-    self.printmsg('trying to find calsource data')
-    filetype = 'calsource'
-    datadir = calsource_dir
-    search_start = self.obsdate - dt.timedelta(minutes=30)
-    pattern = []
-    pattern.append('%s/calsource_%s*.fits' % (calsource_dir,search_start.strftime('%Y%m%dT%H')))
-    pattern.append('%s/calsource_%s*.fits' % (calsource_dir,self.obsdate.strftime('%Y%m%dT%H')))
-    files = []
-    for p in pattern:
-        files += glob(p)
-    if len(files)==0:
-        self.printmsg('No %s data found in directory: %s' % (filetype,datadir))
-        return
+    self.find_calsource(datadir)
 
-    # find the file which starts before and nearest to obsdate
-    filename = None
-    file_delta = 1e6
-    for f in files:
-        basename = os.path.basename(f)
-        file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.fits')
-        delta = tot_seconds(self.obsdate - file_date)
-        if np.abs(delta)<file_delta:
-            file_delta = np.abs(delta)
-            filename = f
-
-    if file_delta>30:
-        self.printmsg('Did not find a corresponding calsource file.')
-        return
-    
-    self.printmsg('found calsource file which started %.1f seconds before the data acquisition' % file_delta)
-    self.printmsg('reading calsource file: %s' % filename)
-    hdulist=pyfits.open(filename)
-    nhdu=len(hdulist)
-    if nhdu<>2:
-        self.printmsg("This doesn't look like a calsource file!")
-        hdulist.close()
-        return
-    hdu = hdulist[1]
-    if 'EXTNAME' not in hdu.header.keys()\
-       and hdu.header['EXTNAME']<>'CALSOURCE':
-        self.printmsg("This is not a calsource FITS file!")
-        hdulist.close()
-        return
-
-    self.read_calsource_fits(hdu)
-    hdulist.close()
+    # and try to find corresponding hornswitch files
+    self.hornswitch_files = self.find_hornswitch(datadir)
 
     return 
 
@@ -538,6 +574,7 @@ def read_qubicstudio_science_fits(self,hdu):
     tdata['BEG-OBS'] = dateobs[0]
     self.obsdate = tdata['BEG-OBS']
     tdata['END-OBS'] = dateobs[-1]
+    self.endobs = dateobs[-1]
 
     # other info in the science file
     # CN is the "chronological number" counter tag for each sample so we can see if we lost packets

@@ -21,7 +21,7 @@ TES2PIX = None
 
 def assign_pix_grid():
     '''
-    generate the layout of the TES array
+    generate the layout of the TES array:  These are the pixel numbers
     zeros indicate empty grid positions
     '''
     ncols=[8,9,11,12,12,14,15,15,16,17,17,17,17,17,17,17,17]
@@ -40,6 +40,35 @@ def assign_pix_grid():
         nrow+=1
 
     return full_grid
+
+def assign_tes_grid(obsdate=None):
+    '''
+    make a 17x17 array with TES id's
+    '''
+    pix_grid = assign_pix_grid()
+    tes_grid = np.zeros(pix_grid.shape)
+    TES2PIX = assign_pix2tes(obsdate)
+
+    nrows = pix_grid.shape[0]
+    ncols = pix_grid.shape[1]
+    
+    for row in range(nrows):
+        for col in range(ncols):
+
+            # the pixel identity associated with its physical location in the array
+            physpix=pix_grid[row,col]
+            pix_index=physpix-1
+            if physpix<>0:
+                for asic_ctr in range(2):
+                    asic = asic_ctr + 1
+                    asic_idx = ASIC_index(asic)
+                        
+                    if physpix in TES2PIX[asic_idx]:
+                        TES=pix2tes(physpix,asic)
+                        TES_idx = TES - 1
+                        pix_label = TES + 0.1*asic
+                        tes_grid[row,col] = pix_label
+    return tes_grid                        
 
 def assign_pix2tes(obsdate=None):
     '''

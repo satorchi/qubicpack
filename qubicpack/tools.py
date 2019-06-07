@@ -23,7 +23,7 @@ from astropy.io import fits as pyfits
 
 from satorchipy.datefunctions import tot_seconds
 
-def debugmsg(self,msg,verbosity=2):
+def debugmsg(self,msg,verbosity=3):
     if verbosity<=self.verbosity:
         if self.logfile is None:
             print('DEBUG %s : %s' % (dt.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),msg))
@@ -347,11 +347,15 @@ def find_hornswitch(self,datadir):
     datadir = hornswitch_dir
     search_start = self.obsdate
     search_end = self.endobs
+    datefmt = '%Y-%m-%d %H:%M:%S'
+    self.printmsg('looking for files in time period: %s to %s'
+                  % (search_start.strftime(datefmt),search_end.strftime(datefmt)),verbosity=3)
     one_minute = dt.timedelta(minutes=1)
     pattern_time = search_start
     files = []
     while pattern_time<=search_end:
         pattern = '%s/hornswitch_?_%s*.fits' % (hornswitch_dir,pattern_time.strftime('%Y%m%dT%H%M'))
+        self.printmsg('looking for files with pattern: %s' % pattern,verbosity=3)
         files += glob(pattern)
         pattern_time += one_minute
         
@@ -603,6 +607,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     
     if self.tdata is None:self.tdata = [{}]
     tdata = self.tdata[-1]
+    if 'WARNING' not in tdata.keys(): tdata['WARNING']=[]
 
     # check which ASIC
     hdu = hdulist[self.asic]

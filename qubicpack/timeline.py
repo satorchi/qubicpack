@@ -20,6 +20,7 @@ from scipy.optimize import curve_fit
 
 from qubicpack.utilities import TES_index
 from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
+from qubicpack.plot_fp import plot_fp
 
 def exist_timeline_data(self):
     '''
@@ -533,94 +534,30 @@ def plot_timeline_physical_layout(self,
             tempstr=str('%.0f mK' % (1000*self.temperature))
     subttl=str('Array %s, ASIC #%i, T$_\mathrm{bath}$=%s' % (self.detector_name,self.asic,tempstr))
 
-    nrows=self.pix_grid.shape[0]
-    ncols=self.pix_grid.shape[1]
-
-    if xwin: plt.ion()
-    else: plt.ioff()
-    # need a square figure for this plot to look right
-    figlen=max(self.figsize)
-    fig,ax=plt.subplots(nrows,ncols,figsize=[figlen,figlen])
+    # use the plot_fp algorithm to plot the focal plane
+    asic_key = 'ASIC%i' % self.asic
+    args = {}
+    args['title'] = ttl
+    args['subtitle'] = subttl
+    
     pngname=str('QUBIC_Array-%s_ASIC%i_timeline_%s.png' % (self.detector_name,self.asic,timeline_start.strftime('%Y%m%dT%H%M%SUTC')))
     pngname_fullpath=self.output_filename(pngname)
-    if xwin: fig.canvas.set_window_title('plt:  '+ttl)
-    fig.suptitle(ttl+'\n'+subttl,fontsize=16)
-    
+    args['pngname'] = pngname_fullpath
 
-    # the pixel number is between 1 and 248
-    TES_translation_table = TES2PIX[self.asic_index()]
-    ilim=[None,None]
+
+    # plot subsection of timeline
     tlim=[0,timeline_npts]
-    
-    text_y=0.0
-    text_x=1.0
-    for row in range(nrows):
-        for col in range(ncols):
-            ax[row,col].get_xaxis().set_visible(False)
-            ax[row,col].get_yaxis().set_visible(False)
+    if tmin is None:
+        tlim[0] = 0
+    else:
+        tlim[0] = tmin
+    if tmax is None:
+        tlim[1] = timeline_npts
+    else:
+        tlim[1] = tmax    
+    args[asic_key] = self.timeline_array(timeline_index=timeline_index)[:,tlim[0]:tlim[1]]
 
-            # the pixel identity associated with its physical location in the array
-            physpix=self.pix_grid[row,col]
-            pix_index=physpix-1
-            self.debugmsg('processing PIX %i' % physpix)
-
-            if physpix==0:
-                pix_label = 'EMPTY'
-                label_colour = 'black'
-                face_colour = 'black'
-            elif physpix in TES_translation_table:
-                TES = pix2tes(physpix,self.asic)
-                pix_label = str('%i' % TES)
-                label_colour = 'black'
-                face_colour = 'white'
-                TES_idx = TES_index(TES)
-                timeline = self.timeline(TES,timeline_index)
-                I = self.ADU2I(timeline)
-                self.debugmsg('plotting TES %i' % TES)
-                ax[row,col].plot(I,color='blue')
-
-                # plot subsection of timeline
-                if tmin is None:
-                    tlim[0] = 0
-                else:
-                    tlim[0] = tmin
-                if tmax is None:
-                    tlim[1] = timeline_npts
-                else:
-                    tlim[1] = tmax
-                ax[row,col].set_xlim(tlim)
-
-                # get min/max from timeline window
-                negpeak = min(I[ tlim[0]:tlim[1] ])
-                pospeak = max(I[ tlim[0]:tlim[1] ])
-                if imin is None:
-                    ilim[0] = negpeak
-                else:
-                    ilim[0] = imin
-                if imax is None:
-                    ilim[1] = pospeak
-                else:
-                    ilim[1] = imax
-                ax[row,col].set_ylim(ilim)
-
-                # get face colour from peak-to-peak
-                peak2peak = pospeak - negpeak
-                #face_colour = self.lut(peak2peak,lutmin,lutmax)
-                              
-                
-
-            else:
-                pix_label='other\nASIC'
-                label_colour='yellow'
-                face_colour='blue'
-
-            ax[row,col].set_facecolor(face_colour)
-            ax[row,col].text(text_x,text_y,pix_label,va='bottom',ha='right',
-                             color=label_colour,fontsize=8,transform=ax[row,col].transAxes)
-            
-    if isinstance(pngname_fullpath,str): plt.savefig(pngname_fullpath,format='png',dpi=100,bbox_inches='tight')
-    if xwin: plt.show()
-    else: plt.close('all')
+    plot_fp(args)
 
     return
 

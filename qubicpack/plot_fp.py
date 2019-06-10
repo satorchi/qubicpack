@@ -97,7 +97,7 @@ def plot_fp(args):
     curve_colours['ASIC2'] = 'blue'
 
     label_colours = {}
-    label_colours['ASIC0'] = 'white'
+    label_colours['ASIC0'] = 'black'
     label_colours['ASIC1'] = 'black'
     label_colours['ASIC2'] = 'blue'
     
@@ -147,10 +147,15 @@ def plot_fp(args):
                 elif asicbg_key in args.keys():
                     face_colour=mylut(args[asicbg_key][TES_idx],lutmin,lutmax)
 
-            if xaxis_key in args.keys() and args[xaxis_key] is not None:
-                curve_x = args[xaxis_key]
+                if xaxis_key in args.keys() and args[xaxis_key] is not None:
+                    curve_x = args[xaxis_key]
 
-            ax[row,col].plot(curve_x,curve,color=curve_colour)                
+                ax[row,col].plot(curve_x,curve,color=curve_colour)
+
+            
+                
+
+            #print('(%i,%i) : facecolour=%s, labelcolour=%s' % (row,col,face_colour,label_colour))
             ax[row,col].set_facecolor(face_colour)
             label_boxprops['facecolor'] = face_colour
             ax[row,col].text(text_x,text_y,pix_label,

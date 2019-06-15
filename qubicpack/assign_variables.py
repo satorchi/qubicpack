@@ -53,6 +53,7 @@ def assign_defaults(self):
     self.assign_integration_time()
     self.adu=None
     self.vbias=None
+    self.timeline_vbias=None
     self.Vinfinity=0.0 # used to calculate the I-V offset (force the line through 0,0)
     self.cycle_vbias=True
     self.nbiascycles=None
@@ -198,6 +199,8 @@ def assign_temperature(self,temp):
         return None
     else:
         self.temperature=temp
+        if self.tdata is not None:
+            self.tdata[-1]['TES_TEMP'] = temp
     return self.temperature
 
 def assign_obsdate(self,d=None):

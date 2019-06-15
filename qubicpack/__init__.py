@@ -137,6 +137,7 @@ class qubicpack:
         R1,\
         Rn,\
         selected_iv_curve,\
+        best_iv_curve,\
         Vtes,\
         Ites,\
         Ptes,\

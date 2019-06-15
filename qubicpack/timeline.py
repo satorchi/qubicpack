@@ -166,6 +166,8 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
     This is determined from the sample period and the number of points
     or, possibly given as a list of datetime
     '''
+    self.printmsg('call to timeline_timeaxis',verbosity=4)
+    
     if not self.exist_timeline_data():return None
     if timeline_index is None:timeline_index = 0
 
@@ -186,11 +188,11 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
             pps = self.pps(hk='ASIC_SUMS')
             gps = self.gps(hk='ASIC_SUMS')
             if gps is None or gps.min()<1494486000 or gps.max()<1494486000:
-                self.printmsg('ERROR! Bad GPS data.  Using sample rate to make a time axis.')
+                self.printmsg('ERROR! Bad GPS data.  Using sample rate to make a time axis.',verbosity=2)
                 return time_axis_index
             time_axis = self.pps2date(pps,gps)
             return time_axis
-        self.printmsg('ERROR! No PPS data.')
+        self.printmsg('ERROR! No PPS data.',verbosity=2)
         return time_axis_index
 
     if axistype.lower()=='computertime':
@@ -198,7 +200,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
             time_axis = np.array([ eval(t.strftime('%s.%f')) for t in timeline_date ])
             t0 = time_axis[0]
             return time_axis
-        self.printmsg('ERROR! No Computer Time.')
+        self.printmsg('ERROR! No Computer Time.',verbosity=2)
         return time_axis_index
 
     return time_axis_index
@@ -229,6 +231,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None):
         return None
 
     if datatype=='ASIC_SUMS':
+        self.printmsg('DEBUG: calling timeline_timeaxis from timeaxis()',verbosity=4)
         return self.timeline_timeaxis(axistype=axistype)
 
     # otherwise, return the time axis from one of the housekeeping sections
@@ -396,6 +399,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     current=self.ADU2I(timeline) # uAmps
     timeline_npts=len(timeline)
 
+    self.printmsg('DEBUG: calling timeline_timeaxis from plot_timeline()',verbosity=4)
     time_axis=self.timeline_timeaxis(timeline_index,axistype=timeaxis)
 
     fitparms=None
@@ -424,15 +428,18 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     if plot_bias:
         if biasphase is not None:
-            ysine = self.vbias
+            self.printmsg('DEBUG: taking ysine from QubicStudio FITS file',verbosity=4)
+            ysine = self.timeline_vbias
             sinelabel = 'V$_\mathrm{bias}$ from QubicStudio FITS file'
         elif fitparms is None:
+            self.printmsg('DEBUG: taking ysine from peak to peak',verbosity=4)
             bias_period=peak1-peak0
             amplitude=0.5*(self.max_bias-self.min_bias)
             offset=self.min_bias+amplitude
             sinelabel='sine curve period=%.2f seconds\npeaks determined from TES %i' % (bias_period,self.timeline_conversion['TES'])
             ysine=offset+amplitude*np.sin((time_axis-peak0)*2*np.pi/bias_period + 0.5*np.pi + shift*2*np.pi)
         else:
+            self.printmsg('DEBUG: taking ysine from timeline fit to sine curve',verbosity=4)
             bias_period=fitparms['period']
             amplitude=fitparms['amplitude']
             offset=fitparms['offset']
@@ -461,7 +468,9 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             ax_bias.set_ylim([self.min_bias,self.max_bias])
             curve2_ax=ax_bias
         else:
-            curve2_ax=ax        
+            curve2_ax=ax
+        self.printmsg('DEBUG: plotting sine curve for bias: len(time_axis)=%i, len(ysine)=%i'
+                      % (len(time_axis),len(ysine)),verbosity=4)
         curve2=curve2_ax.plot(time_axis,ysine,label=sinelabel,color='green')
         curves = curve1+curve2
     else:
@@ -590,19 +599,22 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
     self.timeline_conversion['timeline_index']=timeline_index
     self.timeline_conversion['shift']=shift
     
+    self.printmsg('DEBUG: calling timeline_timeaxis from timeline2adu()',verbosity=4)
     time_axis=self.timeline_timeaxis(timeline_index)
     peak0=time_axis[ipeak0]
     peak1=time_axis[ipeak1]
+    self.timeline_conversion['peak0']=peak0
+    self.timeline_conversion['peak1']=peak1
     bias_period=peak1-peak0
+    self.timeline_conversion['bias_period']=bias_period
 
-    # find the number of cycles from the bias modulation "frequency" which is the period
-    ### what's this? it doesn't make sense.
-    # ncycles=int( np.round((peak1-peak0)/self.bias_frequency) )
 
+    # find the number of bias cycles (one cycle is back to the original Vbias)
+    # one full bias_period is a return to the same bias voltage, so one period is 1 cycle
     if bias_period==0.0:
         ncycles = 0
     else:
-        ncycles = int( (time_axis[-1] - time_axis[0])/bias_period )
+        ncycles = int( (peak1 - peak0)/bias_period )
     if ncycles==0:
         # it's not down/up
         self.nbiascycles=1
@@ -618,11 +630,12 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
     biasphase = self.bias_phase()
     if biasphase is None:
         # the last term is if we're applying a shift in terms of period
-        ysine=offset+amplitude*np.sin((time_axis-peak0)*2*np.pi/bias_period + 0.5*np.pi + shift*2*np.pi)
-        self.vbias=ysine[ipeak0:ipeak1]
+        ysine = offset+amplitude*np.sin((time_axis-peak0)*2*np.pi/bias_period + 0.5*np.pi + shift*2*np.pi)
+        self.printmsg('DEBUG: timeline2adu() : setting vbias to derived sine curve',verbosity=4)
+        self.vbias = ysine[ipeak0:ipeak1]
     else:
-        ipeak0 = 0
-        ipeak1 = self.vbias.shape[0]
+        self.printmsg('DEBUG: timeline2adu() : setting vbias to subset between peaks',verbosity=4)
+        self.vbias = self.timeline_vbias[ipeak0:ipeak1]
         
         
     self.min_bias=min(self.vbias)
@@ -677,6 +690,7 @@ def fit_timeline(self,TES,timeline_index=None,ipeak0=None,ipeak1=None):
     current=self.ADU2I(timeline)
     timeline_npts=len(timeline)
 
+    self.printmsg('DEBUG: calling timeline_timeaxis from fit_timeline()',verbosity=4)
     time_axis=self.timeline_timeaxis(timeline_index)
 
     # first guess;  use the peak search algorithm

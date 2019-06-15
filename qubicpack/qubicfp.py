@@ -56,7 +56,6 @@ class qubicfp:
 
     from .assign_variables import\
         assign_observer,\
-        assign_temperature,\
         assign_datadir,\
         assign_obsdate,\
         assign_detector_name,\
@@ -73,6 +72,7 @@ class qubicfp:
     from .fpmethods import\
         infotext,\
         assign_defaults,\
+        assign_temperature,\
         read_qubicstudio_science_fits,\
         read_qubicstudio_asic_fits,\
         args_ok,\
@@ -83,7 +83,10 @@ class qubicfp:
         plot_timeline_focalplane,\
         plot_iv,\
         plot_iv_focalplane,\
-        filter_iv_all
+        filter_iv_all,\
+        ngood,\
+        make_iv_tex_report,\
+        make_iv_report
 
 
     def __init__(self):

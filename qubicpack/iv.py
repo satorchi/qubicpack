@@ -22,6 +22,7 @@ from glob import glob
 import math
 import pickle
 from scipy.optimize import curve_fit
+from PIL import Image
 
 from qubicpack.utilities import TES_index
 from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
@@ -31,9 +32,15 @@ def exist_iv_data(self):
     check if we have I-V data
     '''
     if not isinstance(self.adu,np.ndarray):
+        self.printmsg('No I-V data!',verbosity=2)
         return False
 
     if not isinstance(self.vbias,np.ndarray):
+        self.printmsg('No bias data!',verbosity=2)
+        return False
+
+    if self.vbias.shape[0]<>self.adu.shape[1]:
+        self.printmsg("I and V don't match! npts V = %i, npts I = %i" % (self.vbias.shape[0],self.adu.shape[1]))
         return False
     return True
 
@@ -741,6 +748,7 @@ def model_iv_super(self,V,coeff0,coeff1):
     '''
     the model of the superconducting portion of the I-V curve
     '''
+    self.printmsg('DEBUG: call to model_iv_super()',verbosity=5)
     I=coeff0 + coeff1/V
     return I
 
@@ -748,6 +756,7 @@ def model_iv_normal(self,V,coeff0,coeff1):
     '''
     the model of the normal portion of the I-V curve
     '''
+    self.printmsg('DEBUG: call to model_iv_normal()',verbosity=5)
     I=coeff0 + coeff1*V
     return I
 
@@ -760,6 +769,7 @@ def model_iv_mixed(self,V,coeff0,coeff1,coeff2,coeff3):
     0 = coeff1*Vturnover + 2*coeff2*Vturnover + 3*coeff3*Vturnover**2
     with the above we impose a relation between coeff3 and coeff2 and coeff1, knowing Vturnover
     '''
+    self.printmsg('DEBUG: call to model_iv_mixed()',verbosity=5)
 
     # Vturnover sneaks in via a class variable.  self.TES should be assigned in fit_iv()
     #Vturnover=self.turnover(self.TES)
@@ -779,6 +789,8 @@ def model_iv_combined(self,V,Vsuper,Vnormal,a0,a1,b0,b1,b2,b3,c0,c1):
     BUG: The Vsuper and Vnormal remain fixed at the first guess. (or not?)
 
     '''
+    self.printmsg('DEBUG: call to model_iv_combined()',verbosity=5)
+    
     if isinstance(V,np.ndarray):
         I=np.empty(len(V))
         for idx,v in enumerate(V):
@@ -926,24 +938,29 @@ def fit_iv(self,TES,
     return fit
 
 
-def draw_iv(self,I,colour='blue',axis=plt,label=None):
+def draw_iv(self,I,bias=None,colour='blue',axis=None,label=None):
     '''
     draw an individual I-V curve
     '''
-
+    if axis is None: axis = plt.gca()
     npts=len(I)
     if npts<len(self.vbias) and npts>0:
-        # this is a partial curve
+        # this is a partial curve, it should come with a bias axis
+        if bias is None: # assume it's the first part of Vbias during an ongoing acquisition
+            bias = self.bias_factor*self.vbias[0:npts]      
         plt.cla()
         axis.set_xlim([self.bias_factor*self.min_bias,self.bias_factor*self.max_bias])
-        # axis.set_ylim([min(self.vbias),max(self.vbias)])
 
-        # we mark the last point
-        axis.plot(self.bias_factor*self.vbias[0:npts],I,color=colour)
-        axis.plot(self.bias_factor*self.vbias[npts-1],I[npts-1],color='red',marker='D',linestyle='none')
+        axis.plot(bias,I,color=colour)
+        # we mark the last point to show the progressive plot
+        axis.plot(bias[-1],I[-1],color='red',marker='D',linestyle='none')
 
-        tempstr='T$_\mathrm{bath}$=%0.2f mK' % (1000*self.temperature)
-        axis.text(0.05,0.95,tempstr,va='top',ha='left',fontsize=14,transform=axis.transAxes)
+        if self.temperature is None:
+            tempstr = 'unknown'
+        else:
+            tempstr = '%0.2f mK' % (1000*self.temperature)            
+        tempstr = 'T$_\mathrm{bath}$=%s' % tempstr
+        axis.text(0.05,0.95,tempstr,va='top',ha='left',fontsize=12,transform=axis.transAxes)
         
         plt.pause(0.01)
         return
@@ -988,14 +1005,24 @@ def adjusted_iv(self,TES):
     Iadjusted=self.ADU2I(self.adu[TES_index(TES),:],offset=offset,R1adjust=R1adjust)
     return Iadjusted
 
-def oplot_iv(self,TES,label=None):
+def oplot_iv(self,TES,label=None,best=True,axis=None):
+    Iadjusted = self.adjusted_iv(TES)
+    bias = None
+    if best:
+        istart,iend=self.selected_iv_curve(TES)
+        Iadjusted = Iadjusted[istart:iend]
+        bias = self.bias_factor*self.vbias[istart:iend]
+    return self.draw_iv(Iadjusted,bias=bias,label=label,axis=axis)
 
-    Iadjusted=self.adjusted_iv(TES)
-    self.draw_iv(Iadjusted,label=label)
-    
-    return
-
-def plot_iv(self,TES=None,multi=False,xwin=True):
+def plot_iv(self,TES=None,multi=False,xwin=True,best=True):
+    '''
+    plot the I-V curve.
+      keywords:
+        TES: the TES number to plot.  If "None" then plot all in the plot of the focal plane
+        multi: plot all the TES I-V curves in a multi-window plot
+        xwin: plot to the screen (or not)
+        best: plot only the "best" curve if there are multiple I-V curves
+    '''
     filterinfo=self.filterinfo(TES)
     if filterinfo is None:return None
     
@@ -1025,7 +1052,7 @@ def plot_iv(self,TES=None,multi=False,xwin=True):
     I_plot_window=[Ibot-0.5*Irange,Itop+0.1*Irange]
     ax.set_ylim(I_plot_window)
     Vturnover=self.turnover(TES)
-    self.oplot_iv(TES)
+    self.oplot_iv(TES,axis=ax,best=best)
         
     # draw a line tangent to the fit at the highest Vbias
     # I0 here is the current extrapolated to Vbias=0
@@ -1670,6 +1697,7 @@ def make_Vbias(self,cycle=True,ncycles=2,vmin=0.5,vmax=3.0,dv=0.002,lowhigh=True
 
 def filter_iv(self,TES,
               R1adjust=1.0,
+              R1_limit=10.0,
               residual_limit=3.0,
               abs_amplitude_limit=0.01,
               rel_amplitude_limit=0.1,
@@ -1699,23 +1727,41 @@ def filter_iv(self,TES,
     ret['comment']='no comment'
 
     # fit to the chosen model. The fit will be for the best measured curve if it's cycled bias
-    fit=self.fit_iv(TES,jumplimit,curve_index,fitfunction,Vsuper,Vnormal,istart,iend,R1adjust)
-    ret['fit']=fit
-    residual=fit['residual']
-    ret['residual']=residual
-    offset=fit['offset']
-    ret['offset']=offset
-    ADU=self.adu[TES_idx,:]
-    Iadjusted=self.ADU2I(ADU,offset=offset,R1adjust=R1adjust)
-    ret['turnover']=fit['turnover']
+    fit = self.fit_iv(TES,jumplimit,curve_index,fitfunction,Vsuper,Vnormal,istart,iend,R1adjust)
+    ret['fit'] = fit
+    residual = fit['residual']
+    ret['residual'] = residual
+    offset = fit['offset']
+    ret['offset'] = offset
+    ADU = self.adu[TES_idx,:]
+    Iadjusted = self.ADU2I(ADU,offset=offset,R1adjust=R1adjust)
+    ret['turnover'] = fit['turnover']
+    R1 = fit['R1']
+    ret['R1'] = R1
 
-    # first filter:  is it a good fit?
+    ##########################
+    # filter out bad detectors
+    ##########################
+
+    # negative normal resistance is bad
+    if R1<0.0:
+        ret['is_good']=False
+        ret['comment']='negative normal resistance'
+        return self.assign_filterinfo(TES,ret)
+
+    # big normal resistance is bad
+    if R1>R1_limit:
+        ret['is_good']=False
+        ret['comment']='high normal resistance'
+        return self.assign_filterinfo(TES,ret)
+    
+    # is it a good fit?
     if residual>residual_limit:
         ret['is_good']=False
         ret['comment']='bad poly fit'
         return self.assign_filterinfo(TES,ret)
     
-    # second filter: small amplitude is rejected
+    # small amplitude is rejected
     # we use the best curve as determined by the fit unless curve_index was specified
     curve_index=fit['curve index']
     npts=fit['npts_curve']
@@ -1732,7 +1778,7 @@ def filter_iv(self,TES,
         ret['comment']='current too low'
         return self.assign_filterinfo(TES,ret)
         
-    # third filter: peak to peak amplitude
+    # peak to peak amplitude
     rel_amplitude=abs(spread/meanval)
     ret['rel_amplitude']=rel_amplitude
     if rel_amplitude<rel_amplitude_limit:
@@ -1740,20 +1786,20 @@ def filter_iv(self,TES,
         ret['comment']='current peak-to-peak too small'
         return self.assign_filterinfo(TES,ret)
     
-    # fourth filter: do we find a valid turnover for the Vbias?
+    # do we find a valid turnover for the Vbias?
     ret['turnover']=fit['turnover']
     if fit['turning'] is None or fit['turnover'] is None:
         ret['is_good']=False
         ret['comment']='no turnover'
         return self.assign_filterinfo(TES,ret)
 
-    # fifth filter: is the operational point (the turnover) within the acceptable range?
+    # is the operational point (the turnover) within the acceptable range?
     if ret['turnover']<self.bias_factor*self.min_bias+bias_margin or ret['turnover']>self.bias_factor*self.max_bias-bias_margin:
         ret['is_good']=False
         ret['comment']='operation point outside acceptable range'
         return self.assign_filterinfo(TES,ret)
 
-    # sixth filter:  do we have both turning points within the bias range?
+    # do we have both turning points within the bias range?
     # maybe I should delete this filter
     #if fit['turnings within range']>1:
     #    ret['is_good']=False
@@ -1766,6 +1812,7 @@ def filter_iv(self,TES,
 
 def filter_iv_all(self,
                   R1adjust=1.0,
+                  R1_limit=10,
                   residual_limit=3.0,
                   abs_amplitude_limit=0.01,
                   rel_amplitude_limit=0.1,
@@ -1799,6 +1846,7 @@ def filter_iv_all(self,
         self.debugmsg('running filter on TES %03i' % TES)
         filterinfo=self.filter_iv(TES,
                                   R1adjust_vector[TES_idx],
+                                  R1_limit,
                                   residual_limit,
                                   abs_amplitude_limit,
                                   rel_amplitude_limit,
@@ -1955,6 +2003,9 @@ def make_iv_tex_report(self,tableonly=False):
     if not isinstance(texfilename_fullpath,str):
         print('ERROR! Not possible to write tex file.')
         return None
+
+    cfibre_ack = 'The carbon fibre measurements are from Sophie Henrot Versill\\a\'e, see \\url{http://qubic.in2p3.fr/wiki/pmwiki.php/TD/P73TestWithACarbonFiberSource}.\\\\\n'
+    openloop_ack = 'Results of the open loop test and the room temperature measurements are from Damien Pr\\^ele\\\\\n'
     
     h=open(texfilename_fullpath,'w')
     h.write('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n')
@@ -1979,7 +2030,7 @@ def make_iv_tex_report(self,tableonly=False):
     h.write('\\begin{center}\n')
     h.write('QUBIC TES Report\\\\\n')
     h.write(self.obsdate.strftime('data from %Y-%m-%d %H:%M UTC\\\\\n'))
-    h.write('compiled by %s\\\\\nusing PyStudio/QubicPack: \\url{https://github.com/satorchi/pystudio}\n' % observer)
+    h.write('compiled by %s\\\\\nusing QubicPack: \\url{https://github.com/satorchi/qubicpack}\n' % observer)
     h.write(dt.datetime.utcnow().strftime('this report compiled %Y-%m-%d %H:%M UTC\\\\\n'))
     h.write('\\end{center}\n')
 
@@ -2025,9 +2076,10 @@ def make_iv_tex_report(self,tableonly=False):
             headline+=' & '+headline1 
     h.write('\\noindent\\begin{longtable}{%s}\n' % colfmt)
     h.write('\\caption{Summary Table for TES\\\\\n')
-    h.write('The carbon fibre measurements are from Sophie Henrot Versill\\a\'e, see \\url{http://qubic.in2p3.fr/wiki/pmwiki.php/TD/P73TestWithACarbonFiberSource}.\\\\\n')
-    h.write('Results of the open loop test and the room temperature measurements are from Damien Pr\\^ele}\\\\\n')
-    h.write('\\hline\n')
+    if self.transdic is not None:
+        h.write(cfibre_ack)
+        h.write(openloop_ack)
+    h.write('}\\\\\n\\hline\n')
     h.write(headline+'\\\\ \n')
     h.write('\\hline\\endhead\n')
     h.write('\\hline\\endfoot\n')
@@ -2044,12 +2096,12 @@ def make_iv_tex_report(self,tableonly=False):
 
 
     # make a table of disagreement
-    if not self.transdic is None:
+    if self.transdic is not None:
         h.write('\\noindent\\begin{longtable}{%s}\n' % colfmt)
         h.write('\\caption{Table of Disagreement\\\\\n')
-        h.write('The carbon fibre measurements are from Sophie Henrot Versill\\a\'e, see \\url{http://qubic.in2p3.fr/wiki/pmwiki.php/TD/P73TestWithACarbonFiberSource}.\\\\\n')
-        h.write('Results of the open loop test and the room temperature measurements are from Damien Pr\\^ele}\\\\\n')
-        h.write('\\hline\n')
+        h.write(cfibre_ack)
+        h.write(openloop_ack)
+        h.write('}\\hline\n')
         h.write(headline+'\\\\ \n')
         h.write('\\hline\\endhead\n')
         h.write('\\hline\\endfoot\n')
@@ -2096,14 +2148,30 @@ def make_iv_tex_report(self,tableonly=False):
         h.write('\n\n\\end{document}\n')
         h.close()
         return texfilename_fullpath
-        
-    
-    h.write('\n\\noindent\\includegraphics[width=0.8\\linewidth,clip]{%s}\\\\' % thumbnailplot)
-    h.write('\n\\includegraphics[width=0.8\\linewidth,clip]{%s}\n\\clearpage\n\\noindent' % allplot)
-    for png in iv_plots:
-        h.write('\n\\includegraphics[width=0.8\\linewidth,clip]{%s}\\\\' % png)
 
+    h.write('\n\\noindent')
+
+    #includefmt = '\n\\includegraphics[width=0.8\\linewidth,natwidth=%i,natheight=%i,clip]{%s}\\\\'
+    includefmt = '\n\\includegraphics[width=0.8\\linewidth,clip]{%s}\\\\'
+    #img = Image.open(self.output_filename(thumbnailplot))
+    #natwidth,natheight = img.size
+    #img.close()
+    #h.write(includefmt % (natwidth,natheight,thumbnailplot))
+    h.write(includefmt % thumbnailplot)
+
+    #img = Image.open(self.output_filename(allplot))
+    #natwidth,natheight = img.size
+    #img.close()
+    #h.write(includefmt % (natwidth,natheight,allplot))
+    h.write(includefmt % allplot)
     
+    h.write('\n\\clearpage\n\\noindent')
+    for png in iv_plots:
+        #img = Image.open(self.output_filename(png))
+        #natwidth,natheight = img.size
+        #img.close()
+        #h.write(includefmt % (natwidth,natheight,png))
+        h.write(includefmt % png)
     
     h.write('\n\n\\end{document}\n')
     h.close()
@@ -2349,7 +2417,33 @@ def selected_iv_curve(self,TES):
     iend=istart+npts_curve
     return (istart,iend)
 
+def best_iv_curve(self,TES=None):
+    '''
+    return the best I-V curve for a TES
+    if TES is None, return all best I-V curves
+    '''
+    filterinfo=self.filterinfo(TES)
+    if filterinfo is None:return None
+    
+    if TES is not None:
+        TES_idx = TES_index(TES)
+        istart,iend=self.selected_iv_curve(TES)
+        bias = self.bias_factor*self.vbias[istart:iend]
+        adu = self.adu[TES_idx,istart:iend]
+        return bias, adu
 
+    adu_best = []
+    bias_best = []
+    for TES_idx in range(self.NPIXELS):
+        TES = TES_idx + 1
+        fit = filterinfo[TES_idx]['fit']
+        istart,iend=self.selected_iv_curve(TES)
+        bias = self.bias_factor*self.vbias[istart:iend]
+        bias_best.append(bias)
+        adu_best.append(self.adu[TES_idx,istart:iend])
+        
+    return bias_best,adu_best
+        
 def Ites(self,TES):
     '''
     return the TES current in Amps (not in microAmps)

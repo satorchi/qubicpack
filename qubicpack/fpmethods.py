@@ -29,10 +29,19 @@ def assign_defaults(self):
     self.figsize = (12.80,6.40)
     self.colours = ['blue','green','red','cyan','magenta','yellow','black']
     self.observer = 'APC LaboMM'
-    self.tdata = [{}]
+    self.tdata = None
     self.temperature = None
     self.hk  =  {}
     self.hornswitch_files = None
+    return
+
+def assign_temperature(self,temp):
+    '''
+    assign the bath temperature to the asic objects
+    '''
+    for asic_obj in self.asic_list:
+        if asic_obj is not None:
+            asic_obj.assign_temperature(temp)
     return
 
 def infotext(self):
@@ -103,6 +112,11 @@ def args_ok(self,TES=None,asic=None):
         self.printmsg('Please give an asic number')
         return False
 
+    asic_idx = asic - 1
+    if self.asic_list[asic_idx] is None:
+        self.printmsg('No data for ASIC %i' % asic)
+        return False
+
     if TES is None:
         self.printmsg('Please give a TES number')
         return False
@@ -139,12 +153,7 @@ def timeline(self,TES=None,asic=None):
     wrapper to get a timeline for a TES from an asic object
     '''
     if not self.args_ok(TES,asic):return
-    
-    asic_idx = asic - 1
-    if self.asic_list[asic_idx] is None:
-        self.printmsg('No data for ASIC %i' % asic)
-        return
-
+    asic_idx = asic-1
     return self.asic_list[asic_idx].timeline(TES=TES)
     
 
@@ -154,12 +163,7 @@ def plot_timeline(self,TES=None,asic=None):
     '''
 
     if not self.args_ok(TES,asic):return
-    
-    asic_idx = asic - 1
-    if self.asic_list[asic_idx] is None:
-        self.printmsg('No data for ASIC %i' % asic)
-        return
-
+    asic_idx = asic-1
     return self.asic_list[asic_idx].plot_timeline(TES=TES)
     
 def plot_timeline_focalplane(self):
@@ -187,19 +191,14 @@ def plot_timeline_focalplane(self):
 
 
 #### I-V methods 
-def plot_iv(self,TES=None,asic=None):
+def plot_iv(self,TES=None,asic=None,multi=False,xwin=True,best=True):
     '''
     wrapper to plot I-V of the asic object
     '''
 
-    if not self.args_ok(TES,asic):return
-    
+    if not self.args_ok(TES,asic):return    
     asic_idx = asic - 1
-    if self.asic_list[asic_idx] is None:
-        self.printmsg('No data for ASIC %i' % asic)
-        return
-
-    return self.asic_list[asic_idx].plot_iv(TES=TES)
+    return self.asic_list[asic_idx].plot_iv(TES=TES,multi=multi,xwin=xwin,best=best)
 
 def plot_iv_focalplane(self):
     '''
@@ -210,32 +209,54 @@ def plot_iv_focalplane(self):
     args['title'] = 'QUBIC Focal Plane I-V curves: %s' % self.dataset_name
     subttl_list = []
     obsdates = []
+    ngood = []
+    tot_ngood = 0
+    tot_npixels = 0
     for idx,asic_obj in enumerate(self.asic_list):
         if asic_obj is not None:
             key = 'ASIC%i' % (idx+1)
             
             subttl_list.append(asic_obj.infotext())
 
-            args[key] = asic_obj.adu
+            bias,adu = asic_obj.best_iv_curve()
+            args[key] = adu
             obsdates.append(asic_obj.obsdate)
 
             keyx = '%s x-axis' % key
-            args[keyx] = asic_obj.vbias
+            args[keyx] = bias
 
             keygood = '%s good' % key
             args[keygood] = asic_obj.is_good_iv()
 
             keybg = '%s bg' % key
             args[keybg] = asic_obj.turnover()
-            
+
+            ngood = asic_obj.ngood()
+            if ngood is not None:
+                tot_ngood += ngood
+                subttl_list.append('%i flagged as bad pixels : yield = %.1f%%' %
+                                   (asic_obj.NPIXELS-ngood,100.0*ngood/asic_obj.NPIXELS))
+            tot_npixels += asic_obj.NPIXELS
+
+
+    subttl_list.append('overall yield %i/%i = %.1f%%' % (tot_ngood,tot_npixels,100.0*tot_ngood/tot_npixels))
     args['subtitle'] = '\n'.join(subttl_list)
     args['obsdate'] = min(obsdates)
 
     return plot_fp(args)
 
+def ngood(self):
+    '''
+    return the number of good TES
+    '''
+    tot_ngood = 0
+    for asic_obj in self.asic_list:
+        tot_ngood += asic_obj.ngood()
+    return tot_ngood
     
 def filter_iv_all(self,
                   R1adjust=1.0,
+                  R1_limit=10,
                   residual_limit=3.0,
                   abs_amplitude_limit=0.01,
                   rel_amplitude_limit=0.1,
@@ -252,8 +273,27 @@ def filter_iv_all(self,
 
     for asic_obj in self.asic_list:
         if asic_obj is not None:
-            asic_obj.filter_iv_all(R1adjust,residual_limit,abs_amplitude_limit,rel_amplitude_limit,
+            asic_obj.filter_iv_all(R1adjust,R1_limit,residual_limit,abs_amplitude_limit,rel_amplitude_limit,
                                    bias_margin,jumplimit,fitfunction,Vsuper,Vnormal,istart,iend)
 
     return
     
+
+def make_iv_tex_report(self,tableonly=False):
+    '''
+    produce a latex report on I-V curves
+    '''
+    for asic_obj in self.asic_list:
+        if asic_obj is not None:
+            asic_obj.make_iv_tex_report(tableonly=tableonly)
+    return
+
+
+def make_iv_report(self):
+    '''
+    do all the business to generate the I-V report document
+    '''
+    for asic_obj in self.asic_list:
+        if asic_obj is not None:
+            asic_obj.make_iv_report()
+    return

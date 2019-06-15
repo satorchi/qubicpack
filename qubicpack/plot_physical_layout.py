@@ -9,6 +9,8 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
           permitted by law.
 
 plot a poster of the layout of the QUBIC TES array
+
+DEPRECATED:  This has been replaced by plot_fp()
 '''
 from __future__ import division, print_function
 import numpy as np

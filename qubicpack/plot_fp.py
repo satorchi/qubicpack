@@ -135,7 +135,10 @@ def plot_fp(args):
 
 
             if asic_key in args.keys() and args[asic_key] is not None:
-                curve_x = range(args[asic_key].shape[1])
+                if xaxis_key in args.keys() and args[xaxis_key] is not None:
+                    curve_x = args[xaxis_key][TES_idx]
+                else:
+                    curve_x = range(args[asic_key].shape[1])
                 curve = args[asic_key][TES_idx]
                 text_x = 0.9
                 text_y = 0.1
@@ -147,8 +150,6 @@ def plot_fp(args):
                 elif asicbg_key in args.keys():
                     face_colour=mylut(args[asicbg_key][TES_idx],lutmin,lutmax)
 
-                if xaxis_key in args.keys() and args[xaxis_key] is not None:
-                    curve_x = args[xaxis_key]
 
                 ax[row,col].plot(curve_x,curve,color=curve_colour)
 

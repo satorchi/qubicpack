@@ -426,7 +426,9 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
 
 
     # assign bath temperature to asic objects.  This is useful for infotext()
-    if self.__object_type__=='qubicfp':
+    if self.temperature is None:
+        self.printmsg('WARNING!  Bath temperature is unknown!',verbosity=2)
+    elif self.__object_type__=='qubicfp':
         for asic_obj in self.asic_list:
             self.printmsg('assigning bath temperature of %.3fK to asic %i' % (self.temperature,asic_obj.asic),verbosity=2)
             asic_obj.tdata[-1]['TES_TEMP'] = self.temperature
@@ -1085,7 +1087,7 @@ def get_hk(self,data='PPS',hk=None,asic=None):
 
     val = HK[data]
     if val.max() == 0:
-        self.printmsg('Bad %s Data!' % data)
+        self.printmsg('get_hk() : Bad %s Data!' % data,verbosity=3)
     return val
 
 def pps(self,hk=None,asic=None):
@@ -1140,6 +1142,8 @@ def bias_phase(self):
     '''
     return the bias voltage phase when in Sine mode
     '''
+    self.printmsg('DEBUG: call to bias_phase()',verbosity=4)
+
     hktype = 'ASIC_SUMS'
     
     if hktype not in self.hk.keys():
@@ -1159,11 +1163,12 @@ def bias_phase(self):
     norm = max(abs(sinephase.max()),abs(sinephase.min()))
     sinephase = sinephase/norm
 
-    # assign the vbias
+    # assign the vbias for the timeline (vbias for the I-V curve will be a subset)
     if self.max_bias is not None and self.min_bias is not None:
         amplitude = 0.5*(self.max_bias - self.min_bias)
         offset = self.min_bias + amplitude
-        self.vbias = amplitude*sinephase + offset
+        self.printmsg('DEBUG: bias_phase() : scaling vbias to max/min bias',verbosity=4)
+        self.timeline_vbias = amplitude*sinephase + offset
     
     return sinephase
 
@@ -1247,6 +1252,7 @@ def azel_etc(self,TES=None):
             data = self.timeline_array()
         else:
             data = self.timeline(TES=TES)
+        self.printmsg('DEBUG: calling timeline_timeaxis from azel_etc()',verbosity=4)
         t_data = self.timeline_timeaxis(axistype='pps')
         retval['t_data'] = t_data
         retval['data'] = data
@@ -1260,6 +1266,7 @@ def azel_etc(self,TES=None):
             data = self.timeline_array(asic=asic_no)
         else:
             data = self.timeline(TES=TES,asic=asic_no)
+        self.printmsg('DEBUG: calling timeaxis from azel_etc()',verbosity=4)
         t_data = self.timeaxis(datatype='sci',asic=asic_no)
         retval['t_data %i' % asic_no] = t_data
         retval['data %i' % asic_no] = data

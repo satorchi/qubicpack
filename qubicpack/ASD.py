@@ -23,7 +23,7 @@ import matplotlib.mlab as mlab
 import pickle
 
 from qubicpack.utilities import TES_index
-from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
+from qubicpack.plot_fp import plot_fp
 
 def plot_ASD(self,TES=None,
              timeline_index=0,
@@ -60,7 +60,7 @@ def plot_ASD(self,TES=None,
     result['TES']=TES
     result['nbins']=nbins
     timeline=self.timeline(TES,timeline_index)
-    obsdate=self.tdata[timeline_index]['DATE-OBS']
+    obsdate=self.tdata[timeline_index]['BEG-OBS']
     result['obsdate']=obsdate
 
     tinteg=self.tinteg
@@ -297,82 +297,47 @@ def plot_ASD_physical_layout(self,timeline_index=0,xwin=True,amin=None,amax=None
     if nbins is None:nbins=1
     
     Tbath=self.tdata[timeline_index]['TES_TEMP']
-    obsdate=self.tdata[timeline_index]['DATE-OBS']
+    obsdate=self.tdata[timeline_index]['BEG-OBS']
     fs = 1.0/self.sample_period()
 
-    nrows=self.pix_grid.shape[0]
-    ncols=self.pix_grid.shape[1]
-    if xwin: plt.ion()
-    else: plt.ioff()
-    # need a square figure for this plot to look right
-    figlen=max(self.figsize)
-    fig,ax=plt.subplots(nrows,ncols,figsize=[figlen,figlen])
     pngname=str('QUBIC_Array-%s_ASIC%i_ASD_%s.png' % (self.detector_name,self.asic,obsdate.strftime('%Y%m%dT%H%M%SUTC')))
     pngname_fullpath=self.output_filename(pngname)
 
     ttl='Amplitude Spectral Density (%s)' % obsdate.strftime('%Y-%m-%d %H:%M')
     subttl='\nQUBIC Array %s, ASIC %i, T$_\mathrm{bath}$=%.1f mK' % (self.detector_name,self.asic,1000*Tbath)
 
-    if xwin: fig.canvas.set_window_title('plt:  '+ttl)
-    fig.suptitle(ttl+'\n'+subttl,fontsize=16)
-    
-    # the pixel number is between 1 and 248
-    TES_translation_table=self.TES2PIX[self.asic_index()]
-    alim=[None,None]
-    for row in range(nrows):
-        for col in range(ncols):
-            ax[row,col].get_xaxis().set_visible(False)
-            ax[row,col].get_yaxis().set_visible(False)
+    timeline_npts = self.timeline_array(timeline_index=timeline_index).shape[1]
+    psd_npts = timeline_npts // 2
+    if np.modf(0.5*timeline_npts)[0] == 0.5:
+        psd_npts += 1
+    freq_array = np.zeros((self.NPIXELS,psd_npts))
+    psd_array = np.zeros((self.NPIXELS,psd_npts))
+    for TES_idx in range(self.NPIXELS):
 
-            # the pixel identity associated with its physical location in the array
-            physpix=self.pix_grid[row,col]
-            pix_index=physpix-1
-            self.debugmsg('processing PIX %i' % physpix)
+        TES = TES_idx + 1
+        timeline=self.timeline(TES,timeline_index)
+        current=self.ADU2I(timeline)
+        PSD, freqs = mlab.psd(current,
+                              Fs = fs,
+                              NFFT = timeline_npts//nbins,
+                              window=mlab.window_hanning,
+                              detrend='mean')
+        ASD=np.sqrt(PSD)
+        logASD = np.log10(ASD)
+        logFreq = np.log10(freqs)
 
-            text_y=0.0
-            text_x=1.0
-            if physpix==0:
-                pix_label='EMPTY'
-                label_colour='black'
-                face_colour='black'
-            elif physpix in TES_translation_table:
-                TES=pix2tes(physpix,self.asic)
-                pix_label=str('%i' % TES)
-                label_colour='black'
-                face_colour='white'
-                TES_idx=TES_index(TES)
-                timeline=self.timeline(TES,timeline_index)
-                current=self.ADU2I(timeline)
-                timeline_npts=len(timeline)
-                PSD, freqs = mlab.psd(current,
-                                      Fs = fs,
-                                      NFFT = timeline_npts//nbins,
-                                      window=mlab.window_hanning,
-                                      detrend='mean')
-                ASD=np.sqrt(PSD)
-                if amin is None:
-                    alim[0]=min(ASD)
-                else:
-                    alim[0]=amin
-                if amax is None:
-                    alim[1]=max(ASD)
-                else:
-                    alim[1]=amax
-                plt.sca(ax[row,col])
-                plt.loglog(freqs,ASD)
-                ax[row,col].set_ylim(alim)
-            else:
-                pix_label='other\nASIC'
-                label_colour='yellow'
-                face_colour='blue'
+        psd_array[TES_idx,:] = logASD
+        freq_array[TES_idx,:] = logFreq
 
-            ax[row,col].set_facecolor(face_colour)
-            ax[row,col].text(text_x,text_y,pix_label,va='bottom',ha='right',color=label_colour,
-                             fontsize=8,transform=ax[row,col].transAxes)
-            
-    if not pngname_fullpath is None: plt.savefig(pngname_fullpath,format='png',dpi=100,bbox_inches='tight')
-    if xwin: plt.show()
-    else: plt.close('all')
+    args = {}
+    args['title'] = ttl
+    args['subtitle'] = subttl
+    args['obsdate'] = obsdate
+    args['pngname'] = pngname_fullpath
+    key = 'ASIC%i' % self.asic
+    args[key] = psd_array
+    args['%s x-axis'] = freq_array
 
-    return
+    plot_fp(args)
+    return args
     

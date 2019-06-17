@@ -270,13 +270,15 @@ def determine_bias_modulation(self,TES,timeline_index=None):
     if timeline_index>=ntimelines:
         self.printmsg('Please enter a timeline between 0 and %i' % (ntimelines-1))
         return None
-    
+
+    retval = {}
     TES_idx=TES_index(TES)
     timeline=self.timeline(TES,timeline_index)
     timeline_npts=len(timeline)
 
     sample_period=self.sample_period(timeline_index)
     time_axis=self.timeline_timeaxis(timeline_index)
+    measured_sample_period = (time_axis[-1] - time_axis[0])/(timeline_npts-1)
 
     # use the bias_phase if it exists
     bias_phase = self.bias_phase()
@@ -285,12 +287,23 @@ def determine_bias_modulation(self,TES,timeline_index=None):
         imin = np.argmin(bias_phase)
         imax = np.argmax(bias_phase)
         iperiod = 2*abs(imax-imin)
-        ipeak0 = imin
+        if imin==imax:
+            imin = 0
+            imax = timeline_npts - 1
+            iperiod = imax - imin
+        ipeak0 = min([imin,imax])
         ipeak1 = imin + iperiod
         peak0 = time_axis[ipeak0]
-        peak1 = time_axis[ipeak1]
+        if ipeak1>=timeline_npts:
+            peak1 = peak0 + iperiod*measured_sample_period
+        else:
+            peak1 = time_axis[ipeak1]
         self.bias_period = peak1-peak0
-        return (ipeak0,ipeak1)
+        retval['ipeak0'] = ipeak0
+        retval['ipeak1'] = ipeak1
+        retval['peak0'] = peak0
+        retval['peak1'] = peak1
+        return retval
 
     # the so-called frequency of the bias modulation is, in fact, the period
     # In QubicStudio the selection of bias_frequency=99 changes the significance from frequency to period (confusing)
@@ -327,7 +340,12 @@ def determine_bias_modulation(self,TES,timeline_index=None):
         ipeak1=timeline_npts-1
     peak1=time_axis[ipeak1]
     self.bias_period = peak1-peak0
-    return (ipeak0,ipeak1)
+
+    retval['ipeak0'] = ipeak0
+    retval['ipeak1'] = ipeak1
+    retval['peak0'] = peak0
+    retval['peak1'] = peak1
+    return retval
 
 def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None,plot_bias=True,xwin=True,timeaxis='pps'):
     '''
@@ -409,22 +427,20 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     ipeak0=0
     ipeak1=timeline_npts-1
-    if plot_bias:
-        if self.timeline_conversion is None:
-            if self.timeline2adu(TES=TES,timeline_index=timeline_index):
-                ipeak0=self.timeline_conversion['ipeak0']
-                ipeak1=self.timeline_conversion['ipeak1']
-                shift=self.timeline_conversion['shift']
-            else:
-                plot_bias=False
-        else:
-            ipeak0=self.timeline_conversion['ipeak0']
-            ipeak1=self.timeline_conversion['ipeak1']
-            shift=self.timeline_conversion['shift']
-
-            
     peak0=time_axis[ipeak0]
     peak1=time_axis[ipeak1]
+    if plot_bias:
+        if self.timeline_conversion is None:
+            self.timeline2adu(TES=TES,timeline_index=timeline_index)
+
+        if self.timeline_conversion is None:
+            plot_bias = False
+        else:    
+            ipeak0=self.timeline_conversion['ipeak0']
+            ipeak1=self.timeline_conversion['ipeak1']
+            peak0=self.timeline_conversion['peak0']
+            peak1=self.timeline_conversion['peak1']
+            shift=self.timeline_conversion['shift']
 
     if plot_bias:
         if biasphase is not None:
@@ -568,7 +584,7 @@ def plot_timeline_physical_layout(self,
 
     plot_fp(args)
 
-    return
+    return args
 
 
 def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.0):
@@ -586,8 +602,12 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
         self.printmsg('Please enter a TES which is the reference for extracting the bias timeline')
         return None
 
-    ip0,ip1=self.determine_bias_modulation(TES,timeline_index)
-        
+    biasmod = self.determine_bias_modulation(TES,timeline_index)
+    ip0 = biasmod['ipeak0']
+    ip1 = biasmod['ipeak1']
+    peak0 = biasmod['peak0']
+    peak1 = biasmod['peak1']
+    
     if not isinstance(ipeak0,int):ipeak0=ip0
     if not isinstance(ipeak1,int):ipeak1=ip1
     self.debugmsg('timeline2adu: ipeak0=%i' % ipeak0)
@@ -602,7 +622,8 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
     self.printmsg('DEBUG: calling timeline_timeaxis from timeline2adu()',verbosity=4)
     time_axis=self.timeline_timeaxis(timeline_index)
     peak0=time_axis[ipeak0]
-    peak1=time_axis[ipeak1]
+    if ipeak1<len(time_axis):
+        peak1=time_axis[ipeak1]
     self.timeline_conversion['peak0']=peak0
     self.timeline_conversion['peak1']=peak1
     bias_period=peak1-peak0
@@ -694,15 +715,16 @@ def fit_timeline(self,TES,timeline_index=None,ipeak0=None,ipeak1=None):
     time_axis=self.timeline_timeaxis(timeline_index)
 
     # first guess;  use the peak search algorithm
-    i0,i1=self.determine_bias_modulation(TES,timeline_index)
-    if ipeak0 is None:ipeak0=i0
-    if ipeak1 is None:ipeak1=i1
-    peak0=time_axis[ipeak0]
-    peak1=time_axis[ipeak1]
-    period=peak1-peak0
-    amplitude=0.5*(max(current)-min(current))
-    offset=min(current)+amplitude
-    phaseshift=peak0/period
+    biasmod = self.determine_bias_modulation(TES,timeline_index)
+    if biasmod is None:
+        self.printmsg('ERROR! Could not determine bias modulation.',verbosity=2)
+        return None
+    peak0 = biasmod['peak0']
+    peak1 = biasmod['peak1']
+    period = peak1-peak0
+    amplitude = 0.5*(max(current)-min(current))
+    offset = min(current)+amplitude
+    phaseshift = peak0/period
     
     p0=[period,phaseshift,offset,amplitude]
 

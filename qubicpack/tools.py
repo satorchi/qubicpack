@@ -477,8 +477,7 @@ def read_qubicstudio_fits(self,hdulist):
     # dictionary for the return of timeline data
     if self.tdata is None:self.tdata = [{}]
     tdata = self.tdata[-1]
-    if 'WARNING' not in tdata.keys():
-        tdata['WARNING'] = []
+    if 'WARNING' not in tdata.keys(): tdata['WARNING'] = []
     
     # get the timeline data from each detector
     if extname=='ASIC_SUMS':
@@ -513,6 +512,7 @@ def read_qubicstudio_science_fits(self,hdu):
     self.printmsg('DEBUG: read_qubicstudio_science_fits object type is %s' % self.__object_type__,verbosity=3)
     if self.tdata is None:self.tdata = [{}]
     tdata = self.tdata[-1]
+    if 'WARNING' not in tdata.keys(): tdata['WARNING'] = []
         
     # check which ASIC
     asic = hdu.header['ASIC_NUM']
@@ -609,7 +609,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     
     if self.tdata is None:self.tdata = [{}]
     tdata = self.tdata[-1]
-    if 'WARNING' not in tdata.keys(): tdata['WARNING']=[]
+    if 'WARNING' not in tdata.keys(): tdata['WARNING'] = []
 
     # check which ASIC
     hdu = hdulist[self.asic]

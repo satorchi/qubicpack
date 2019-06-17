@@ -157,14 +157,14 @@ def timeline(self,TES=None,asic=None):
     return self.asic_list[asic_idx].timeline(TES=TES)
     
 
-def plot_timeline(self,TES=None,asic=None):
+def plot_timeline(self,TES=None,asic=None,plot_bias=True):
     '''
     wrapper to plot timeline of the asic object
     '''
 
     if not self.args_ok(TES,asic):return
     asic_idx = asic-1
-    return self.asic_list[asic_idx].plot_timeline(TES=TES)
+    return self.asic_list[asic_idx].plot_timeline(TES=TES,plot_bias=plot_bias)
     
 def plot_timeline_focalplane(self):
     '''

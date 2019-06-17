@@ -26,6 +26,7 @@ from PIL import Image
 
 from qubicpack.utilities import TES_index
 from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
+from qubicpack.plot_fp import plot_fp
 
 def exist_iv_data(self):
     '''
@@ -229,82 +230,40 @@ def plot_iv_physical_layout(self,xwin=True):
     plot the I-V curves in thumbnails mapped to the physical location of each detector
     '''
     if not self.exist_iv_data():return None
-    TES2PIX = assign_pix2tes(self.obsdate)
+
+    args= {}
+    key = 'ASIC%i' % self.asic
     
-    ttl=str('QUBIC I-V curves (%s)' % (self.obsdate.strftime('%Y-%b-%d %H:%M UTC')))
+    args['title'] = 'QUBIC Focal Plane I-V curves: %s' % self.obsdate.strftime('%Y-%b-%d %H:%M UTC')
+    subttl_list = []
+    subttl_list.append(self.infotext())
+    args['obsdate'] = self.obsdate
 
-    ngood=self.ngood()
-    nrows=self.pix_grid.shape[0]
-    ncols=self.pix_grid.shape[1]
+    bias,adu = self.best_iv_curve()
+    args[key] = adu
 
-    if xwin: plt.ion()
-    else: plt.ioff()
-    # need a square figure for this plot to look right
-    figlen=max(self.figsize)
-    fig,ax=plt.subplots(nrows,ncols,figsize=[figlen,figlen])
-    subttl='Array %s, ASIC #%i' % (self.detector_name,self.asic)
-    if not self.temperature is None:
-        subttl+=', T$_\mathrm{bath}$=%.2f mK' % (1000*self.temperature)
-    if not ngood is None:
-        subttl+=': %i flagged as bad pixels : yield = %.1f%%' % (self.NPIXELS-ngood,100.0*ngood/self.NPIXELS)
+    keyx = '%s x-axis' % key
+    args[keyx] = bias
+
+    keygood = '%s good' % key
+    args[keygood] = self.is_good_iv()
+
+    keybg = '%s bg' % key
+    args[keybg] = self.turnover()
+
+    ngood = self.ngood()
+    if ngood is not None:
+        subttl_list.append('%i flagged as bad pixels : yield = %.1f%%' %
+                           (self.NPIXELS-ngood,100.0*ngood/self.NPIXELS))
+    args['subtitle'] = '\n'.join(subttl_list)
+    
     pngname='TES_IV_array-%s_ASIC%i_%s.png' % (self.detector_name,self.asic,self.obsdate.strftime('%Y%m%dT%H%M%SUTC'))
     pngname_fullpath=self.output_filename(pngname)
-    if xwin: fig.canvas.set_window_title('plt:  '+ttl)
-    fig.suptitle(ttl+'\n'+subttl,fontsize=16)
-    
+    args['pngname'] = pngname_fullpath
 
-    # the pixel number is between 1 and 248
-    TES_translation_table=TES2PIX[self.asic_index()]
+    plot_fp(args)
+    return args
 
-    for row in range(nrows):
-        for col in range(ncols):
-            TES=0
-            ax[row,col].get_xaxis().set_visible(False)
-            ax[row,col].get_yaxis().set_visible(False)
-            ax[row,col].set_xlim([self.bias_factor*self.min_bias,self.bias_factor*self.max_bias])
-
-            # the pixel identity associated with its physical location in the array
-            physpix=self.pix_grid[row,col]
-            pix_index=physpix-1
-            
-            text_y=0.0
-            if physpix==0:
-                pix_label='EMPTY'
-                label_colour='black'
-                face_colour='black'
-            elif physpix in TES_translation_table:
-                TES=pix2tes(physpix,self.asic)
-                TES_idx=TES_index(TES)
-                Iadjusted=self.adjusted_iv(TES)
-                turnover=self.turnover(TES)
-                pix_label=str('%i' % TES)
-                label_colour='black'
-                if turnover is None:
-                    face_colour='red'
-                else:
-                    face_colour=self.lut(turnover)
-                text_y=min(Iadjusted)
-                
-                self.draw_iv(Iadjusted,colour='blue',axis=ax[row,col])
-                
-                
-                if (not self.is_good_iv(TES) is None) and (not self.is_good_iv(TES)):
-                    face_colour='black'
-                    label_colour='white'
-                    # ax[row,col].text(self.min_bias,text_y,'BAD',va='bottom',ha='left',color=label_colour)
-            else:
-                pix_label='other\nASIC'
-                label_colour='yellow'
-                face_colour='blue'
-                
-            ax[row,col].set_facecolor(face_colour)
-            ax[row,col].text(self.bias_factor*self.max_bias,text_y,pix_label,va='bottom',ha='right',color=label_colour,fontsize=8)
-            
-    if isinstance(pngname_fullpath,str): plt.savefig(pngname_fullpath,format='png',dpi=100,bbox_inches='tight')
-    if xwin: plt.show()
-    else: plt.close('all')
-
-    return
 
 
 def make_line(self,pt1,pt2,xmin,xmax):
@@ -948,23 +907,27 @@ def draw_iv(self,I,bias=None,colour='blue',axis=None,label=None):
         # this is a partial curve, it should come with a bias axis
         if bias is None: # assume it's the first part of Vbias during an ongoing acquisition
             bias = self.bias_factor*self.vbias[0:npts]      
-        plt.cla()
-        axis.set_xlim([self.bias_factor*self.min_bias,self.bias_factor*self.max_bias])
+            plt.cla()
+            axis.set_xlim([self.bias_factor*self.min_bias,self.bias_factor*self.max_bias])
+            axis.plot(bias,I,color=colour)
 
+            # we mark the last point to show the progressive plot
+            axis.plot(bias[-1],I[-1],color='red',marker='D',linestyle='none')
+
+            # and the temperature during the acquisition
+            if self.temperature is None:
+                tempstr = 'unknown'
+            else:
+                tempstr = '%0.2f mK' % (1000*self.temperature)            
+            tempstr = 'T$_\mathrm{bath}$=%s' % tempstr
+            axis.text(0.05,0.95,tempstr,va='top',ha='left',fontsize=12,transform=axis.transAxes)
+            plt.pause(0.01)
+            return
+
+        # if bias is given, just plot it
         axis.plot(bias,I,color=colour)
-        # we mark the last point to show the progressive plot
-        axis.plot(bias[-1],I[-1],color='red',marker='D',linestyle='none')
-
-        if self.temperature is None:
-            tempstr = 'unknown'
-        else:
-            tempstr = '%0.2f mK' % (1000*self.temperature)            
-        tempstr = 'T$_\mathrm{bath}$=%s' % tempstr
-        axis.text(0.05,0.95,tempstr,va='top',ha='left',fontsize=12,transform=axis.transAxes)
-        
-        plt.pause(0.01)
         return
-    
+
     if self.cycle_vbias:
         # plot down and up voltage with different linestyles
         mid=int(len(self.bias_factor*self.vbias)/2)
@@ -1088,9 +1051,11 @@ def plot_iv(self,TES=None,multi=False,xwin=True,best=True):
 
     # draw vertical lines to show the range used for the fit
     if 'fit range' in fit.keys():
-        fit_istart,fit_iend=fit['fit range']
-        fit_vstart=self.bias_factor*self.vbias[fit_istart]
-        fit_vend=self.bias_factor*self.vbias[fit_iend-1]
+        fit_istart,fit_iend = fit['fit range']
+        istart,iend = self.selected_iv_curve(TES)
+        bias = self.bias_factor*self.vbias[istart:iend]
+        fit_vstart = bias[fit_istart]
+        fit_vend = bias[fit_iend]
         ax.plot([fit_vstart,fit_vstart],[Ibot,Itop],color='red',linestyle='dashed')
         ax.plot([fit_vend,fit_vend],[Ibot,Itop],color='red',linestyle='dashed')
     

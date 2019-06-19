@@ -22,7 +22,7 @@ from glob import glob
 import math
 import pickle
 from scipy.optimize import curve_fit
-from PIL import Image
+#from PIL import Image
 
 from qubicpack.utilities import TES_index
 from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix

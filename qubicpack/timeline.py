@@ -433,7 +433,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         if self.timeline_conversion is None:
             self.timeline2adu(TES=TES,timeline_index=timeline_index)
 
-        if self.timeline_conversion is None:
+        if self.timeline_conversion is None or self.min_bias is None or self.max_bias is None:
             plot_bias = False
         else:    
             ipeak0=self.timeline_conversion['ipeak0']
@@ -643,6 +643,11 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
     else:
         self.nbiascycles=ncycles
         self.cycle_vbias=True    
+
+
+    if (self.max_bias is None) or (self.min_bias is None):
+        self.printmsg('No Bias Voltage information.',verbosity=2)
+        return False
     
     amplitude=0.5*(self.max_bias-self.min_bias)
     offset=self.min_bias+amplitude

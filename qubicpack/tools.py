@@ -320,13 +320,13 @@ def find_calsource(self,datadir):
     self.printmsg('reading calsource file: %s' % filename)
     hdulist=pyfits.open(filename)
     nhdu=len(hdulist)
-    if nhdu<>2:
+    if nhdu!=2:
         self.printmsg("This doesn't look like a calsource file!")
         hdulist.close()
         return
     hdu = hdulist[1]
     if 'EXTNAME' not in hdu.header.keys()\
-       and hdu.header['EXTNAME']<>'CALSOURCE':
+       and hdu.header['EXTNAME']!='CALSOURCE':
         self.printmsg("This is not a calsource FITS file!")
         hdulist.close()
         return
@@ -417,7 +417,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
             continue
 
         # we expect only one file of each type (per ASIC) unless we're reading all ASIC
-        if asic<>'ALL' and len(files)>1:
+        if asic!='ALL' and len(files)>1:
             self.printmsg('WARNING! There are %i %s data files!' % (len(files),filetype))
             self.printmsg('         There should only be 1 file.')
 
@@ -968,7 +968,7 @@ def pps2date(self,pps,gps):
         if (idx>0 and pps[idx-1]==0)\
            or (idx<npts-1 and pps[idx+1]==0):
             sep = gps[idx] - prev
-            if sep <> 0: # next PPS valid only if we have a non-zero step (modif by MP)
+            if sep != 0: # next PPS valid only if we have a non-zero step (modif by MP)
                 pps_indexes.append(idx)    
                 separations.append(sep)
                 prev = gps[idx]
@@ -1032,7 +1032,7 @@ def RawMask(self,asic=None):
     '''
     return the Raw Mask from the Housekeeping data
     '''
-    if self.__object_type__<>'qubicfp':
+    if self.__object_type__!='qubicfp':
         asic = self.asic
 
     if asic is None:
@@ -1247,7 +1247,7 @@ def azel_etc(self,TES=None):
     retval['t_src'] = t_src
     retval['data_src'] = data_src
 
-    if self.__object_type__<>'qubicfp':
+    if self.__object_type__!='qubicfp':
         if TES is None:
             data = self.timeline_array()
         else:

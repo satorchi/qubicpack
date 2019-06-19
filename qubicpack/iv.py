@@ -40,7 +40,7 @@ def exist_iv_data(self):
         self.printmsg('No bias data!',verbosity=2)
         return False
 
-    if self.vbias.shape[0]<>self.adu.shape[1]:
+    if self.vbias.shape[0]!=self.adu.shape[1]:
         self.printmsg("I and V don't match! npts V = %i, npts I = %i" % (self.vbias.shape[0],self.adu.shape[1]))
         return False
     return True

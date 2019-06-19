@@ -58,7 +58,7 @@ def assign_tes_grid(obsdate=None):
             # the pixel identity associated with its physical location in the array
             physpix=pix_grid[row,col]
             pix_index=physpix-1
-            if physpix<>0:
+            if physpix!=0:
                 for asic_ctr in range(2):
                     asic = asic_ctr + 1
                     asic_idx = ASIC_index(asic)

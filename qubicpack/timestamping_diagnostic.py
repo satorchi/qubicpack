@@ -35,7 +35,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None,asic=None):
     hk = self.qubicstudio_filetype_truename(hk)
     if hk is None: hk = 'ASIC_SUMS'
     
-    if self.__object_type__<>'qubicfp':
+    if self.__object_type__!='qubicfp':
         asic = self.asic
         HK = self.hk
     else:
@@ -93,7 +93,7 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None,asic=None):
     for idx in pps_high:
         if (idx>0 and pps[idx-1]==0) or (idx<npts-1 and pps[idx+1]==0):
             sep = gps[idx] - prev
-            if sep <> 0:
+            if sep != 0:
                 pps_indexes.append(idx)
                 separations.append(sep)
                 separations_idx.append(idx)
@@ -287,7 +287,7 @@ def lost_packets(self,hk='sci',asic=None):
     '''
     datatype = self.qubicstudio_filetype_truename(hk)
 
-    if self.__object_type__<>'qubicfp':
+    if self.__object_type__!='qubicfp':
         asic = self.asic
         HK = self.hk
     else:
@@ -330,7 +330,7 @@ def lost_packets(self,hk='sci',asic=None):
         counter += 1
         
     delta = cn - generated_cn
-    idx_lost = np.where(delta<>0)[0]
+    idx_lost = np.where(delta!=0)[0]
 
     if len(idx_lost)==0:
         self.printmsg('No lost packets!')

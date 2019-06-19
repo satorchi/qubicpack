@@ -33,6 +33,7 @@ def assign_defaults(self):
     self.temperature = None
     self.hk  =  {}
     self.hornswitch_files = None
+    self.detector_name = 'undefined'
     return
 
 def assign_temperature(self,temp):

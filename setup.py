@@ -27,7 +27,7 @@ DOWNLOAD_URL     = 'https://github.com/satorchi/qubicpack'
 VERSION          = '2.0.0'
 
 with open('README.md') as f:
-    long_description = f.readlines()
+    long_description = f.read()
 
 
 setup(install_requires=['numpy'],

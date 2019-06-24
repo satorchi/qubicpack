@@ -243,23 +243,30 @@ def read_fits(self,filename):
        and ('TELESCOP' in hdulist[0].header.keys())\
        and (hdulist[0].header['TELESCOP'].strip()=='QUBIC'):
         self.printmsg('Reading QubicPack file: %s' % filename)
-        return self.read_qubicpack_fits(hdulist)
+        self.read_qubicpack_fits(hdulist)
+        hdulist.close()
+        return
 
     # check if it's a QubicStudio file
     # QubicStudio FITS files always have at least 2 HDUs, with nothing in the primary header
     nogood_msg = 'Unrecognized FITS file!'
     if 'INSTRUME' not in hdulist[1].header.keys():
         self.printmsg("'INSTRUME' keyword not found\n%s" % nogood_msg)
+        hdulist.close()
         return False
     if hdulist[1].header['INSTRUME'].strip() !=  'QUBIC':
         self.printmsg('Instrument is not QUBIC\n%s' % nogood_msg)
+        hdulist.close()
         return False
     if 'EXTNAME' not in hdulist[1].header.keys():
         self.printmsg("'EXTNAME' keyword not found\n%s" % nogood_msg)
+        hdulist.close()
         return False
     
     self.printmsg('Reading QubicStudio FITS file: %s' % filename,verbosity=2)
-    return self.read_qubicstudio_fits(hdulist)
+    self.read_qubicstudio_fits(hdulist)
+    hdulist.close()
+    return
 
 def read_fits_field(self,hdu,fieldname):
     '''

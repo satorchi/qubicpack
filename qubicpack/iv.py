@@ -1834,8 +1834,8 @@ def save_filter(self):
     '''
     datefmt='%Y%m%dT%H%M%SUTC'
     datestr=self.obsdate.strftime(datefmt)
-    picklename=str('QUBIC_TES_%s.filter.pickle' % datestr)
-    h=open(picklename,'w')
+    picklename=str('QUBIC_TES_ASIC%i_%s.filter.pickle' % (self.asic,datestr))
+    h=open(picklename,'wb')
     pickle.dump(self.filtersummary,h)
     h.close()
     return
@@ -1846,13 +1846,13 @@ def read_filter(self):
     '''
     datefmt='%Y%m%dT%H%M%SUTC'
     datestr=self.obsdate.strftime(datefmt)
-    picklename=str('QUBIC_TES_%s.filter.pickle' % datestr)
+    picklename=str('QUBIC_TES_ASIC%i_%s.filter.pickle' % (self.asic,datestr))
     if not os.path.exists(picklename):
         print('No previously saved filter information: %s' % picklename)
         return None
 
     print('Reading previously saved filter information: %s' % picklename)
-    h=open(picklename,'r')
+    h=open(picklename,'rb')
     filtersummary=pickle.load(h)
     h.close()
     self.filtersummary=filtersummary

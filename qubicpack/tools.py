@@ -1142,7 +1142,9 @@ def elevation(self):
         return None
 
     elRaw = self.hk[hktype][elkey]
-    el = (elRaw.astype(np.int) - 2**15) * 360.0/2**16
+    # offset is deduced from beam synthesis mapping on 2019-04-06
+    offset = 10131.591
+    el = (elRaw.astype(np.int) - offset) * 360.0/2**16
     return el
 
 def bias_phase(self):

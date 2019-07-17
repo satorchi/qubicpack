@@ -245,7 +245,7 @@ def read_fits(self,filename):
         self.printmsg('Reading QubicPack file: %s' % filename)
         self.read_qubicpack_fits(hdulist)
         hdulist.close()
-        return
+        return True
 
     # check if it's a QubicStudio file
     # QubicStudio FITS files always have at least 2 HDUs, with nothing in the primary header
@@ -264,9 +264,9 @@ def read_fits(self,filename):
         return False
     
     self.printmsg('Reading QubicStudio FITS file: %s' % filename,verbosity=2)
-    self.read_qubicstudio_fits(hdulist)
+    chk = self.read_qubicstudio_fits(hdulist)
     hdulist.close()
-    return
+    return chk 
 
 def read_fits_field(self,hdu,fieldname):
     '''
@@ -448,7 +448,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     # and try to find corresponding hornswitch files
     self.hornswitch_files = self.find_hornswitch(datadir)
 
-    return 
+    return True
 
 def read_calsource_fits(self,hdu):
     '''
@@ -488,28 +488,28 @@ def read_qubicstudio_fits(self,hdulist):
     
     # get the timeline data from each detector
     if extname=='ASIC_SUMS':
-        self.read_qubicstudio_science_fits(hdu)
+        chk = self.read_qubicstudio_science_fits(hdu)
         hdulist.close()
-        return
+        return chk
         
     if extname=='CONF_ASIC1':
-        self.read_qubicstudio_asic_fits(hdulist)
+        chk = self.read_qubicstudio_asic_fits(hdulist)
         hdulist.close()
-        return
+        return chk
 
     if extname=='EXTERN_HK':
-        self.read_qubicstudio_hkextern_fits(hdu)
+        chk = self.read_qubicstudio_hkextern_fits(hdu)
         hdulist.close()
-        return
+        return chk
 
     if extname=='CALSOURCE':
-        self.read_calsource_fits(hdu)
+        chk = self.read_calsource_fits(hdu)
         hdulist.close()
-        return
+        return chk
 
-    self.read_qubicstudio_hkfits(hdu)
+    chk = self.read_qubicstudio_hkfits(hdu)
     hdulist.close()
-    return
+    return chk
 
 def read_qubicstudio_science_fits(self,hdu):
     '''
@@ -601,7 +601,7 @@ def read_qubicstudio_science_fits(self,hdu):
     # try to guess the name of the detector array (P87, or whatever)
     self.guess_detector_name()
         
-    return
+    return True
 
 def read_qubicstudio_asic_fits(self,hdulist):
     '''
@@ -708,7 +708,21 @@ def read_qubicstudio_hkfits(self,hdu):
     for key in ['ComputerDate','GPSDate']:
         if key in self.hk[hkname].keys():
             self.hk[hkname][key] = 1e-3*self.hk[hkname][key]
-            
+
+
+    # correct misinterpreted RaspberryDate
+    key = 'RaspberryDate'
+    if key in self.hk[hkname].keys():
+        if self.hk[hkname][key][0] > 1e10:
+            self.printmsg('correcting misinterpreted RaspberryDate',verbosity=2)
+            # QubicStudio misinterpreted the socket broadcast
+            raspdate_raw = np.int64(self.hk[hkname][key])
+            npts = len(raspdate_raw)
+            fmt = '<%iq' % npts
+            raspdate_packed = struct.pack(fmt,*raspdate_raw)
+            fmt = '<%id' % npts
+            raspdate = struct.unpack(fmt,raspdate_packed)
+            self.hk[hkname][key] = np.array(raspdate)
     return
 
 def read_qubicstudio_hkextern_fits(self,hdu):
@@ -726,7 +740,8 @@ def read_qubicstudio_hkextern_fits(self,hdu):
     self.tdata[0]['TES_TEMP'] = temperature
     self.temperature = temperature
 
-    return self.read_qubicstudio_hkfits(hdu)
+    self.read_qubicstudio_hkfits(hdu)
+    return
 
 def read_qubicpack_fits(self,h):
     '''
@@ -923,8 +938,12 @@ def get_from_keyboard(self,msg,default=None):
     ''''
     get interactive input from the keyboard
     '''
+    pythonmajor = sys.version_info[0]
     prompt='%s (default: %s) ' % (msg,str(default))
-    ans=raw_input(prompt)
+    if pythonmajor==2:
+        ans = raw_input(prompt)
+    else:
+        ans = input(prompt)
     if ans=='':return default
     if type(default)==str:
         return ans

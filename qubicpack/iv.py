@@ -1853,7 +1853,7 @@ def read_filter(self):
 
     print('Reading previously saved filter information: %s' % picklename)
     h=open(picklename,'rb')
-    filtersummary=pickle.load(h)
+    filtersummary=pickle.load(h,encoding='latin1')
     h.close()
     self.filtersummary=filtersummary
     return True

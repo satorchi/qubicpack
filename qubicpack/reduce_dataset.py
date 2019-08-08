@@ -8,7 +8,6 @@ filename to have asic information
 Repeat this for each asic
 startpoint and endpoint refer to time series points. e.g. if 10,000 time points for each TES
 startpoint=0, and finishpoint=100 will produce a dataset with only the first 100 datapoints
-test intengration with eclipse
 """
 from __future__ import division, print_function
 

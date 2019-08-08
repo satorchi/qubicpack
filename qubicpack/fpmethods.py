@@ -201,13 +201,15 @@ def plot_iv(self,TES=None,asic=None,multi=False,xwin=True,best=True):
     asic_idx = asic - 1
     return self.asic_list[asic_idx].plot_iv(TES=TES,multi=multi,xwin=xwin,best=best)
 
-def plot_iv_focalplane(self):
+def plot_iv_focalplane(self,labels=True):
     '''
     plot all the I-V curves in the focal plane
     '''
 
     args= {}
     args['title'] = 'QUBIC Focal Plane I-V curves: %s' % self.dataset_name
+    if not labels: args['nolabels'] = True
+    
     subttl_list = []
     obsdates = []
     ngood = []

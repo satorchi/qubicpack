@@ -1,0 +1,174 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.1.5
+  kernelspec:
+    display_name: Python 2
+    language: python
+    name: python2
+---
+
+```{python}
+#pipeline for analysis
+#start by downloading dataset
+#scp -r jdmurphy@cca.in2p3.fr:/sps/hep/qubic/Data/Calib-TD/2018-12-20 .
+```
+
+```{python}
+#If data needs to be reduced...
+from qubicpack.reduce_dataset import reduce_qubic_dataset
+qfitsfile = '/home/james/TDCalibData/Calib-TD/2019-05-27/2019-05-27_18.46.54__Fibers_Amp_0.5_V_mod_1_Hz_Duty_0.3_duration_43200.0_sec_index_0/Sums/science-asic1-2019.05.27.184654.fits'
+outfile = '/home/james/TDCalibData/Calib-TD/2019-05-27-reduced-files/2019-05-27_18.46.54__Fibers_Amp_0.5_V_mod_1_Hz_Duty_0.3_duration_43200.0_sec_index_0/Sums/science-asic1-2019.05.27.184654.fits'
+startpoint = 0
+finishpoint = 10000
+reduce_qubic_dataset(qfitsfile, outfile, startpoint, finishpoint)
+```
+
+```{python}
+#load dataset
+from qubicpack.qubicfp import qubicfp
+#dataset = '/home/james/TDCalibData/Calib-TD/2019-05-27-redu500000/2019-05-27_18.46.54__Fibers_Amp_0.5_V_mod_1_Hz_Duty_0.3_duration_43200.0_sec_index_0/'
+dataset = '/home/james/TDCalibData/Calib-TD/2018-12-20/2018-12-20_17.27.22__Fiber_2/'
+a = qubicfp()
+a.read_qubicstudio_dataset(dataset)
+a.hk.keys()
+a.plot_timeline_focalplane()
+```
+
+```{python}
+#Create mircroAmp data in physical locations using vertexes from qubicsoft
+import sys
+sys.path.append('/home/james/eclipse-workspace/qubiclmou2/qubic/')
+import qubic
+import matplotlib.pyplot as plt
+import numpy as np
+#I should repalce using qubicpack if I find a qubicfp alternative
+from qubicpack import qubicpack
+q = qubicpack()
+
+basedir = '/home/james/eclipse-workspace/qubiclmou2/'
+dictfilename = basedir + '/qubic/qubic/scripts/global_source.dict'
+d = qubic.qubicdict.qubicDict()
+d.read_from_file(dictfilename)
+b = qubic.QubicMultibandInstrument(d)
+vtxs = b[0].detector.vertex
+#print abs(vtxs[0])
+vtxs = abs(vtxs)
+x1 = vtxs[0,0,1]
+x2 = vtxs[0,2,1]
+y1 = vtxs[0,1,0]
+y2 = vtxs[0,0,0]
+#print x1, x2, y1, y2
+
+xcens = np.array([])
+ycens = np.array([])
+asicarr = np.array([])
+pixidx = np.array([])
+meancurr = np.array([])
+
+npts = len(vtxs[:,0,0])
+
+#loop over index for each pix
+for n in range(npts):
+    #vtxs appears to have grid ordering correct, and find pix centre
+    x1 = vtxs[n,0,1]
+    x2 = vtxs[n,2,1]
+    y1 = vtxs[n,1,0]
+    y2 = vtxs[n,0,0]
+    xcen = (x1 + x2) / 2
+    ycen = (y1 + y2) / 2
+    #for first asic, load timeline
+    if n<=127:
+        asic=0
+        timeline = a.timeline_array(asic=asic)[n,:]
+    else:
+        asic=1
+        m = n-128
+        timeline = a.timeline_array(asic=asic)[m,:]
+    #append values per TES to arrays
+    meancurr = np.append(meancurr, np.mean(q.ADU2I(timeline)))
+    xcens = np.append(xcens, xcen)
+    ycens = np.append(ycens, ycen)
+    asicarr = np.append(asicarr, asic)
+    pixidx = np.append(pixidx, n)
+#asicarr and pixidx don't get used? Maybe should delete if possible    
+print xcens.shape, ycens.shape, meancurr.shape
+```
+
+```{python}
+#Simple analysis to select good pixels. Likely too simple.
+#take absolute value of currents, set zero
+#if current too high, set zero.
+from qubicpack.pix2tes import tes2pix, assign_pix2tes, TES2PIX, assign_pix_grid, pix2tes
+meancurr = abs(meancurr)
+for i, curr in enumerate(meancurr):
+    if curr > 2:
+        meancurr[i] = 0
+```
+
+```{python}
+# %%capture
+# %matplotlib qt
+plt.figure()
+plt.scatter(xcens*-1000,ycens*-1000, c=meancurr/max(meancurr), cmap='jet',marker='s')
+
+#use hack logic with pix2tes to find out if asic corresponds to pix value
+# for n in range(npts):
+#     asic=2
+#     if pix2tes(n+1, asic=asic) is None:
+#         asic=1       
+#     plt.text(xcens[n]*1000, ycens[n]*1000, str(pix2tes(n+1,asic=asic)))
+    
+plt.subplots_adjust(bottom=0.1, right=0.8, top=0.9)
+cax = plt.axes([0.85, 0.1, 0.05, 0.8])
+plt.colorbar(cax=cax,label=" Mean Current (microA)")
+plt.show()
+```
+
+```{python}
+plt.close('all')
+```
+
+```{python}
+#load simulation data
+#simu data for cf1
+cf1dataweighted = '/home/james/multifreqfiles/outfiles/CF1weighted.txt'
+#see header - intensity, x, y 
+simdat = np.loadtxt(cf1dataweighted, delimiter=', ', skiprows=1)
+#select correct 1/4 focal plane for TD
+simdat = simdat[496:744,:]
+#simdat = simdat[0:17,:]
+#simdat = simdat[744:992,:]
+print simdat.shape
+
+plt.figure()
+plt.scatter(simdat[:,1]*1000, simdat[:,2]*1000, c=simdat[:,0]/max(simdat[:,0]), cmap='jet', marker='s')
+plt.subplots_adjust(bottom=0.1, right=0.8, top=0.9)
+cax = plt.axes([0.85, 0.1, 0.05, 0.8])
+plt.colorbar(cax=cax,label="Weighted Simulation Intensity (W)")
+```
+
+```{python}
+#do covariance
+from numpy import cov
+covariance = cov(simdat[:,0], meancurr)
+print covariance
+
+#pearsons
+from scipy.stats import pearsonr
+corr, _ = pearsonr(simdat[:,0], meancurr)
+print('Pearsons correlation: %.3f' % corr)
+
+#spearman, non-linear data
+from scipy.stats import spearmanr
+corr, _ = spearmanr(simdat[:,0], meancurr)
+print('Spearmans correlation: %.3f' % corr)
+```
+
+```{python}
+
+```

@@ -437,9 +437,10 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         self.printmsg('WARNING!  Bath temperature is unknown!',verbosity=2)
     elif self.__object_type__=='qubicfp':
         for asic_obj in self.asic_list:
-            self.printmsg('assigning bath temperature of %.3fK to asic %i' % (self.temperature,asic_obj.asic),verbosity=2)
-            asic_obj.tdata[-1]['TES_TEMP'] = self.temperature
-            asic_obj.temperature = self.temperature
+            if asic_obj is not None:
+                self.printmsg('assigning bath temperature of %.3fK to asic %i' % (self.temperature,asic_obj.asic),verbosity=2)
+                asic_obj.tdata[-1]['TES_TEMP'] = self.temperature
+                asic_obj.temperature = self.temperature
             
 
     # now try to find the corresponding calsource file

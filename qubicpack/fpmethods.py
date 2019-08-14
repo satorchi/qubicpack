@@ -23,11 +23,11 @@ from qubicpack.plot_fp import plot_fp
 def assign_defaults(self):
     '''default values for object variables
     '''
+    self.assign_constants()
+
     self.obsdate = None
     self.endobs = None
     self.logfile = None
-    self.figsize = (12.80,6.40)
-    self.colours = ['blue','green','red','cyan','magenta','yellow','black']
     self.observer = 'APC LaboMM'
     self.tdata = None
     self.temperature = None

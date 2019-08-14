@@ -12,6 +12,8 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 common utilities used in the qubicpack classes
 (see also pix2tex.py)
 '''
+from __future__ import division, print_function
+import sys,os
 import datetime as dt
 
 # on 6 Feb 2018, we reversed the wires for the ASICs
@@ -56,3 +58,65 @@ def ASIC_index(asic):
         return 0
     return 1
 
+def Qubic_DataDir(datadir=None,datafile=None):
+    '''
+    try to find the user's location for data to be read
+    NOTE:  this is different from the qubicpack method assign_datadir which looks for a place to *write* data
+    '''
+    cwd = os.getcwd() # current working directory
+
+    # make a list of possible directories
+    datadirs = []
+    toplevel_dirs = []
+    
+    if datadir is not None:
+        toplevel_dirs.append(datadir)
+
+    if 'QUBIC_DATADIR' in os.environ.keys():
+        toplevel_dirs.append(os.environ['QUBIC_DATADIR'])
+
+    # data on cc-in2p3
+    toplevel_dirs.append('/sps/hep/qubic/Data/Calib-TD')
+
+    # Louise
+    toplevel_dirs.append('/home/louisemousset/QUBIC')
+
+    # Steve
+    toplevel_dirs.append('/home/work/qubic/data')
+
+    # JCH
+    toplevel_dirs.append('/Users/hamilton/Qubic')
+
+    # Martin
+    toplevel_dirs.append('/home/martin/QUBIC')
+
+    # add the current working directory
+    toplevel_dirs.append(cwd)
+
+    for tl_dir in toplevel_dirs:
+        for r,f,d in os.walk(tl_dir):
+            datadirs.append(r)
+
+    if 'HOME' in os.environ.keys():
+        home=os.environ['HOME']
+        datadirs.append(home+'/data')
+
+    # now find the first valid data directory
+    for datadir in datadirs:
+        # if not a valid directory, try the next one
+        if not os.path.isdir(datadir): continue
+
+        # if no datafile given, then stop at the first valid directory
+        if datafile is None: return datadir
+            
+        # if a filename is given, check if it's in this directory
+        filename = '%s/%s' % (datadir,datafile)
+        if os.path.isfile(filename): return datadir
+
+    # if we've gone through the whole loop, then we have a problem
+    if datafile is None:
+        print('ERROR! Could not find a valid data directory')
+        return cwd
+
+    print('ERROR! Could not find the directory with that file: %s' % datafile)
+    return cwd

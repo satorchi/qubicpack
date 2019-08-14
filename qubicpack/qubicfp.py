@@ -55,6 +55,7 @@ class qubicfp:
         azel_etc
 
     from .assign_variables import\
+        assign_constants,\
         assign_observer,\
         assign_datadir,\
         assign_obsdate,\
@@ -89,6 +90,9 @@ class qubicfp:
         make_iv_report
 
 
+    from .iv import\
+        ADU2I
+    
     def __init__(self):
 
         self.asic_list = []

@@ -22,39 +22,25 @@ from qubicpack.pix2tes import assign_pix_grid, assign_pix2tes, tes2pix, pix2tes,
 ### the rest of the defs are methods of the qubicasic object
 
 def assign_defaults(self):
+    self.assign_constants()
     self.AVOID_HANGUP=False # this is to avoid the hangup of communication with QubicStudio.  See acquisition.py
     self.logfile=None
-    self.asic_reversal_date = asic_reversal_date
     self.NPIXELS = NPIXELS
     self.assign_obsdate()
     #self.assign_datadir() # already called from assign_obsdate() above
     self.endobs=None
-    self.zero=1e-9
-    #self.QubicStudio_ip='134.158.186.233'
-    #self.QubicStudio_ip='134.158.187.21'
-    self.QubicStudio_ip='192.168.2.8'
-    self.OxfordInstruments_ip='134.158.186.162'
     self.NPIXELS_requested=False # this is a hack to help with the hangup problem
     self.NPIXELS_sampled=None
     self.detector_name='undefined'
-    #self.DAC2V=2.627e-4    # email from Michel Piat 2018/02/09 17:14 CET
-    self.DAC2V=9.404/2**15 # measured Tue 13 Feb 2018 15:25:11 CET
-    self.kBoltzmann=1.3806485279e-23
-    self.Rshunt=10.e-3  # 10mOhm, mail from M.Piat to M.Salatino 2017-08-10
-    self.Rbias =10.e3   # 10kOhm, mail from M.Piat to M.Salatino 2017-08-10
-    self.Rfeedback=10e3 # 10kOhm, this is selectable between 10kOhm and 100kOhm (also called "relay" resistance)
     self.FLL_state=None
     self.FLL_P=None
     self.FLL_I=None
     self.FLL_D=None
-    self.figsize=(12.80,6.40)
-    self.colours=['blue','green','red','cyan','magenta','yellow','black']
     self.asic=None
     self.assign_integration_time()
     self.adu=None
     self.vbias=None
     self.timeline_vbias=None
-    self.Vinfinity=0.0 # used to calculate the I-V offset (force the line through 0,0)
     self.cycle_vbias=True
     self.nbiascycles=None
     self.bias_frequency=None
@@ -114,6 +100,27 @@ def assign_defaults(self):
     self.fitsblurbs['DET_NAME']='ID of the detector array'
     self.fitsblurbs['R_FEEDBK']='Feedback resistance in Flux Lock Loop'
     self.fitsblurbs['CHUNK']='data chunk size delivered by QubicStudio'
+    return
+
+def assign_constants(self):
+    '''
+    assign some constant values used in calculations and measurements
+    '''
+    self.asic_reversal_date = asic_reversal_date
+    self.zero=1e-9
+    #self.QubicStudio_ip='134.158.186.233'
+    #self.QubicStudio_ip='134.158.187.21'
+    self.QubicStudio_ip='192.168.2.8'
+    self.OxfordInstruments_ip='134.158.186.162'
+    #self.DAC2V=2.627e-4    # email from Michel Piat 2018/02/09 17:14 CET
+    self.DAC2V=9.404/2**15 # measured Tue 13 Feb 2018 15:25:11 CET
+    self.kBoltzmann=1.3806485279e-23
+    self.Rshunt=10.e-3  # 10mOhm, mail from M.Piat to M.Salatino 2017-08-10
+    self.Rbias =10.e3   # 10kOhm, mail from M.Piat to M.Salatino 2017-08-10
+    self.Rfeedback=10e3 # 10kOhm, this is selectable between 10kOhm and 100kOhm (also called "relay" resistance)
+    self.figsize=(12.80,6.40)
+    self.colours=['blue','green','red','cyan','magenta','yellow','black']
+    self.Vinfinity=0.0 # used to calculate the I-V offset (force the line through 0,0)
     return
 
 def assign_observer(self,observer='APC LaboMM'):

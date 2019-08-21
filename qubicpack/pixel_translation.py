@@ -92,7 +92,6 @@ def make_id_focalplane():
         for i in range(34):
             col = i
             fpmatrix[col][row]['FP index'] = fp_idx
-            fpmatrix[col][row]['PIX'] = -1
             if row < 17:
                 if col < 17:
                     quadrant = 3

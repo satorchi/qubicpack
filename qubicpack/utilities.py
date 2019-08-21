@@ -37,7 +37,7 @@ def TES_index(TES):
     if (not isinstance(TES,int))\
        or TES<1\
        or TES>NPIXELS:
-        print('TES should have a value between 1 and %i' % NPIXELS)
+        print('TES should have a value between 1 and %i: %s' % (NPIXELS,TES))
         return None
     TES_idx=TES-1
     return TES_idx

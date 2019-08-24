@@ -34,11 +34,17 @@ def TES_index(TES):
     '''
     return the index (counting from 0) given the TES number (counting from 1)
     '''
-    if (not isinstance(TES,int))\
-       or TES<1\
-       or TES>NPIXELS:
-        print('TES should have a value between 1 and %i: %s' % (NPIXELS,TES))
+    if (not isinstance(TES,int)):
+        print('TES should have an integer value between 1 and %i' % NPIXELS)
         return None
+
+    if TES == 0: # return quietly.  This is used in make_id_focalplane()
+        return -1
+
+    if TES>NPIXELS or TES<=0:
+        print('TES should have a value between 1 and %i: %i' % (NPIXELS,TES))
+        return None
+    
     TES_idx=TES-1
     return TES_idx
 

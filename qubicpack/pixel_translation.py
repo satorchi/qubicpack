@@ -36,7 +36,7 @@ def plot_id_focalplane(fpmatrix,figsize=(30,30)):
     '''
     plot all the different identity names of each pixel in the focal plane
 
-    fpmatrix is a 34x34 matrix of dictionaries
+    fpmatrix is a recarray of shape 34x34
     '''
 
     quadrant_colour = ['blue','red','green','purple']
@@ -48,7 +48,8 @@ def plot_id_focalplane(fpmatrix,figsize=(30,30)):
     fig = plt.figure(figsize=figsize)
     fig.canvas.set_window_title('plt: QUBIC Focal Plane ID Matrix')
     ax = fig.add_axes([0,0,1,1])
-    ax.text(0.5,0.96,'QUBIC Focal Plane ID Matrix', ha='center',va='bottom',transform=ax.transAxes,fontsize=title_fontsize)
+    ax.text(0.5,0.96,'QUBIC Focal Plane ID Matrix',
+            ha='center',va='bottom',transform=ax.transAxes,fontsize=title_fontsize)
     ax.set_xlim(-1,35)
     ax.set_ylim(-1,35)
     ax.set_aspect('equal')
@@ -56,15 +57,20 @@ def plot_id_focalplane(fpmatrix,figsize=(30,30)):
     
     for i in range(34):
         for j in range(34):
-            txt = 'Q%i' % (fpmatrix[i][j]['quadrant'])
-            quadrant = fpmatrix[i][j]['quadrant']
-            asic = fpmatrix[i][j]['ASIC']
+            txt = 'Q%i' % (fpmatrix[i,j].quadrant)
+            quadrant = fpmatrix[i,j].quadrant
+            asic = fpmatrix[i,j].ASIC
             colour = asic_colour[asic-1]
-            if fpmatrix[i][j]['TES']==0:
+            if fpmatrix[i,j].TES==0:
                 colour = 'black'
-                txt += '\nFP%4i' % fpmatrix[i][j]['FP index']
+                txt += '\nFP%4i' % fpmatrix[i,j].FPindex
             else:
-                txt += ' %s\nFP%4i\nPIX%03i\nASIC%i\nTES%03i' % (fpmatrix[i][j]['matrix'],fpmatrix[i][j]['FP index'],fpmatrix[i][j]['PIX'],fpmatrix[i][j]['ASIC'],fpmatrix[i][j]['TES'])
+                txt += ' %s\nFP%4i\nPIX%03i\nASIC%i\nTES%03i'\
+                    % (fpmatrix[i,j].matrix.decode('UTF-8'),
+                       fpmatrix[i,j].FPindex,
+                       fpmatrix[i,j].PIX,
+                       fpmatrix[i,j].ASIC,
+                       fpmatrix[i,j].TES)
             plot_square(i,j,colour=colour,labelcolour='white',label=txt,fontsize=label_fontsize)
     return
 
@@ -76,26 +82,19 @@ def make_id_focalplane():
     tes_grid = assign_tes_grid()
 
     # initialize the matrix
-    fpmatrix = []
-    for i in range(34):
-        fpmatrix.append([])
-        fpmatrix[i] = []
-        for j in range(34):
-            transdict = {}
-            transdict['FP index'] = -1
-            fpmatrix[i].append(transdict)
+    names = 'FPindex,quadrant,matrix,TES,PIX,ASIC'
+    fmts = 'int,int,a4,int,int,int'
+    fpmatrix = np.recarray(names=names,formats=fmts,shape=(34,34))
 
-    # there should be a way to do this without a second double loop
     fp_idx = 0
     for j in range(34):
         row = 33 - j
         for i in range(34):
             col = i
-            fpmatrix[col][row]['FP index'] = fp_idx
             if row < 17:
                 if col < 17:
                     quadrant = 3
-                    matrix = 'P87'
+                    matrix = 'PXX'
                     tes_y = 16 - col
                     tes_x = row
                 else:
@@ -106,7 +105,7 @@ def make_id_focalplane():
             else:
                 if col < 17:
                     quadrant = 2
-                    matrix = 'PXX'
+                    matrix = 'P87'
                     tes_x = col
                     tes_y = row - 17
                 else:
@@ -120,17 +119,18 @@ def make_id_focalplane():
             asic_no = int(round(10*TES_parts[0]))
             TES_no = int(round(TES_parts[1]))
             PIX = tes2pix(TES_no,asic_no)
-
-            fpmatrix[col][row]['quadrant'] = quadrant
-            fpmatrix[col][row]['matrix'] = matrix
-            fpmatrix[col][row]['TES'] = TES_no
-            fpmatrix[col][row]['PIX'] = PIX
-            if quadrant==3 or quadrant==4:
-                rotated_asic = 2*(quadrant-3) + asic_no  # quadrant 3 & 4
+            if quadrant==1:
+                rotated_asic = 6 + asic_no  # quadrant 1
             else:
-                rotated_asic = 2*(quadrant+1) + asic_no  # quadrant 1 & 2                
-            
-            fpmatrix[col][row]['ASIC'] =  rotated_asic
+                rotated_asic = 2*(quadrant-2) + asic_no  # quadrant 2,3, 4
+                
+
+            fpmatrix[col,row].FPindex = fp_idx
+            fpmatrix[col,row].quadrant = quadrant
+            fpmatrix[col,row].matrix = matrix
+            fpmatrix[col,row].TES = TES_no
+            fpmatrix[col,row].PIX = PIX
+            fpmatrix[col,row].ASIC =  rotated_asic
                     
             fp_idx += 1
             

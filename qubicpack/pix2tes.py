@@ -110,6 +110,7 @@ def tes2pix(TES,asic):
     if TES2PIX is None: TES2PIX = assign_pix2tes()
     TES_idx = TES_index(TES)
     if TES_idx is None: return None
+    if TES_idx == -1: return -1
     PIX = TES2PIX[ASIC_index(asic),TES_idx]
     return PIX
 

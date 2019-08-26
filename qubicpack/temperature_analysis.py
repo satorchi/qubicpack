@@ -23,7 +23,7 @@ import datetime as dt
 from scipy.optimize import curve_fit
 
 from qubicpack import qubicpack as qp
-from qubicpack.pix2tes import assign_pix2tes, tes2pix
+from qubicpack.pix2tes import tes2pix
 from qubicpack.utilities import FIGSIZE
 
 # some constants and values required
@@ -350,8 +350,9 @@ def fit_Pbath(T_pts, P_pts):
     npts=len(T_pts)
     T=np.array(T_pts).reshape(npts)
     P=np.array(P_pts).reshape(npts)
+    pinit=np.array([1E-10, 0.5,4.5]) #MP
     try:
-        ret=curve_fit(P_bath_function,T,P)
+        ret=curve_fit(P_bath_function,T,P,p0=pinit) #MP
     except:
         ret=None
     return ret
@@ -399,9 +400,11 @@ def calculate_TES_NEP(qplist,TES):
             Iturnover=1e-6*I.min()
         Tbath=go.temperature
         Vtes_turnover=go.Rshunt*(go.turnover(TES)/go.Rbias-Iturnover)
-        #P.append(Iturnover*go.turnover(TES)*1e-12)
-        P.append(Iturnover*Vtes_turnover)
-        T.append(Tbath)
+        Ptes=go.Ptes(TES)[istart:iend] #MP
+        Pbeg=np.mean(Ptes[0:10])
+        if ((Pbeg > 5) and (Pbeg < 40)):
+            P.append(Pbeg*1e-12)
+            T.append(Tbath)
 
     temperature_fit=fit_Pbath(T,P)
 
@@ -420,7 +423,7 @@ def calculate_TES_NEP(qplist,TES):
 
         G=n*K*(T0**(n-1))
         ret['G']=G
-        Tratio=0.3/T0
+        Tratio=0.35/T0
         # gamma is defined in Perbost PhD eq. 2.72 (page 82)
         gamma=(n/(2*n+1)) * (1-Tratio**(2*n+1))/(1-Tratio**n)
         ret['gamma']=gamma
@@ -820,7 +823,6 @@ def plot_rt_analysis(reslist,xwin=True):
     plot the results of the R-T analysis
     we need to run fit_timeline() for this!
     '''
-    global TES2PIX
     global FIGSIZE
     
     TES=reslist[0]['TES']

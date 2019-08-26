@@ -94,7 +94,7 @@ def make_id_focalplane():
             if row < 17:
                 if col < 17:
                     quadrant = 3
-                    matrix = 'PXX'
+                    matrix = 'P87'
                     tes_y = 16 - col
                     tes_x = row
                 else:
@@ -105,7 +105,7 @@ def make_id_focalplane():
             else:
                 if col < 17:
                     quadrant = 2
-                    matrix = 'P87'
+                    matrix = 'PXX'
                     tes_x = col
                     tes_y = row - 17
                 else:
@@ -118,10 +118,9 @@ def make_id_focalplane():
             asic_no = tes_grid[tes_x,tes_y].ASIC
             TES_no = tes_grid[tes_x,tes_y].TES
             PIX = tes2pix(TES_no,asic_no)
-            if quadrant==1:
-                rotated_asic = 6 + asic_no  # quadrant 1
-            else:
-                rotated_asic = 2*(quadrant-2) + asic_no  # quadrant 2,3, 4
+            rotated_asic = 2*(quadrant-3) + asic_no
+            if rotated_asic < 0:
+                rotated_asic += 8
                 
 
             fpmatrix[col,row].FPindex = fp_idx

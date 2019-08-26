@@ -119,10 +119,11 @@ def plot_fp(args):
             ax[row,col].get_yaxis().set_visible(False)
 
             # the pixel identity associated with its physical location in the array
-            TES_parts = np.modf( tes_grid[row,col] )
-            asic_str = '%.0f' % (10*TES_parts[0])
-            TES_str = '%.0f' % TES_parts[1]
-            TES = int(TES_str)
+            TES = tes_grid[row,col].TES
+            TES_str = '%03i' % TES
+            asic = tes_grid[row,col].ASIC
+            asic_str = '%i' % asic
+            
             TES_idx = TES - 1
             pix_label = TES_str
             asic_key = 'ASIC%s' % asic_str

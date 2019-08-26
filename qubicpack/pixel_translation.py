@@ -115,9 +115,8 @@ def make_id_focalplane():
                     tes_y = row - 17
                     
                 
-            TES_parts = np.modf( tes_grid[tes_x,tes_y] )
-            asic_no = int(round(10*TES_parts[0]))
-            TES_no = int(round(TES_parts[1]))
+            asic_no = tes_grid[tes_x,tes_y].ASIC
+            TES_no = tes_grid[tes_x,tes_y].TES
             PIX = tes2pix(TES_no,asic_no)
             if quadrant==1:
                 rotated_asic = 6 + asic_no  # quadrant 1

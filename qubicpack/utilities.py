@@ -34,10 +34,6 @@ def TES_index(TES):
     '''
     return the index (counting from 0) given the TES number (counting from 1)
     '''
-    if (not isinstance(TES,int)):
-        print('TES should have an integer value between 1 and %i' % NPIXELS)
-        return None
-
     if TES == 0: # return quietly.  This is used in make_id_focalplane()
         return -1
 
@@ -53,9 +49,7 @@ def ASIC_index(asic):
     return the asic index (counting from zero) given the asic number
     the asic index is either 0 or 1 which is used for plotting the focal plane
     '''
-    if (not isinstance(asic,int))\
-       or asic<1\
-       or asic>NASIC:
+    if asic<1 or asic>NASIC:
         print('asic should have a value between 1 and %i' % NASIC)
         return None
     asic_idx = asic-1

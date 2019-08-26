@@ -21,6 +21,7 @@ class qubicasic:
     __object_type__ = 'qubicasic'
 
     from .assign_variables import\
+        assign_constants,\
         assign_defaults,\
         assign_observer,\
         assign_asic,\

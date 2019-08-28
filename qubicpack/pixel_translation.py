@@ -17,6 +17,9 @@ from matplotlib import pyplot as plt
 
 from qubicpack.pix2tes import assign_tes_grid, tes2pix
 
+quadrant_colour = ['blue','red','green','purple']
+asic_colour = ['blue','darkblue','red','#cc0000','green','#00cc00','purple','#7210a7']
+
 def plot_square(x,y,colour='black',label='null',labelcolour='white',ax=None,fontsize=10):
     '''
     plot a square with a label
@@ -39,8 +42,6 @@ def plot_id_focalplane(fpmatrix,figsize=(30,30)):
     fpmatrix is a recarray of shape 34x34
     '''
 
-    quadrant_colour = ['blue','red','green','purple']
-    asic_colour = ['blue','darkblue','red','#cc0000','green','#00cc00','purple','#7210a7']
     scale_factor = figsize[0]
     title_fontsize = 0.67*scale_factor
     label_fontsize = 0.2*scale_factor

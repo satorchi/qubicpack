@@ -2217,7 +2217,7 @@ def filterinfo(self,TES=None):
         return self.filtersummary
 
     # if not a valid TES, return None
-    if not isinstance(TES,int) or TES<1 or TES>self.NPIXELS:
+    if TES<1 or TES>self.NPIXELS:
         print('please enter a valid TES number between 1 and %i.' % self.NPIXELS)
         return None
 
@@ -2331,7 +2331,7 @@ def R1adjust(self,TES=None):
         return R1adjust_vector
 
     # if not a valid TES, return None
-    if not isinstance(TES,int) or TES<1 or TES>self.NPIXELS:
+    if TES<1 or TES>self.NPIXELS:
         print('please enter a valid TES number between 1 and %i.' % self.NPIXELS)
         return None
 

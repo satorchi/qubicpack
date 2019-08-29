@@ -23,6 +23,7 @@ import datetime as dt
 from scipy.optimize import curve_fit
 
 from qubicpack import qubicpack as qp
+from qubicpack.qubicfp import qubicfp
 from qubicpack.pix2tes import tes2pix
 from qubicpack.utilities import FIGSIZE
 
@@ -32,13 +33,34 @@ temperature_precision = 0.005 # close enough for temperature
 
 def print_datlist(datlist,obsdate=None,temperature=None):
     '''
-    print some of the main parameters of all the data in a list of qp objects
-    select members of the list according to obsdate and/or temperature
+    check if we're using a list of qubicfp objects or qubicasic/qubicpack objects
     '''
     if not isinstance(datlist,list):datlist=[datlist]
     print(' idx    array ASIC date                temp')
+
+    if datlist[0].__object_type__=='qubicpack' or datlist[0].__object_type__=='qubicasic':
+        return print_asic_datlist(datlist,obsdate,temperature)
+
+    if not datlist[0].__object_type__=='qubicfp':
+        print('ERROR! This is not a list of qubicfp or qubicpack objects')
+        return None
+
+    for idx,go in enumerate(datlist):
+        print('[%2i]' % idx, end='')
+        print_asic_datlist(go.asic_list,obsdate,temperature)
+
+    return    
+    
+
+def print_asic_datlist(datlist,obsdate=None,temperature=None):
+    '''
+    print some of the main parameters of all the data in a list of qp objects
+    select members of the list according to obsdate and/or temperature
+    '''
     datstr='[%2i][%2i] %s ASIC%i %s %.3fmK'
     for idx,go in enumerate(datlist):
+        if go is None: continue
+        
         printit=True
         if go.exist_timeline_data():
             ntimelines=go.ntimelines()
@@ -680,7 +702,7 @@ def make_TES_NEP_tex_report(qplist,NEPresults=None,refresh=True):
     h.write('QUBIC TES Report\\\\\n')
     h.write('NEP estimates\\\\\n')
     h.write(go300.obsdate.strftime('data from %Y-%m-%d\\\\\n'))
-    h.write('compiled by %s\\\\\nusing PyStudio/QubicPack: \\url{https://github.com/satorchi/pystudio}\n' % observer)
+    h.write('compiled by %s\\\\\nusing QubicPack: \\url{https://github.com/satorchi/qubicpack}\n' % observer)
     h.write(dt.datetime.utcnow().strftime('this report compiled %Y-%m-%d %H:%M UTC\\\\\n'))
     h.write('\\end{center}\n')
 

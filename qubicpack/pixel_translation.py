@@ -19,6 +19,8 @@ from qubicpack.pix2tes import assign_tes_grid, tes2pix
 
 quadrant_colour = ['blue','red','green','purple']
 asic_colour = ['blue','darkblue','red','#cc0000','green','#00cc00','purple','#7210a7']
+FPidentity = None
+
 
 def plot_square(x,y,colour='black',label='null',labelcolour='white',ax=None,fontsize=10):
     '''
@@ -35,12 +37,14 @@ def plot_square(x,y,colour='black',label='null',labelcolour='white',ax=None,font
     return
 
 
-def plot_id_focalplane(fpmatrix,figsize=(30,30)):
+def plot_id_focalplane(figsize=(30,30)):
     '''
     plot all the different identity names of each pixel in the focal plane
 
-    fpmatrix is a recarray of shape 34x34
+    FPidentity is a recarray of shape 34*34
     '''
+    global FPidentity
+    if FPidentity is None: FPidentity = make_id_focalplane()
 
     scale_factor = figsize[0]
     title_fontsize = 0.67*scale_factor
@@ -55,37 +59,37 @@ def plot_id_focalplane(fpmatrix,figsize=(30,30)):
     ax.set_ylim(-1,35)
     ax.set_aspect('equal')
     
-    
-    for i in range(34):
-        for j in range(34):
-            txt = 'Q%i' % (fpmatrix[i,j].quadrant)
-            quadrant = fpmatrix[i,j].quadrant
-            asic = fpmatrix[i,j].ASIC
-            colour = asic_colour[asic-1]
-            if fpmatrix[i,j].TES==0:
-                colour = 'black'
-                txt += '\nFP%4i' % fpmatrix[i,j].FPindex
-            else:
-                txt += ' %s\nFP%4i\nPIX%03i\nASIC%i\nTES%03i'\
-                    % (fpmatrix[i,j].matrix.decode('UTF-8'),
-                       fpmatrix[i,j].FPindex,
-                       fpmatrix[i,j].PIX,
-                       fpmatrix[i,j].ASIC,
-                       fpmatrix[i,j].TES)
-            plot_square(i,j,colour=colour,labelcolour='white',label=txt,fontsize=label_fontsize)
+    for fp_idx in range(len(FPidentity)):
+        txt = 'Q%i' % (FPidentity[fp_idx].quadrant)
+        quadrant = FPidentity[fp_idx].quadrant
+        asic = FPidentity[fp_idx].ASIC
+        colour = asic_colour[asic-1]
+        row = FPidentity[fp_idx].row
+        col = FPidentity[fp_idx].col
+        if FPidentity[fp_idx].TES==0:
+            colour = 'black'
+            txt += '\nFP%4i' % FPidentity[fp_idx].index
+        else:
+            txt += ' %s\nFP%4i\nPIX%03i\nASIC%i\nTES%03i'\
+                % (FPidentity[fp_idx].matrix.decode('UTF-8'),
+                   FPidentity[fp_idx].index,
+                   FPidentity[fp_idx].PIX,
+                   FPidentity[fp_idx].ASIC,
+                   FPidentity[fp_idx].TES)
+        plot_square(col,row,colour=colour,labelcolour='white',label=txt,fontsize=label_fontsize)
     return
 
 def make_id_focalplane():
     '''
     make the matrix which has all the translation info for pixel identities
     '''
-
+    global FPidentity
     tes_grid = assign_tes_grid()
 
     # initialize the matrix
-    names = 'FPindex,quadrant,matrix,TES,PIX,ASIC'
-    fmts = 'int,int,a4,int,int,int'
-    fpmatrix = np.recarray(names=names,formats=fmts,shape=(34,34))
+    names = 'index,row,col,quadrant,matrix,TES,PIX,ASIC'
+    fmts = 'int,int,int,int,a4,int,int,int'
+    FPidentity = np.recarray(names=names,formats=fmts,shape=(34*34))
 
     fp_idx = 0
     for j in range(34):
@@ -120,19 +124,37 @@ def make_id_focalplane():
             TES_no = tes_grid[tes_x,tes_y].TES
             PIX = tes2pix(TES_no,asic_no)
             rotated_asic = 2*(quadrant-3) + asic_no
-            if rotated_asic < 0:
+            if rotated_asic < 1:
                 rotated_asic += 8
-                
+            if asic_no==0: rotated_asic = 0
 
-            fpmatrix[col,row].FPindex = fp_idx
-            fpmatrix[col,row].quadrant = quadrant
-            fpmatrix[col,row].matrix = matrix
-            fpmatrix[col,row].TES = TES_no
-            fpmatrix[col,row].PIX = PIX
-            fpmatrix[col,row].ASIC =  rotated_asic
-                    
+            FPidentity[fp_idx].index = fp_idx
+            FPidentity[fp_idx].quadrant = quadrant
+            FPidentity[fp_idx].matrix = matrix
+            FPidentity[fp_idx].TES = TES_no
+            FPidentity[fp_idx].PIX = PIX
+            FPidentity[fp_idx].ASIC =  rotated_asic
+            FPidentity[fp_idx].row = row
+            FPidentity[fp_idx].col = col
             fp_idx += 1
             
-    return fpmatrix
+    return FPidentity
+
+
+def tes2index(TES,ASIC):
+    '''
+    get the unique Focal Plane identifier for a given TES
+    '''
+    global FPidentity
+    if FPidentity is None: FPidentity = make_id_focalplane()
+
+    idx_range = np.where(FPidentity.TES==TES)
+    TES_locations = FPidentity[idx_range]
+
+    asic_idx = np.where(TES_locations.ASIC == ASIC)
+    entry = TES_locations[asic_idx]
+    return entry.index
+
+
 
             

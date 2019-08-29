@@ -34,6 +34,8 @@ def assign_defaults(self):
     self.hk  =  {}
     self.hornswitch_files = None
     self.detector_name = 'undefined'
+    self.dataset_name=None
+    self.assign_fitsblurbs()
     return
 
 def assign_temperature(self,temp):
@@ -102,6 +104,35 @@ def read_qubicstudio_asic_fits(self,hdulist):
     for asic_obj in self.asic_list:
         if asic_obj is not None:
             asic_obj.read_qubicstudio_asic_fits(hdulist)
+    return
+
+def read_qubicpack_fits(self,hdulist):
+    '''
+    read a FITS file that was written by QubicPack
+    argument is an hdulist after opening a FITS file
+    and confirming that it really is a QubicPack fits file
+    '''
+    
+    self.datafiletype = 'QP_FITS'
+    self.observer = hdulist[0].header['OBSERVER']
+    self.assign_obsdate(dt.datetime.strptime(hdulist[0].header['DATE-OBS'],'%Y-%m-%d %H:%M:%S UTC'))
+            
+    asic_idx = hdulist[0].header['ASIC'] - 1
+    self.QubicStudio_ip=hdulist[0].header['QUBIC-IP']
+
+    if 'TES_TEMP' in hdulist[0].header.keys():
+        self.temperature=hdulist[0].header['TES_TEMP']
+    else:
+        self.temperature=None
+
+    if 'END-OBS' in hdulist[0].header.keys():
+        self.endobs=dt.datetime.strptime(hdulist[0].header['END-OBS'],'%Y-%m-%d %H:%M:%S UTC')
+    else:
+        self.endobs=None
+
+    self.asic_list[asic_idx] = qubicasic()
+    self.asic_list[asic_idx].read_qubicpack_fits(hdulist)
+
     return
 
 
@@ -216,7 +247,7 @@ def plot_iv_focalplane(self,labels=True):
     tot_ngood = 0
     tot_npixels = 0
     for idx,asic_obj in enumerate(self.asic_list):
-        if asic_obj is not None:
+        if asic_obj is not None and asic_obj.exist_iv_data():
             key = 'ASIC%i' % (idx+1)
             
             subttl_list.append(asic_obj.infotext())
@@ -254,7 +285,8 @@ def ngood(self):
     '''
     tot_ngood = 0
     for asic_obj in self.asic_list:
-        tot_ngood += asic_obj.ngood()
+        if asic_obj is not None:
+            tot_ngood += asic_obj.ngood()
     return tot_ngood
     
 def filter_iv_all(self,

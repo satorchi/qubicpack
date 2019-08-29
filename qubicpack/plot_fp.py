@@ -56,7 +56,11 @@ def plot_fp(args):
         figsize = (FIGSIZE[0],FIGSIZE[0])
     fontsize=figsize[0]
     ttlfontsize=figsize[0]*1.2
-        
+
+    quadrant = 3
+    if 'quadrant' in args.keys():
+        quadrant = args['quadrant']
+    
     obsdate = None
     if 'obsdate' in args.keys():
         obsdate = args['obsdate']
@@ -113,15 +117,32 @@ def plot_fp(args):
     fig.suptitle(subttl,fontsize=ttlfontsize)
     
 
-    for row in range(nrows):
-        for col in range(ncols):
+    for j in range(nrows):
+        for i in range(ncols):
+
+            if quadrant==1:
+                row = j
+                col = i
+                
+            elif quadrant==2:
+                row = i
+                col = j
+
+            elif quadrant==3:
+                row = 16 - j
+                col = 16 - i
+            else:
+                row = 16 - i
+                col = 16 - j
+
+            
             ax[row,col].get_xaxis().set_visible(False)
             ax[row,col].get_yaxis().set_visible(False)
 
             # the pixel identity associated with its physical location in the array
-            TES = tes_grid[row,col].TES
+            TES = tes_grid[j,i].TES
             TES_str = '%03i' % TES
-            asic = tes_grid[row,col].ASIC
+            asic = tes_grid[j,i].ASIC
             asic_str = '%i' % asic
             
             TES_idx = TES - 1

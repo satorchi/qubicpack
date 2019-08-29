@@ -30,6 +30,7 @@ class qubicpack:
     from .assign_variables import\
         assign_defaults,\
         assign_constants,\
+        assign_fitsblurbs,\
         assign_observer,\
         assign_asic,\
         asic_index,\

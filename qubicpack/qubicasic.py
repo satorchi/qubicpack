@@ -23,6 +23,7 @@ class qubicasic:
     from .assign_variables import\
         assign_constants,\
         assign_defaults,\
+        assign_fitsblurbs,\
         assign_observer,\
         assign_asic,\
         asic_index,\
@@ -48,6 +49,7 @@ class qubicasic:
         write_fits,\
         read_fits_field,\
         read_fits,\
+        read_qubicpack_fits,\
         read_qubicstudio_science_fits,\
         read_qubicstudio_asic_fits,\
         read_qubicstudio_hkfits,\

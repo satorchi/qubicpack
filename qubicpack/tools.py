@@ -235,6 +235,7 @@ def read_fits(self,filename):
         self.printmsg('ERROR! file not found: %s' % filename)
         return None
 
+    self.dataset_name = os.path.basename(filename).replace('.fits','')
     hdulist=pyfits.open(filename)
     nhdu=len(hdulist)
 

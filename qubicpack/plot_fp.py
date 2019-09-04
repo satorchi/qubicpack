@@ -40,8 +40,10 @@ def plot_fp(args):
       'lutmin' : min value for colour look up table
       'lutmax' : max value for colour look up table
       'pngname' : name of file for saving the plot
+      'nolabels' : if true, do not plot TES labels in each box
 
     '''
+    global FIGSIZE
     
     # initialize stuff
     pix_grid = assign_pix_grid()
@@ -54,7 +56,11 @@ def plot_fp(args):
         figsize = (FIGSIZE[0],FIGSIZE[0])
     fontsize=figsize[0]
     ttlfontsize=figsize[0]*1.2
-        
+
+    quadrant = 3
+    if 'quadrant' in args.keys():
+        quadrant = args['quadrant']
+    
     obsdate = None
     if 'obsdate' in args.keys():
         obsdate = args['obsdate']
@@ -83,8 +89,6 @@ def plot_fp(args):
     lutmax = 10.0
     if 'lutmax' in args.keys():
         lutmax = args['lutmax']
-
-    label_boxprops = dict(boxstyle='round, pad=0.1', facecolor='white', alpha=1.0)
  
     face_colours = {}
     face_colours['ASIC0'] = 'black'
@@ -96,10 +100,15 @@ def plot_fp(args):
     curve_colours['ASIC1'] = 'black'
     curve_colours['ASIC2'] = 'blue'
 
+    label_boxprops = dict(boxstyle='round, pad=0.1', facecolor='white', alpha=1.0)
     label_colours = {}
     label_colours['ASIC0'] = 'black'
     label_colours['ASIC1'] = 'black'
     label_colours['ASIC2'] = 'blue'
+    if 'nolabels' in args.keys() and args['nolabels']:
+        print_labels = False
+    else:
+        print_labels = True
     
     plt.ion()
     fig,ax=plt.subplots(nrows,ncols,figsize=figsize)
@@ -108,16 +117,34 @@ def plot_fp(args):
     fig.suptitle(subttl,fontsize=ttlfontsize)
     
 
-    for row in range(nrows):
-        for col in range(ncols):
+    for j in range(nrows):
+        for i in range(ncols):
+
+            if quadrant==1:
+                row = j
+                col = i
+                
+            elif quadrant==2:
+                row = i
+                col = j
+
+            elif quadrant==3:
+                row = 16 - j
+                col = 16 - i
+            else:
+                row = 16 - i
+                col = 16 - j
+
+            
             ax[row,col].get_xaxis().set_visible(False)
             ax[row,col].get_yaxis().set_visible(False)
 
             # the pixel identity associated with its physical location in the array
-            TES_parts = np.modf( tes_grid[row,col] )
-            asic_str = '%.0f' % (10*TES_parts[0])
-            TES_str = '%.0f' % TES_parts[1]
-            TES = int(TES_str)
+            TES = tes_grid[j,i].TES
+            TES_str = '%03i' % TES
+            asic = tes_grid[j,i].ASIC
+            asic_str = '%i' % asic
+            
             TES_idx = TES - 1
             pix_label = TES_str
             asic_key = 'ASIC%s' % asic_str
@@ -129,8 +156,8 @@ def plot_fp(args):
             label_colour = label_colours[asic_key]
             curve_colour = curve_colours[asic_key]
 
-            text_y=0.4
-            text_x=0.9
+            text_x=0.5
+            text_y=0.9
             labelfontsize = ttlfontsize
 
 
@@ -140,9 +167,9 @@ def plot_fp(args):
                 else:
                     curve_x = range(args[asic_key].shape[1])
                 curve = args[asic_key][TES_idx]
-                text_x = 0.9
-                text_y = 0.1
-                labelfontsize = fontsize
+                text_x = 0.5
+                text_y = 0.9
+                labelfontsize = 0.8*fontsize
                 if asicgood_key in args.keys() and not args[asicgood_key][TES_idx]:
                     face_colour='black'
                     label_colour='white'
@@ -159,9 +186,11 @@ def plot_fp(args):
             #print('(%i,%i) : facecolour=%s, labelcolour=%s' % (row,col,face_colour,label_colour))
             ax[row,col].set_facecolor(face_colour)
             label_boxprops['facecolor'] = face_colour
-            ax[row,col].text(text_x,text_y,pix_label,
-                             va='bottom',ha='right',color=label_colour,fontsize=labelfontsize,
-                             bbox=label_boxprops,transform = ax[row,col].transAxes)
+            if print_labels:
+                ax[row,col].text(text_x,text_y,pix_label,
+                                 va='top',ha='center',
+                                 color=label_colour,fontsize=labelfontsize,
+                                 bbox=label_boxprops,transform = ax[row,col].transAxes)
             
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     plt.show()

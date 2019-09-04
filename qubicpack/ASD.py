@@ -229,7 +229,7 @@ def make_ASD_tex_report(self,reslist=None,timeline_index=0):
     h.write('\\begin{center}\n')
     h.write('QUBIC TES Report: Amplitude Spectral Density\\\\\n')
     h.write(obsdate.strftime('data from %Y-%m-%d %H:%M UTC\\\\\n'))
-    h.write('compiled by %s\\\\\nusing PyStudio/QubicPack: \\url{https://github.com/satorchi/pystudio}\n' % observer)
+    h.write('compiled by %s\\\\\nusing QubicPack: \\url{https://github.com/satorchi/qubicpack}\n' % observer)
     h.write(dt.datetime.utcnow().strftime('this report compiled %Y-%m-%d %H:%M UTC\\\\\n'))
     h.write('\\end{center}\n')
 

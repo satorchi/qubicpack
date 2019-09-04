@@ -12,7 +12,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 analyze I-V curves at different temperatures to get the NEP
 '''
 from __future__ import division, print_function
-from qubicpack import qubicpack as qp
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
@@ -23,19 +22,45 @@ import os
 import datetime as dt
 from scipy.optimize import curve_fit
 
+from qubicpack import qubicpack as qp
+from qubicpack.qubicfp import qubicfp
+from qubicpack.pix2tes import tes2pix
+from qubicpack.utilities import FIGSIZE
+
 # some constants and values required
 kBoltzmann=1.3806485279e-23
 temperature_precision = 0.005 # close enough for temperature
 
 def print_datlist(datlist,obsdate=None,temperature=None):
     '''
-    print some of the main parameters of all the data in a list of qp objects
-    select members of the list according to obsdate and/or temperature
+    check if we're using a list of qubicfp objects or qubicasic/qubicpack objects
     '''
     if not isinstance(datlist,list):datlist=[datlist]
     print(' idx    array ASIC date                temp')
+
+    if datlist[0].__object_type__=='qubicpack' or datlist[0].__object_type__=='qubicasic':
+        return print_asic_datlist(datlist,obsdate,temperature)
+
+    if not datlist[0].__object_type__=='qubicfp':
+        print('ERROR! This is not a list of qubicfp or qubicpack objects')
+        return None
+
+    for idx,go in enumerate(datlist):
+        print('[%2i]' % idx, end='')
+        print_asic_datlist(go.asic_list,obsdate,temperature)
+
+    return    
+    
+
+def print_asic_datlist(datlist,obsdate=None,temperature=None):
+    '''
+    print some of the main parameters of all the data in a list of qp objects
+    select members of the list according to obsdate and/or temperature
+    '''
     datstr='[%2i][%2i] %s ASIC%i %s %.3fmK'
     for idx,go in enumerate(datlist):
+        if go is None: continue
+        
         printit=True
         if go.exist_timeline_data():
             ntimelines=go.ntimelines()
@@ -113,7 +138,9 @@ def read_data_from_20170905():
 
 def verify_temperature_arguments(qplist,TES):
     # make sure TES is a valid selection
-    if not isinstance(TES,int):
+    try:
+        TES = int(TES)
+    except:
         print('ERROR! Please enter a valid TES number.')
         return False
     
@@ -267,7 +294,11 @@ def plot_TES_temperature_curves(qplist,TES,plot='I',xwin=True):
         go=qplist[idx]
         lbl='%.0f mK' % (1000*go.temperature)
 
-        istart,iend=go.selected_iv_curve(TES)
+        startend = go.selected_iv_curve(TES)
+        if startend is None:
+            print('ERROR! index=%i, Tbath=%s: Could not get selected curve for TES#%i' % (idx,lbl,TES))
+            continue
+        istart,iend = startend
 
         Iadjusted=go.adjusted_iv(TES)
         I=Iadjusted[istart:iend]
@@ -341,8 +372,9 @@ def fit_Pbath(T_pts, P_pts):
     npts=len(T_pts)
     T=np.array(T_pts).reshape(npts)
     P=np.array(P_pts).reshape(npts)
+    pinit=np.array([1E-10, 0.5,4.5]) #MP
     try:
-        ret=curve_fit(P_bath_function,T,P)
+        ret=curve_fit(P_bath_function,T,P,p0=pinit) #MP
     except:
         ret=None
     return ret
@@ -390,12 +422,14 @@ def calculate_TES_NEP(qplist,TES):
             Iturnover=1e-6*I.min()
         Tbath=go.temperature
         Vtes_turnover=go.Rshunt*(go.turnover(TES)/go.Rbias-Iturnover)
-        #P.append(Iturnover*go.turnover(TES)*1e-12)
-        P.append(Iturnover*Vtes_turnover)
-        T.append(Tbath)
+        Ptes=go.Ptes(TES)[istart:iend] #MP
+        Pbeg=np.mean(Ptes[0:10])
+        if ((Pbeg > 5) and (Pbeg < 40)):
+            P.append(Pbeg*1e-12)
+            T.append(Tbath)
 
     temperature_fit=fit_Pbath(T,P)
-        
+
     ret['P']=P
     ret['T']=T
     ret['all temperatures']=all_T
@@ -411,7 +445,7 @@ def calculate_TES_NEP(qplist,TES):
 
         G=n*K*(T0**(n-1))
         ret['G']=G
-        Tratio=0.3/T0
+        Tratio=0.35/T0
         # gamma is defined in Perbost PhD eq. 2.72 (page 82)
         gamma=(n/(2*n+1)) * (1-Tratio**(2*n+1))/(1-Tratio**n)
         ret['gamma']=gamma
@@ -441,7 +475,8 @@ def make_TES_NEP_resultslist(qplist):
     if not verify_temperature_arguments(qplist,1):return None
     NPIXELS=qplist[0].NPIXELS
     results=[]
-    for TES in 1+np.arange(128):
+    for idx in range(NPIXELS):
+        TES = 1 + idx
         res=calculate_TES_NEP(qplist,TES)
         results.append(res)
             
@@ -667,7 +702,7 @@ def make_TES_NEP_tex_report(qplist,NEPresults=None,refresh=True):
     h.write('QUBIC TES Report\\\\\n')
     h.write('NEP estimates\\\\\n')
     h.write(go300.obsdate.strftime('data from %Y-%m-%d\\\\\n'))
-    h.write('compiled by %s\\\\\nusing PyStudio/QubicPack: \\url{https://github.com/satorchi/pystudio}\n' % observer)
+    h.write('compiled by %s\\\\\nusing QubicPack: \\url{https://github.com/satorchi/qubicpack}\n' % observer)
     h.write(dt.datetime.utcnow().strftime('this report compiled %Y-%m-%d %H:%M UTC\\\\\n'))
     h.write('\\end{center}\n')
 
@@ -808,12 +843,15 @@ def rt_analysis(TES,datlist,xwin=True):
 def plot_rt_analysis(reslist,xwin=True):
     '''
     plot the results of the R-T analysis
+    we need to run fit_timeline() for this!
     '''
+    global FIGSIZE
+    
     TES=reslist[0]['TES']
     detector_name=reslist[0]['DET_NAME']
     asic=reslist[0]['ASIC']
-    go=qp()
-    PIX=go.tes2pix(TES)
+
+    PIX=tes2pix(TES,asic)
 
     Tbath=[]
     R=[]
@@ -840,11 +878,10 @@ def plot_rt_analysis(reslist,xwin=True):
     
     ttl='Array %s: Critical Temperature for TES %i (PIX %i) on ASIC %i' % (detector_name,TES,PIX,asic)
     pngname='QUBIC_Array-%s_TES%03i_ASIC%i_Tcritical.png' % (detector_name,TES,asic)
-    figsize=go.figsize
 
     if xwin: plt.ion()
     else: plt.ioff()
-    fig=plt.figure(figsize=figsize)
+    fig=plt.figure(figsize=FIGSIZE)
     fig.canvas.set_window_title('plt: '+ttl)
     ax=plt.gca()
     plt.title(ttl)

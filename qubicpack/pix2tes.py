@@ -46,28 +46,32 @@ def assign_tes_grid(obsdate=None):
     make a 17x17 array with TES id's
     '''
     pix_grid = assign_pix_grid()
-    tes_grid = np.zeros(pix_grid.shape)
     TES2PIX = assign_pix2tes(obsdate)
+    tes_grid = np.recarray(names='PIX,TES,ASIC',formats='int,int,int',shape=pix_grid.shape)    
 
     nrows = pix_grid.shape[0]
     ncols = pix_grid.shape[1]
     
     for row in range(nrows):
         for col in range(ncols):
-
+            tes_grid[row,col].PIX = 0
+            tes_grid[row,col].TES = 0
+            tes_grid[row,col].ASIC = 0
+            
             # the pixel identity associated with its physical location in the array
             physpix=pix_grid[row,col]
+            tes_grid[row,col].PIX = physpix
             pix_index=physpix-1
             if physpix!=0:
                 for asic_ctr in range(2):
                     asic = asic_ctr + 1
                     asic_idx = ASIC_index(asic)
-                        
+                
                     if physpix in TES2PIX[asic_idx]:
-                        TES=pix2tes(physpix,asic)
+                        TES=pix2tes(physpix)[0]
                         TES_idx = TES - 1
-                        pix_label = TES + 0.1*asic
-                        tes_grid[row,col] = pix_label
+                        tes_grid[row,col].ASIC = asic
+                        tes_grid[row,col].TES = TES
     return tes_grid                        
 
 def assign_pix2tes(obsdate=None):
@@ -107,20 +111,31 @@ def assign_pix2tes(obsdate=None):
 
 def tes2pix(TES,asic):
     global TES2PIX
-    if TES2PIX is None:
-        TES2PIX = assign_pix2tes()
+    if TES2PIX is None: TES2PIX = assign_pix2tes()
     TES_idx = TES_index(TES)
     if TES_idx is None: return None
+    if TES_idx == -1: return -1
     PIX = TES2PIX[ASIC_index(asic),TES_idx]
     return PIX
 
-def pix2tes(PIX,asic):
+def pix2tes(PIX, asic=None):
+    '''
+    convert a pixel number to a TES number
+    the ASIC number is not required, but is there for historical purposes
+    so we don't have to change other scripts that use this function
+    '''
     global TES2PIX
+    if TES2PIX is None: TES2PIX = assign_pix2tes()
     pix_index=PIX-1
-    if not PIX in TES2PIX[ASIC_index(asic),:]:
+    asic_idx = None
+    for idx in range(2):
+        if PIX in TES2PIX[idx,:]:
+            asic_idx = idx
+            break
+    if asic_idx is None:
         print('ERROR! invalid Pixel number request: %i' % PIX)
         return None
 
-    idx_tuple = np.where(TES2PIX[ASIC_index(asic)]==PIX)
-    return idx_tuple[0][0] + 1
+    idx_tuple = np.where(TES2PIX[asic_idx]==PIX)
+    return (idx_tuple[0][0]+1, asic_idx+1)
 

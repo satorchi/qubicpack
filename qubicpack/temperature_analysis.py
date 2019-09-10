@@ -22,10 +22,9 @@ import os
 import datetime as dt
 from scipy.optimize import curve_fit
 
-from qubicpack import qubicpack as qp
 from qubicpack.qubicfp import qubicfp
 from qubicpack.pix2tes import tes2pix
-from qubicpack.utilities import FIGSIZE
+from qubicpack.utilities import FIGSIZE, asic_reversal_date, NPIXELS, NASIC, TES_index, ASIC_index
 
 # some constants and values required
 kBoltzmann=1.3806485279e-23
@@ -36,7 +35,7 @@ def print_datlist(datlist,obsdate=None,temperature=None):
     check if we're using a list of qubicfp objects or qubicasic/qubicpack objects
     '''
     if not isinstance(datlist,list):datlist=[datlist]
-    print(' idx    array ASIC date                temp')
+    print(' idx        array ASIC date                temp')
 
     if datlist[0].__object_type__=='qubicpack' or datlist[0].__object_type__=='qubicasic':
         return print_asic_datlist(datlist,obsdate,temperature)
@@ -46,7 +45,7 @@ def print_datlist(datlist,obsdate=None,temperature=None):
         return None
 
     for idx,go in enumerate(datlist):
-        print('[%2i]' % idx, end='')
+        print('[%2i]' % idx)
         print_asic_datlist(go.asic_list,obsdate,temperature)
 
     return    
@@ -54,10 +53,10 @@ def print_datlist(datlist,obsdate=None,temperature=None):
 
 def print_asic_datlist(datlist,obsdate=None,temperature=None):
     '''
-    print some of the main parameters of all the data in a list of qp objects
+    print some of the main parameters of all the data in a list of qubicfp objects
     select members of the list according to obsdate and/or temperature
     '''
-    datstr='[%2i][%2i] %s ASIC%i %s %.3fmK'
+    datstr='    [%2i][%2i] %s ASIC%i %s %.3fmK'
     for idx,go in enumerate(datlist):
         if go is None: continue
         
@@ -77,14 +76,23 @@ def print_asic_datlist(datlist,obsdate=None,temperature=None):
             T=go.temperature
             d=go.obsdate
             t_idx=0
-            if not obsdate is None and d!=obsdate:
+            if obsdate is not None and d!=obsdate:
                 printit=False
-            if not temperature is None and not (T<temperature+0.001 and T>temperature-0.001):
+            if temperature is not None and not (T<temperature+0.001 and T>temperature-0.001):
                 printit=False
             if printit: print(datstr % (idx,t_idx,go.detector_name,go.asic,d,1000*T))
             
     return
 
+def is_300mK_measurement(go):
+    '''
+    check if this is a measurement taken at 300mK
+    the argument "go" is an object of type qubicfp, qubicasic, or qubicpack
+    '''
+    if go.temperature>=0.3-temperature_precision\
+       and go.temperature<=0.3+temperature_precision:
+        return True
+    return False
 
 def read_data_from_20170804():
     '''
@@ -136,59 +144,68 @@ def read_data_from_20170905():
     
     return datlist
 
-def verify_temperature_arguments(qplist,TES):
+def verify_temperature_arguments(fplist,TES,asic):
     # make sure TES is a valid selection
     try:
         TES = int(TES)
+        asic = int(asic)
     except:
-        print('ERROR! Please enter a valid TES number.')
-        return False
-    
-    # make sure we have a list of qubicpack objects
-    if not isinstance(qplist, list):
-        print('ERROR!  Please provide a list of qubicpack objects')
-        return False
-    if not isinstance(qplist[0], qp):
-        print('ERROR!  Please provide a list of qubicpack objects')
+        print('ERROR! Please enter a valid TES and asic number.')
         return False
 
-    asic=qplist[0].asic
-    detector_name=qplist[0].detector_name
-    for go in qplist:
-        if not isinstance(go,qp):
-            print('ERROR! The list should contain qubicpack objects')
+    if asic<1 or asic>NASIC:
+        print('ERROR! Please enter a valid asic number: %i' % asic)
+    asic_idx = asic - 1
+
+    if TES<1 or TES>NPIXELS:
+        print('ERROR! Please enter a valid TES number: %i' % TES)
+        
+    # make sure we have a list of qubicpack.qubicfp objects
+    if not isinstance(fplist, list):
+        print('ERROR!  Please provide a list of qubicpack.qubicfp objects')
+        return False
+
+    if not isinstance(fplist[0], qubicfp):
+        print('ERROR!  Please provide a list of qubicpack.qubicfp objects')
+        return False
+
+    detector_name=fplist[0].detector_name
+    for fp in fplist:
+        if not isinstance(fp,qubicfp):
+            print('ERROR! The list should contain qubicpack.qubicfp objects')
             return False
-        if TES<1 or TES>go.NPIXELS:
-            print('ERROR! Please enter a valid TES number between 1 and %i.' % go.NPIXELS)
+        if TES<1 or TES>NPIXELS:
+            print('ERROR! Please enter a valid TES number between 1 and %i.' % NPIXELS)
             return False
-        if go.detector_name != detector_name:
+        if fp.detector_name != detector_name:
             print('ERROR! These data are not for the same detector array.')
             return False
-        if go.asic != asic:
-            print('ERROR! These data are not for the same ASIC.')
+        if fp.asic_list[asic_idx] is None:
+            print('ERROR! There is no data for the requested ASIC.')
             return False
         
 
     return True
 
-def plot_TES_turnover_temperature(qplist,TES,xwin=True):
+def plot_TES_turnover_temperature(fplist,TES,asic,xwin=True):
     '''
     plot the turnover point as a function of temperature for a given TES
     '''
-    if not verify_temperature_arguments(qplist,TES):return None
-    asic=qplist[0].asic
-    detector_name=qplist[0].detector_name
-
+    if not verify_temperature_arguments(fplist,TES,asic):return None
+    detector_name=fplist[0].detector_name
+    asic_idx = asic - 1
+    
     temps_list=[]
     turnover_list=[]
-    for go in qplist:
+    for fp in fplist:
+        go = fp.asic_list[asic_idx]
         if not go.turnover(TES) is None:
             temps_list.append(go.temperature)
             turnover_list.append(go.turnover(TES))
 
 
     if len(turnover_list)==0:
-        print('no turnover for TES %i' % TES)
+        print('no turnover for TES %i on ASIC %i' % (TES,asic))
         return None
     
     temps_list=np.array(temps_list)
@@ -202,16 +219,15 @@ def plot_TES_turnover_temperature(qplist,TES,xwin=True):
     xlabel='T$_{bath}$ / mK'
     ylabel='V$_{turnover}$ / V'
 
-    figsize=qplist[0].figsize
     ttl='QUBIC Array %s, ASIC %i, TES #%i: Turnover at Different Temperatures' % (detector_name,asic,TES)
-    subttl=qplist[0].obsdate.strftime('Measurements of %Y-%m-%d')
+    subttl=fplist[0].asic_list[asic_idx].obsdate.strftime('Measurements of %Y-%m-%d')
     
     if xwin:plt.ion()
     else:
         plt.close('all')
         plt.ioff()
         
-    fig=plt.figure(figsize=figsize)
+    fig=plt.figure(figsize=FIGSIZE)
     fig.canvas.set_window_title('plt: '+ttl)
 
     plt.suptitle(ttl+'\n'+subttl)
@@ -237,17 +253,19 @@ def plot_TES_turnover_temperature(qplist,TES,xwin=True):
     return
 
 
-def plot_TES_temperature_curves(qplist,TES,plot='I',xwin=True):
+def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     '''
     plot the I-V, P-V, R-P curves for each temperature
     '''
-    if not verify_temperature_arguments(qplist,TES):return None
-    asic=qplist[0].asic
-    detector_name=qplist[0].detector_name
+    if not verify_temperature_arguments(fplist,TES,asic):return None
+    asic_idx = asic - 1
+    detector_name = fplist[0].asic_list[asic_idx].detector_name
 
     temps_list=[]
-    for go in qplist:
+    for fp in fplist:
+        go = fp.asic_list[asic_idx]
         temps_list.append(go.temperature)
+        
     temps_list=np.array(temps_list)
     sorted_index=sorted(range(len(temps_list)), key=lambda i: temps_list[i])
     sorted_temps=temps_list[sorted_index]
@@ -269,14 +287,13 @@ def plot_TES_temperature_curves(qplist,TES,plot='I',xwin=True):
         xlabel='V$_{bias}$ / V'
         ylabel='I$_{TES}$ / $\mu$A'
         
-    figsize=qplist[0].figsize
     ttl='QUBIC Array %s ASIC %i TES%03i at Different Temperatures' % (detector_name,asic,TES)
     if xwin:plt.ion()
     else:
         plt.close('all')
         plt.ioff()
         
-    fig=plt.figure(figsize=figsize)
+    fig=plt.figure(figsize=FIGSIZE)
     fig.canvas.set_window_title('plt: '+ttl)
 
     plt.title(ttl)
@@ -291,8 +308,8 @@ def plot_TES_temperature_curves(qplist,TES,plot='I',xwin=True):
     min_P=1000.
     max_P=-1000.
     for idx in sorted_index:
-        go=qplist[idx]
-        lbl='%.0f mK' % (1000*go.temperature)
+        go = fplist[idx].asic_list[asic_idx]
+        lbl = '%.0f mK' % (1000*go.temperature)
 
         startend = go.selected_iv_curve(TES)
         if startend is None:
@@ -358,159 +375,184 @@ def plot_TES_temperature_curves(qplist,TES,plot='I',xwin=True):
 def P_bath_function(Tbath,K,T0,n):
     '''
     TES power should follow this as a function of bath temperature
-    see Perbost 2016, PhD thesis, eq. 2.11 and 6.1.6
+    see Perbost 2016, PhD thesis, eq. 2.11 and 6.16
     '''
     P=K*(T0**n - Tbath**n)
     return P
 
-def fit_Pbath(T_pts, P_pts):
+def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8):
     '''
     find best fit to the P_bath function
     '''
+    if p0 is None: p0=np.array([1E-10, 0.5,4.5]) #MP
 
     # make sure T_pts and P_pts are 1d arrays
     npts=len(T_pts)
     T=np.array(T_pts).reshape(npts)
     P=np.array(P_pts).reshape(npts)
-    pinit=np.array([1E-10, 0.5,4.5]) #MP
-    try:
-        ret=curve_fit(P_bath_function,T,P,p0=pinit) #MP
-    except:
-        ret=None
+
+    # try to fit the curve with the default tolerance (1e-8)
+    # if unsuccessful, relax the tolerance by a factor 100 and try again
+    for ctr in range(5):
+        try:
+            fit = curve_fit(P_bath_function,T,P,p0=p0,ftol=ftol)
+            ret = {}
+            ret['fit'] = fit
+            ret['tolerance'] = ftol
+            return ret
+        except:
+            ret=None
+        ftol *= 100
+        #print('retrying fit with relaxed tolerance: %.1e' % ftol)
+        
     return ret
 
-def calculate_TES_NEP(qplist,TES):
+def calculate_TES_NEP(fplist,TES,asic,p0=None):
     '''
     make the list of temperatures and associated P0
     and calculate the NEP
     '''
-    if not verify_temperature_arguments(qplist,TES):return None
-    asic=qplist[0].asic
-    detector_name=qplist[0].detector_name
-    asic=qplist[0].asic
-    detector_name=qplist[0].detector_name
+    if not verify_temperature_arguments(fplist,TES,asic):return None
+    asic_idx = asic - 1
+    detector_name=fplist[0].detector_name
 
     temps_list=[]
-    for go in qplist:
+    for fp in fplist:
+        go = fp.asic_list[asic_idx]
         temps_list.append(go.temperature)    
     temps_list=np.array(temps_list)
     sorted_index=sorted(range(len(temps_list)), key=lambda i: temps_list[i])
     sorted_temps=temps_list[sorted_index]
     
     ret={}
-    ret['DET_NAME']=detector_name
-    ret['TES']=TES
-    ret['ASIC']=asic
+    ret['DET_NAME'] = detector_name
+    ret['TES'] = TES
+    ret['ASIC'] = asic
+    ret['Tmin'] = temps_list.min()
+    ret['Tmax'] = temps_list.max()
 
     # make the arrays of Power and T_bath
-    P=[]
-    T=[]
-    all_T=[]
+    P = []
+    T = []
+    all_T = []
+    all_P = []
     for idx in sorted_index:
-        go=qplist[idx]
-        all_T.append(go.temperature)
+        fp = fplist[idx]
+        go = fp.asic_list[asic_idx]
         if go.turnover(TES) is None or go.turnover(TES)<0.0:continue
-        filterinfo=go.filterinfo(TES)
         
-        istart,iend=go.selected_iv_curve(TES)
+        filterinfo = go.filterinfo(TES)
+        
+        istart,iend = go.selected_iv_curve(TES)
 
-        Iadjusted=go.adjusted_iv(TES)
-        I=Iadjusted[istart:iend]
+        Iadjusted = go.adjusted_iv(TES)
+        I = Iadjusted[istart:iend]
         if 'Iturnover' in filterinfo['fit'].keys():
-            Iturnover=1e-6*filterinfo['fit']['Iturnover']
+            Iturnover = 1e-6*filterinfo['fit']['Iturnover']
         else:
-            Iturnover=1e-6*I.min()
-        Tbath=go.temperature
-        Vtes_turnover=go.Rshunt*(go.turnover(TES)/go.Rbias-Iturnover)
-        Ptes=go.Ptes(TES)[istart:iend] #MP
-        Pbeg=np.mean(Ptes[0:10])
+            Iturnover = 1e-6*I.min()
+
+        Tbath = go.temperature
+        Ptes = go.Ptes(TES)[istart:iend] #MP
+        Vtes_turnover = go.Rshunt*(go.turnover(TES)/go.Rbias-Iturnover)
+        all_P.append(Ptes.mean()*1e-12)
+        all_T.append(Tbath)
+        Pbeg = np.mean(Ptes[0:10])
         if ((Pbeg > 5) and (Pbeg < 40)):
             P.append(Pbeg*1e-12)
             T.append(Tbath)
 
-    temperature_fit=fit_Pbath(T,P)
+    temperature_fit = fit_Pbath(T,P,p0=p0)
+    ret['fit points'] = 'filter by first points'
+    if temperature_fit is None:
+        # try again with the full range
+        temperature_fit = fit_Pbath(all_T,all_P,p0=p0)
+        ret['fit points'] = 'all'
 
-    ret['P']=P
-    ret['T']=T
-    ret['all temperatures']=all_T
-
-    if not temperature_fit is None:
-        
-        K=temperature_fit[0][0]
-        T0=temperature_fit[0][1]
-        n=temperature_fit[0][2]
-        ret['K']=K
-        ret['T0']=T0
-        ret['n']=n
-
-        G=n*K*(T0**(n-1))
-        ret['G']=G
-        Tratio=0.35/T0
-        # gamma is defined in Perbost PhD eq. 2.72 (page 82)
-        gamma=(n/(2*n+1)) * (1-Tratio**(2*n+1))/(1-Tratio**n)
-        ret['gamma']=gamma
-        discr=gamma*kBoltzmann*G
-        if discr<0.0:
-            print('ERROR! Imaginary NEP!  TES=%i' % TES)
-            NEP=-2*T0*sqrt(-discr)
-        else:
-            NEP=2*T0*sqrt(discr)
-        ret['NEP']=NEP    
-
-    else:
-        ret['K']=None
-        ret['T0']=None
-        ret['n']=None
-        ret['NEP']=None
-        ret['G']=None
-        ret['gamma']=None
+    ret['P'] = np.array(P)
+    ret['T'] = np.array(T)
+    ret['all temperatures'] = np.array(all_T)
+    ret['all P'] = np.array(all_P)
+    
+    if temperature_fit is None:
+        ret['K'] = None
+        ret['T0'] = None
+        ret['n'] = None
+        ret['NEP'] = None
+        ret['G'] = None
+        ret['gamma'] = None
         print ('insufficient data for curve fit:  TES=%i' % TES)
+        return ret
+    
+        
+    K = temperature_fit['fit'][0][0]
+    T0 = temperature_fit['fit'][0][1]
+    n = temperature_fit['fit'][0][2]
+    ret['K'] = K
+    ret['T0'] = T0
+    ret['n'] = n
+    ret['fit tolerance'] = temperature_fit['tolerance']
+
+    G = n*K*(T0**(n-1))
+    ret['G'] = G
+    Tratio = 0.35/T0
+    # gamma is defined in Perbost PhD eq. 2.72 (page 82)
+    gamma = (n/(2*n+1)) * (1-Tratio**(2*n+1))/(1-Tratio**n)
+    ret['gamma'] = gamma
+    discr = gamma*kBoltzmann*G
+    if discr<0.0:
+        print('ERROR! Imaginary NEP!  TES=%i' % TES)
+        NEP = -2*T0*sqrt(-discr)
+    else:
+        NEP = 2*T0*sqrt(discr)
+    ret['NEP'] = NEP    
+
 
     return ret
 
-def make_TES_NEP_resultslist(qplist):
+def make_TES_NEP_resultslist(fplist,asic):
     '''
     make a list of NEP calculation results, one for each TES
     '''
-    if not verify_temperature_arguments(qplist,1):return None
-    NPIXELS=qplist[0].NPIXELS
+    if not verify_temperature_arguments(fplist,1,asic):return None
     results=[]
     for idx in range(NPIXELS):
         TES = 1 + idx
-        res=calculate_TES_NEP(qplist,TES)
+        res = calculate_TES_NEP(fplist,TES,asic)
         results.append(res)
             
     return results
 
-def plot_TES_NEP(qplist,TES,xwin=True):
+def plot_TES_NEP(fplist,TES,asic,xwin=True):
     '''
     plot the P vs. Temperature for a TES
     '''
 
-    result=calculate_TES_NEP(qplist,TES)
+    result = calculate_TES_NEP(fplist,TES,asic)
     if result is None:return None
 
-    TES=result['TES']
-    asic=result['ASIC']
-    detector_name=result['DET_NAME']
+    TES = result['TES']
+    asic = result['ASIC']
+    detector_name = result['DET_NAME']
 
-    all_T=result['all temperatures']
-    P=result['P']
-    T=result['T']
+    all_T = result['all temperatures']
+    all_P = result['all P']
+    P = result['P']
+    T = result['T']
 
-    NEP=result['NEP']
-    K=result['K']
-    T0=result['T0']
-    n=result['n']
-    G=result['G']
+    NEP = result['NEP']
+    K = result['K']
+    T0 = result['T0']
+    n = result['n']
+    G = result['G']
     
-    Tmin=min(all_T)
-    Tmax=max(all_T)
-    T_span=Tmax-Tmin
+    Tmin = result['Tmin']
+    Tmax = result['Tmax']
+    T_span = Tmax-Tmin
     # add 10% to the plot edges
-    plot_T_min=Tmin - 0.1*T_span
-    plot_T_max=Tmax + 0.1*T_span
-    T_stepsize=1.1*T_span/100
+    plot_T_min = Tmin - 0.1*T_span
+    plot_T_max = Tmax + 0.1*T_span
+    T_stepsize = 1.1*T_span/100
 
     if NEP is None:
         txt='NEP estimate is not possible'
@@ -538,18 +580,17 @@ def plot_TES_NEP(qplist,TES,xwin=True):
             txt+=' ERROR!  T$_0$<300 mK'
         txt+='\nn=%.3f' % n
         txt+='\nG=%.4e' % G
-        txt+='\nNEP=%.4e at T$_{bath}$=300mK' % NEP
+        txt+='\nNEP=%.4e at T$_{bath}$=350mK' % NEP
             
     
 
     pngname='QUBIC_Array-%s_TES%03i_ASIC%i_NEP.png' % (detector_name,TES,asic)
-    figsize=qplist[0].figsize
     ttl='QUBIC Array %s, ASIC %i, TES #%i: NEP' % (detector_name,asic,TES)
     if xwin:plt.ion()
     else:
         plt.close('all')
         plt.ioff()
-    fig=plt.figure(figsize=figsize)
+    fig=plt.figure(figsize=FIGSIZE)
     fig.canvas.set_window_title('plt: '+ttl)
 
     ax=plt.gca()
@@ -560,7 +601,10 @@ def plot_TES_NEP(qplist,TES,xwin=True):
     plt.ylabel('Power / Watt')
     P_span=plot_P_max-plot_P_min
     text_y=plot_P_min+0.5*P_span
-    plt.plot(T,P,linestyle='none',marker='D')
+    if result['fit points'] == 'all':
+        plt.plot(all_T,all_P,ls='none',marker='D')
+    else:
+        plt.plot(T,P,ls='none',marker='D')
     if not NEP is None: plt.plot(fit_T,fit_P,color='red')
     plt.text(Tmin,text_y,txt,fontsize=14)
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
@@ -568,22 +612,23 @@ def plot_TES_NEP(qplist,TES,xwin=True):
     else:plt.close('all')
     return result
 
-def plot_NEP_histogram(qplist,NEPresults=None,xwin=True):
+def plot_NEP_histogram(fplist,asic,NEPresults=None,xwin=True):
     '''
     plot the histogram of the NEP calculations
     '''
-    if not verify_temperature_arguments(qplist,1):return None
-
+    if not verify_temperature_arguments(fplist,1,asic):return None
+    asic_idx = asic - 1
+    
     # find the data at 300mK
     go300=None
-    for go in qplist:
-        if go.temperature>=0.3-temperature_precision and go.temperature<=0.3+temperature_precision:
+    for fp in fplist:
+        go = fp.asic_list[asic_idx]
+        if go300 is None and is_300mK_measurement(go):
             go300=go
     if go300 is None:
-        go300=qplist[-1]
+        go300=fplist[-1].asic_list[asic_idx]
         
-    asic=go300.asic
-    datadate=go.obsdate
+    datadate=fplist[0].asic_list[asic_idx].obsdate
     detector_name=go300.detector_name
 
     # generate the results if not already done
@@ -602,26 +647,25 @@ def plot_NEP_histogram(qplist,NEPresults=None,xwin=True):
     txt='NEP$_\mathrm{mean}=%.4f \\times 10^{-17}W/\sqrt{\mathrm{Hz}}$' % (1e17*NEPmean)
     
     pngname='QUBIC_TES_ASIC%i_NEP_histogram.png' % asic
-    figsize=qplist[0].figsize
     ttl='QUBIC TES ASIC %i NEP' % asic
     ttl+='\nhistogram of %i TES\ndata taken %s' % (nNEP,datadate.strftime('%Y-%m-%d'))
     if xwin:plt.ion()
     else:
         plt.close('all')
         plt.ioff()
-    fig=plt.figure(figsize=figsize)
+    fig=plt.figure(figsize=FIGSIZE)
     fig.canvas.set_window_title('plt: '+ttl)
 
     ax=plt.gca()
     plt.title(ttl)
-    plt.xlabel('NEP  /  ${W}/\sqrt{Hz}$')
-    plt.ylabel('Number per bin')
+    ax.set_xlabel('NEP  /  ${W}/\sqrt{Hz}$')
+    ax.set_ylabel('Number per bin')
 
     hist,binedge=np.histogram(NEP_estimate,bins=10)
     # np.histogram returns the bin edges.  change this to the bin centres
     bincentre = (binedge[:-1] + binedge[1:]) / 2
     width = 0.7 * (binedge[1] - binedge[0])
-    plt.bar(bincentre, hist, align='center',width=width)
+    ax.bar(bincentre, hist, align='center',width=width)
 
     bin_span=binedge[-1] - binedge[0]
     plot_bin_min=binedge[0]-0.1*bin_span
@@ -631,38 +675,43 @@ def plot_NEP_histogram(qplist,NEPresults=None,xwin=True):
     n_max=max(hist)
     ax.set_ylim(0,n_max+1)
 
-    text_x=binedge[0]
-    text_y=n_max-1.5
-    plt.text(text_x,text_y,txt,fontsize=16)
-    plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
-    if xwin:plt.show()
+    ax.text(0.01,0.99,txt,ha='left',va='top',fontsize=16,transform=ax.transAxes)
+    fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+    if xwin:fig.show()
     else:plt.close('all')
     return
             
-def make_TES_NEP_tex_report(qplist,NEPresults=None,refresh=True):
+def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
     '''
     make a LaTeX source file for a test report of NEP estimates
     the input arguments are a list of qubicpack objects with the I-V data at different temperatures
     and a list of results from plot_TES_NEP()
     '''
-    if not verify_temperature_arguments(qplist,1):return None
-
+    if not verify_temperature_arguments(fplist,1,asic):return None
+    asic_idx = asic - 1
+    
     # find the data at 300mK
     go300=None
     datelist=''
-    for go in qplist:
-        datelist+='\n\\item %.3fmK on %s' % (1000*go.temperature,go.obsdate.strftime('%Y-%m-%d %H:%M:%S'))
-        if go.temperature>=0.3-temperature_precision and go.temperature<=0.3+temperature_precision:
+    for fp in fplist:
+        go = fp.asic_list[asic_idx]
+        datelist+='\n\\item %.3fmK on %s'\
+            % (1000*go.temperature,go.obsdate.strftime('%Y-%m-%d %H:%M:%S'))
+        if go300 is None and is_300mK_measurement(go):
             go300=go
     if go300 is None:
-        go300=qplist[-1]
-        
-    asic=go300.asic
+        go300=fplist[-1].asic_list[asic_idx]
+
+    print('300mK results from %s, Tbath=%.1fmK'\
+          % (go300.obsdate.strftime('%Y-%m-%d %H:%M:%S'),go300.temperature*1000))
     observer=go300.observer.replace('<','$<$').replace('>','$>$')
     detector_name=go300.detector_name
+    show_extra_columns = True
+    if go300.transdic is None:
+        show_extra_columns = False
     
     # generate the plots if not already done
-    if NEPresults is None:NEPresults=make_TES_NEP_resultslist(qplist)
+    if NEPresults is None:NEPresults=make_TES_NEP_resultslist(fplist,asic)
 
     NEP_estimate=[]
     TESlist=[]
@@ -696,13 +745,17 @@ def make_TES_NEP_tex_report(qplist,NEPresults=None,refresh=True):
     h.write('\\settowidth{\\cflen}{carbon}\n')
     h.write('\\newcommand{\\openloopheading}{\n\\begin{minipage}[t]{\\openlooplen}\nopen\\\\\nloop\n\\end{minipage}\n}\n')
     h.write('\\newcommand{\\cfheading}{\n\\begin{minipage}[t]{\\cflen}\ncarbon\\\\\nfibre\n\\end{minipage}\n}\n')
+
+    cfibre_ack = 'The carbon fibre measurements are from Sophie Henrot Versill\\a\'e, see \\url{http://qubic.in2p3.fr/wiki/pmwiki.php/TD/P73TestWithACarbonFiberSource}.'
+    openloop_ack = 'Results of the open loop test and the room temperature measurements are from Damien Pr\\^ele.'
+    
     
     h.write('\\begin{document}\n')
     h.write('\\begin{center}\n')
     h.write('QUBIC TES Report\\\\\n')
     h.write('NEP estimates\\\\\n')
     h.write(go300.obsdate.strftime('data from %Y-%m-%d\\\\\n'))
-    h.write('compiled by %s\\\\\nusing QubicPack: \\url{https://github.com/satorchi/qubicpack}\n' % observer)
+    h.write('compiled by %s\\\\\nusing QubicPack: \\url{https://github.com/satorchi/qubicpack}\\\\\n' % observer)
     h.write(dt.datetime.utcnow().strftime('this report compiled %Y-%m-%d %H:%M UTC\\\\\n'))
     h.write('\\end{center}\n')
 
@@ -713,7 +766,7 @@ def make_TES_NEP_tex_report(qplist,NEPresults=None,refresh=True):
     h.write('\\item Array %s\n' % detector_name)
     h.write('\\item ASIC %i\n' % asic)
     h.write('\\item NEP estimated for %i TES out of %i\n' % (nNEP,len(NEPresults)))
-    h.write('\\item average NEP=%.2f $\\times10^{-17}$ W / $\\sqrt{\\rm Hz}$\n' % (NEPmean*1e17))
+    h.write('\\item average NEP=%.2f $\\times10^{-17}$ W / $\\sqrt{\\mathrm{Hz}}$\n' % (NEPmean*1e17))
     h.write('\\item data from:\n\\begin{itemize}\n')
     h.write(datelist)
     h.write('\n\\end{itemize}\n')
@@ -730,28 +783,39 @@ def make_TES_NEP_tex_report(qplist,NEPresults=None,refresh=True):
 
     png='QUBIC_TES_ASIC%i_NEP_histogram.png' % asic
     if refresh or not os.path.exists(png):
-        plot_NEP_histogram(qplist,NEPresults,xwin=False)                           
+        plot_NEP_histogram(fplist,asic,NEPresults,xwin=False)                           
 
     if os.path.exists(png):
        h.write('\n\\noindent\\includegraphics[width=0.9\\linewidth,clip]{%s}' % png)
        h.write('\n\\clearpage\n')
        
     nrows=nNEP
-    colfmt='|r|r|r|r|r|l|l|l|r|'
-    headline='\\multicolumn{1}{|c|}{TES} & '\
-              '\\multicolumn{1}{|c|}{pix} & '\
-              '\\multicolumn{1}{c|}{V$_{\\rm turnover}$} & '\
-              '\\multicolumn{1}{c|}{R$_1$} & '\
-              '\\multicolumn{1}{c|}{R$_{\\rm 300K}$} & '\
-              '\\multicolumn{1}{c|}{\\openloopheading} &'\
-              '\\multicolumn{1}{c|}{\\cfheading} &'\
-              '\\multicolumn{1}{c|}{comment} & '\
-              '\\multicolumn{1}{c|}{NEP}'
+    if show_extra_columns:
+        colfmt='|r|r|r|r|r|l|l|l|r|'
+        headline='\\multicolumn{1}{|c|}{TES} & '\
+            '\\multicolumn{1}{|c|}{pix} & '\
+            '\\multicolumn{1}{c|}{V$_\\mathrm{turnover}$} & '\
+            '\\multicolumn{1}{c|}{R$_1$} & '\
+            '\\multicolumn{1}{c|}{R$_\\mathrm{300K}$} & '\
+            '\\multicolumn{1}{c|}{\\openloopheading} &'\
+            '\\multicolumn{1}{c|}{\\cfheading} &'\
+            '\\multicolumn{1}{c|}{comment} & '\
+            '\\multicolumn{1}{c|}{NEP}'
+    else:
+        colfmt='|r|r|r|r|l|r|'
+        headline='\\multicolumn{1}{|c|}{TES} & '\
+            '\\multicolumn{1}{|c|}{pix} & '\
+            '\\multicolumn{1}{c|}{V$_\\mathrm{turnover}$} & '\
+            '\\multicolumn{1}{c|}{R$_1$} & '\
+            '\\multicolumn{1}{c|}{comment} & '\
+            '\\multicolumn{1}{c|}{NEP}'
     h.write('\\noindent\\begin{longtable}{%s}\n' % colfmt)
     h.write('\\caption{Summary Table for TES\\\\\n')
-    h.write('The carbon fibre measurements are from Sophie Henrot Versill\\a\'e, see \\url{http://qubic.in2p3.fr/wiki/pmwiki.php/TD/P73TestWithACarbonFiberSource}.\\\\\n')
-    h.write('Results of the open loop test and the room temperature measurements are from Damien Pr\\^ele}\\\\\n')
-    h.write('\\hline\n')
+    if show_extra_columns:
+        h.write(cfibre_ack)
+        h.write('\\\\\n')
+        h.write(openloop_ack)
+    h.write('}\\\\\n\\hline\n')
     h.write(headline+'\\\\ \n')
     h.write('\\hline\\endhead\n')
     h.write('\\hline\\endfoot\n')
@@ -771,23 +835,23 @@ def make_TES_NEP_tex_report(qplist,NEPresults=None,refresh=True):
         h.write('\n\\clearpage')
         pngIV ='QUBIC_Array-%s_TES%03i_ASIC%i_I-V_Temperatures.png' % (detector_name,TES,asic)
         if refresh or not os.path.exists(pngIV):
-            res=plot_TES_temperature_curves(qplist,TES,plot='I',xwin=False)
+            res=plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=False)
 
         pngPV ='QUBIC_Array-%s_TES%03i_ASIC%i_P-V_Temperatures.png' % (detector_name,TES,asic)
         if refresh or not os.path.exists(pngPV):
-            res=plot_TES_temperature_curves(qplist,TES,plot='P',xwin=False)
+            res=plot_TES_temperature_curves(fplist,TES,asic,plot='P',xwin=False)
 
         pngRP ='QUBIC_Array-%s_TES%03i_ASIC%i_R-V_Temperatures.png' % (detector_name,TES,asic)
         if refresh or not os.path.exists(pngRP):
-            res=plot_TES_temperature_curves(qplist,TES,plot='R',xwin=False)
+            res=plot_TES_temperature_curves(fplist,TES,asic,plot='R',xwin=False)
 
         pngTurnover='QUBIC_TES%03i_ASIC%i_Turnover_Temperature.png' % (TES,asic)
         if refresh or not os.path.exists(pngTurnover):
-            res=plot_TES_turnover_temperature(qplist,TES,xwin=False)
+            res=plot_TES_turnover_temperature(fplist,TES,asic,xwin=False)
             
         pngNEP='QUBIC_Array-%s_TES%03i_ASIC%i_NEP.png' % (detector_name,TES,asic)
         if refresh or not os.path.exists(pngNEP):
-            res=plot_TES_NEP(qplist,TES,xwin=False)
+            res=plot_TES_NEP(fplist,TES,asic,xwin=False)
 
         
         pngFiles=[pngIV,pngPV,pngRP,pngTurnover,pngNEP]
@@ -799,38 +863,21 @@ def make_TES_NEP_tex_report(qplist,NEPresults=None,refresh=True):
     h.close()
     return texfilename
 
-def rt_analysis(TES,datlist,xwin=True):
+def rt_analysis(datlist,TES,asic,xwin=True):
     '''
     do the analysis to find the critical temperature (resistance vs. temperature)
-    datlist is a list of qubicpack objects containing timeline data
+    datlist is a list of qubicpack.qubicfp objects containing timeline data
     '''
-
-    if not isinstance(TES,int):
-        print('ERROR!  Please enter a valid TES number.')
-        return None
-
-    if not isinstance(datlist,list):
-        if not isinstance(datlist,qp):
-            print('ERROR! datlist should be a list of qubicpack objects.')
-            return None
-        datlist=[datlist]
-
-    if not isinstance(datlist[0],qp):
-        print('ERROR! datlist should be a list of qubicpack objects.')
-        return None
+    if not verify_temperature_arguments(fplist,1,asic):return None
+    asic_idx = asic - 1
 
     # get all the results, including for multiple timelines in a single qp object
-    asic=None
     detector_name=None
     reslist=[]
-    for go in datlist:
+    for fs in datlist:
+        go = fp.asic_list[asic_idx]
         if not go.exist_timeline_data():continue
-        if asic is None: asic=go.asic
-        if go.asic!=asic:
-            print('ERROR! These data are not for the same ASIC!')
         if detector_name is None:detector_name=go.detector_name
-        if go.detector_name!=detector_name:
-            print('ERROR! These data are not for the same detector array!')
             
         ntimelines=go.ntimelines()
         for idx in range(ntimelines):
@@ -845,8 +892,6 @@ def plot_rt_analysis(reslist,xwin=True):
     plot the results of the R-T analysis
     we need to run fit_timeline() for this!
     '''
-    global FIGSIZE
-    
     TES=reslist[0]['TES']
     detector_name=reslist[0]['DET_NAME']
     asic=reslist[0]['ASIC']

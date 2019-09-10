@@ -252,6 +252,7 @@ def plot_iv_focalplane(self,labels=True):
     tot_ngood = 0
     tot_npixels = 0
     for idx,asic_obj in enumerate(self.asic_list):
+        obsdates.append(asic_obj.obsdate)
         if asic_obj is not None and asic_obj.exist_iv_data():
             key = 'ASIC%i' % (idx+1)
             
@@ -259,7 +260,6 @@ def plot_iv_focalplane(self,labels=True):
 
             bias,adu = asic_obj.best_iv_curve()
             args[key] = adu
-            obsdates.append(asic_obj.obsdate)
 
             keyx = '%s x-axis' % key
             args[keyx] = bias
@@ -277,10 +277,12 @@ def plot_iv_focalplane(self,labels=True):
                                    (asic_obj.NPIXELS-ngood,100.0*ngood/asic_obj.NPIXELS))
             tot_npixels += asic_obj.NPIXELS
 
-
-    subttl_list.append('overall yield %i/%i = %.1f%%' % (tot_ngood,tot_npixels,100.0*tot_ngood/tot_npixels))
+    if tot_npixels>0:
+        subttl_list.append('overall yield %i/%i = %.1f%%' % (tot_ngood,tot_npixels,100.0*tot_ngood/tot_npixels))
     args['subtitle'] = '\n'.join(subttl_list)
-    args['obsdate'] = min(obsdates)
+
+    if len(obsdates)>0:
+        args['obsdate'] = min(obsdates)
 
     return plot_fp(args)
 

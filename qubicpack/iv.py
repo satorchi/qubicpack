@@ -1075,7 +1075,7 @@ def plot_iv(self,TES=None,multi=False,xwin=True,best=True):
         
 
     # add room temp results, if loaded
-    if not self.transdic is None:
+    if self.transdic is not None:
         PIX=tes2pix(TES,self.asic)
         # self.debugmsg('table lookup for PIX=%i' % PIX)
         entry=self.lookup_TEStable(key='PIX',value=PIX)
@@ -1931,7 +1931,10 @@ def iv_tex_table_entry(self,TES):
         cf=entry['CarbonFibre']
 
     comment_entry=str('\\comment{%s}' % comment)
-    rowstr='%3i & %3i & %s & %s & %s & %s & %s & %s' % (TES, PIX, turnover, R1str, R300str, openloop, cf, comment_entry)
+    if self.transdic is None:
+        rowstr='%3i & %3i & %s & %s & %s' % (TES, PIX, turnover, R1str, comment_entry)
+    else:
+        rowstr='%3i & %3i & %s & %s & %s & %s & %s & %s' % (TES, PIX, turnover, R1str, R300str, openloop, cf, comment_entry)
     return rowstr
 
 def make_iv_tex_report(self,tableonly=False):
@@ -2024,15 +2027,25 @@ def make_iv_tex_report(self,tableonly=False):
 
     ncols=1
     nrows=int(self.NPIXELS/ncols)
-    colfmt='|r|r|r|r|r|l|l|l|'
-    headline1='\\multicolumn{1}{|c|}{TES} & '\
-               '\\multicolumn{1}{|c|}{pix} & '\
-               '\\multicolumn{1}{c|}{V$_{\\rm turnover}$} & '\
-               '\\multicolumn{1}{c|}{R$_1$} & '\
-               '\\multicolumn{1}{c|}{R$_{\\rm 300K}$} & '\
-               '\\multicolumn{1}{c|}{\\openloopheading} &'\
-               '\\multicolumn{1}{c|}{\\cfheading} &'\
-               '\\multicolumn{1}{c|}{comment}'
+    if self.transdic is not None:
+        colfmt='|r|r|r|r|r|l|l|l|'
+        headline1='\\multicolumn{1}{|c|}{TES} & '\
+            '\\multicolumn{1}{|c|}{pix} & '\
+            '\\multicolumn{1}{c|}{V$_{\\rm turnover}$} & '\
+            '\\multicolumn{1}{c|}{R$_1$} & '\
+            '\\multicolumn{1}{c|}{R$_{\\rm 300K}$} & '\
+            '\\multicolumn{1}{c|}{\\openloopheading} &'\
+            '\\multicolumn{1}{c|}{\\cfheading} &'\
+            '\\multicolumn{1}{c|}{comment}'
+    else:
+        colfmt='|r|r|r|r|l|'
+        headline1='\\multicolumn{1}{|c|}{TES} & '\
+            '\\multicolumn{1}{|c|}{pix} & '\
+            '\\multicolumn{1}{c|}{V$_{\\rm turnover}$} & '\
+            '\\multicolumn{1}{c|}{R$_1$} & '\
+            '\\multicolumn{1}{c|}{comment}'
+        
+        
     headline=''
     headline+=headline1
     if ncols>1:

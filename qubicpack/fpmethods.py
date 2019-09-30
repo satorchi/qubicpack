@@ -34,7 +34,8 @@ def assign_defaults(self):
     self.hk  =  {}
     self.hornswitch_files = None
     self.detector_name = 'undefined'
-    self.dataset_name=None
+    self.dataset_name = None
+    self.datadir = None
     self.assign_fitsblurbs()
     return
 
@@ -55,8 +56,34 @@ def infotext(self):
     for asic_obj in self.asic_list:
         if asic_obj is not None:
             txt.append(asic_obj.infotext())
-    infotxt = '\n'.join(txt)
-    return infotxt
+    ttl = '\n'.join(txt)
+    
+    if 'CALSOURCE-CONF' in self.hk.keys():
+        ttl += '\n'
+        calconf = self.hk['CALSOURCE-CONF']
+        if int(calconf['Modulator'][0])==1:
+            if int(calconf['CalSource'][0])==0:
+                ttl += 'Calsource OFF!'
+            else:
+                ttl += 'Calsource frequency: %.2fGHz' % calconf['Cal_freq'][0]
+
+            modshapes = ['square wave','sinusoidal','DC']
+            shape = modshapes[int(calconf['Mod_shap'][0])]
+            if shape=='DC':                
+                ttl += 'Modulation: DC, amplitude %.1fV, offset %.1fV' % (calconf['Mod_ampl'][0],
+                                                                          calconf['Mod_offs'][0])
+            else:
+                ttl += 'Modulation: %.1fHz, %s, amplitude %.1fV, offset %.1fV' % (calconf['Mod_freq'][0],
+                                                                                  shape,
+                                                                                  calconf['Mod_ampl'][0],
+                                                                                  calconf['Mod_offs'][0])
+            if shape=='square wave':
+                ttl += ', duty cycle: %.1f\%' % calconf['Mod_duty'][0]
+
+            if int(calconf['Amplifier'][0])==0:
+                ttl += ' ERROR: Amplifier OFF!'
+
+    return ttl
 
     
 def read_qubicstudio_science_fits(self,hdu):

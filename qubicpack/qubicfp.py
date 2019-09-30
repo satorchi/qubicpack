@@ -49,7 +49,6 @@ class qubicfp:
         elevation,\
         bias_phase,\
         calsource,\
-        infotext,\
         qubicstudio_filetype_truename,\
         azel_etc
 

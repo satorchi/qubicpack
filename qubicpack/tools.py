@@ -235,7 +235,6 @@ def read_fits(self,filename):
         self.printmsg('ERROR! file not found: %s' % filename)
         return None
 
-    self.dataset_name = os.path.basename(filename).replace('.fits','')
     hdulist=pyfits.open(filename)
     nhdu=len(hdulist)
 
@@ -244,6 +243,7 @@ def read_fits(self,filename):
        and ('TELESCOP' in hdulist[0].header.keys())\
        and (hdulist[0].header['TELESCOP'].strip()=='QUBIC'):
         self.printmsg('Reading QubicPack file: %s' % filename)
+        self.dataset_name = os.path.basename(filename).replace('.fits','')
         self.read_qubicpack_fits(hdulist)
         hdulist.close()
         return True
@@ -348,6 +348,13 @@ def find_hornswitch(self,datadir):
     try to find hornswitch files corresponding to the observation date
     '''
     self.printmsg('trying to find hornswitch data corresponding to %s' % self.dataset_name,verbosity=2)
+    if self.obsdate is None:
+        self.printmsg('No observation date')
+        return None
+
+    if self.endobs is None:
+        self.printmsg('No end observation date')
+        return None
 
     # hornswitch directory is normally two up
     hornswitch_dir = '%s/hornswitch' % os.path.dirname(os.path.dirname(datadir))
@@ -404,6 +411,8 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     subdir['MMR'] = 'Hks'
     subdir['hkintern'] = 'Hks'
     subdir['MGC'] = 'Hks'
+    subdir['calsource'] = 'Hks'
+    subdir['calsource-conf'] = 'Hks'
     
     pattern = OrderedDict()
     if asic=='ALL':
@@ -416,6 +425,8 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     pattern['hkintern'] = '%s/%s/hk-intern-*.fits' % (datadir,subdir['hkintern'])
     pattern['MMR'] = '%s/%s/hk-MMR-*.fits' % (datadir,subdir['MMR'])
     pattern['MGC'] = '%s/%s/hk-MGC-*.fits' % (datadir,subdir['MGC'])
+    pattern['calsource-conf'] = '%s/%s/calibConf-*.fits' % (datadir,subdir['calsource'])
+    pattern['calsource'] = '%s/%s/calibData-*.fits' % (datadir,subdir['calsource'])
 
     # check for files, and read if found
     for filetype in pattern.keys():
@@ -444,8 +455,9 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
                 asic_obj.temperature = self.temperature
             
 
-    # now try to find the corresponding calsource file
-    self.find_calsource(datadir)
+    # now try to find the corresponding calsource file, if necessary
+    if 'CALSOURCE' not in self.hk.keys():
+        self.find_calsource(datadir)
 
     # and try to find corresponding hornswitch files
     self.hornswitch_files = self.find_hornswitch(datadir)
@@ -458,8 +470,8 @@ def read_calsource_fits(self,hdu):
     '''
     
     self.hk['CALSOURCE'] = {}
-    self.hk['CALSOURCE']['ComputerDate'] = hdu.data.field(0)
-    self.hk['CALSOURCE']['amplitude'] = hdu.data.field(1)
+    self.hk['CALSOURCE']['timestamp'] = hdu.data.field(0)
+    self.hk['CALSOURCE']['Value'] = hdu.data.field(1)
     
     return
 
@@ -475,7 +487,15 @@ def read_qubicstudio_fits(self,hdulist):
     keys = hdu.header.keys()
 
     # what kind of QubicStudio file?
-    QS_filetypes = ['ASIC_SUMS','CONF_ASIC1','EXTERN_HK','ASIC_RAW','INTERN_HK','MMR_HK','MGC_HK','CALSOURCE']
+    QS_filetypes = ['ASIC_SUMS',
+                    'CONF_ASIC1',
+                    'EXTERN_HK',
+                    'ASIC_RAW',
+                    'INTERN_HK',
+                    'MMR_HK',
+                    'MGC_HK',
+                    'CALSOURCE',
+                    'CALSOURCE-CONF']
     extname = hdu.header['EXTNAME'].strip()
     if extname not in QS_filetypes:
         self.printmsg('ERROR! Unrecognized QubicStudio FITS file: %s' % extname)
@@ -501,11 +521,6 @@ def read_qubicstudio_fits(self,hdulist):
 
     if extname=='EXTERN_HK':
         chk = self.read_qubicstudio_hkextern_fits(hdu)
-        hdulist.close()
-        return chk
-
-    if extname=='CALSOURCE':
-        chk = self.read_calsource_fits(hdu)
         hdulist.close()
         return chk
 
@@ -1205,23 +1220,25 @@ def bias_phase(self):
 def calsource(self):
     '''
     return the calibration source data
-    '''
-    if 'CALSOURCE' in self.hk.keys():
-        t_src = self.hk['CALSOURCE']['ComputerDate']
-        data_src = self.hk['CALSOURCE']['amplitude']
-        return t_src,data_src
-
-    return None
+    '''    
+    if 'CALSOURCE' not in self.hk.keys():
+        return None
+    
+    t_src = self.hk['CALSOURCE']['timestamp']
+    data_src = self.hk['CALSOURCE']['Value']
+    return t_src,data_src
 
 def infotext(self,TES=None):
     '''
     information to put on plots as a subtitle
     '''
+    
     ttl = self.obsdate.strftime('%Y-%m-%d %H:%M:%S')
     if self.detector_name!='undefined':
         ttl += ' Array %s' % self.detector_name
 
-    ttl += ' ASIC#%i' % self.asic
+    if self.__object_type__!='qubicfp':
+        ttl += ' ASIC#%i' % self.asic
 
     if TES is not None:
         ttl += ' TES#%03i' % TES

@@ -157,6 +157,7 @@ def tes2index(TES,ASIC):
 
     asic_idx = np.where(TES_locations.ASIC == ASIC)
     entry = TES_locations[asic_idx]
+    if len(entry)==0: return None
     return entry.index[0]
 
             

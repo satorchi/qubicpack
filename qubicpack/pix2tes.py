@@ -133,8 +133,8 @@ def pix2tes(PIX, asic=None):
             asic_idx = idx
             break
     if asic_idx is None:
-        print('ERROR! invalid Pixel number request: %i' % PIX)
-        return None
+        if PIX!=0: print('ERROR! invalid Pixel number request: %i' % PIX)
+        return (None,None)
 
     idx_tuple = np.where(TES2PIX[asic_idx]==PIX)
     return (idx_tuple[0][0]+1, asic_idx+1)

@@ -24,7 +24,7 @@ MAINTAINER_EMAIL = 'satorchi@apc.in2p3.fr'
 URL              = 'https://github.com/satorchi/qubicpack'
 LICENSE          = 'GPL'
 DOWNLOAD_URL     = 'https://github.com/satorchi/qubicpack'
-VERSION          = '2.0.0'
+VERSION          = '3.0'
 
 with open('README.md') as f:
     long_description = f.read()

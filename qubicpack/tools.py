@@ -1183,6 +1183,23 @@ def elevation(self):
     el = (elRaw.astype(np.int) - offset) * 360.0/2**16
     return el
 
+def hwp_position(self):
+    '''
+    return the HWP position timeline
+    '''
+    hktype = 'INTERN_HK'
+    if hktype not in self.hk.keys():
+        self.printmsg('No internal housekeeping data!')
+        return None
+
+    key = 'HWP-Position'
+    if key not in self.hk[hktype].keys():
+        self.printmsg('No HWP data!')
+        return None
+
+    hwp_pos = self.hk[hktype][key]
+    return hwp_pos
+
 def bias_phase(self):
     '''
     return the bias voltage phase when in Sine mode

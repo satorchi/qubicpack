@@ -78,6 +78,7 @@ class qubicpack:
         pps,\
         azimuth,\
         elevation,\
+        hwp_position,\
         bias_phase,\
         calsource,\
         infotext,\

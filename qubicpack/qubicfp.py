@@ -47,6 +47,7 @@ class qubicfp:
         pps,\
         azimuth,\
         elevation,\
+        hwp_position,\
         bias_phase,\
         calsource,\
         qubicstudio_filetype_truename,\

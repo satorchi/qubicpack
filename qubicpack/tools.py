@@ -1300,6 +1300,8 @@ def azel_etc(self,TES=None):
 
     t_azel = self.timeaxis(datatype='hk',axistype='pps')
     retval['t_azel'] = t_azel
+    retval['t_hk'] = t_azel
+    retval['hwp_position'] = self.hwp_position()
 
     calsource = self.calsource()
     if calsource is None:
@@ -1322,7 +1324,6 @@ def azel_etc(self,TES=None):
         retval['data'] = data
         return retval
 
-    
 
     for idx,asic_obj in enumerate(self.asic_list):
         asic_no = idx + 1

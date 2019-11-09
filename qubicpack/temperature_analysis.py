@@ -66,7 +66,10 @@ def print_asic_datlist(datlist,obsdate=None,temperature=None):
             for t_idx in range(ntimelines):
                 printit=True
                 T=go.tdata[t_idx]['TES_TEMP']
-                d=go.tdata[t_idx]['DATE-OBS']
+                if 'BEG-OBS' in go.tdata[t_idx].keys():
+                    d=go.tdata[t_idx]['BEG-OBS']
+                else:
+                    d=go.tdata[t_idx]['DATE-OBS']
                 if not obsdate is None and d!=obsdate:
                     printit=False
                 if not temperature is None and not (T<temperature+0.001 and T>temperature-0.001):

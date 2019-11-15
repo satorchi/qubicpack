@@ -848,7 +848,7 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
         if refresh or not os.path.exists(pngRP):
             res=plot_TES_temperature_curves(fplist,TES,asic,plot='R',xwin=False)
 
-        pngTurnover='QUBIC_TES%03i_ASIC%i_Turnover_Temperature.png' % (TES,asic)
+        pngTurnover='QUBIC_Array-%s_TES%03i_ASIC%i_Turnover_Temperature.png' % (detector_name,TES,asic)
         if refresh or not os.path.exists(pngTurnover):
             res=plot_TES_turnover_temperature(fplist,TES,asic,xwin=False)
             

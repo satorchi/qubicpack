@@ -166,7 +166,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
     This is determined from the sample period and the number of points
     or, possibly given as a list of datetime
     '''
-    self.printmsg('call to timeline_timeaxis',verbosity=4)
+    self.printmsg('DEBUG: call to timeline_timeaxis with axistype=%s' % axistype,verbosity=4)
     
     if not self.exist_timeline_data():return None
     if timeline_index is None:timeline_index = 0
@@ -187,7 +187,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
         if 'ASIC_SUMS' in self.hk.keys():
             pps = self.pps(hk='ASIC_SUMS')
             gps = self.gps(hk='ASIC_SUMS')
-            if gps is None or gps.min()<1494486000 or gps.max()<1494486000:
+            if gps is None or gps.min()<1494486000 or gps.max()<1494486000 or len(np.unique(gps))<2:
                 self.printmsg('ERROR! Bad GPS data.  Using sample rate to make a time axis.',verbosity=2)
                 return time_axis_index
             time_axis = self.pps2date(pps,gps)
@@ -231,7 +231,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None):
         return None
 
     if datatype=='ASIC_SUMS':
-        self.printmsg('DEBUG: calling timeline_timeaxis from timeaxis()',verbosity=4)
+        self.printmsg('DEBUG: calling timeline_timeaxis from timeaxis() with axistype=%s' % axistype,verbosity=4)
         return self.timeline_timeaxis(axistype=axistype)
 
     # otherwise, return the time axis from one of the housekeeping sections
@@ -259,7 +259,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None):
     return tstamp
     
 
-def determine_bias_modulation(self,TES,timeline_index=None):
+def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):
     '''
     determine the modulation of the bias voltage
     It should be close to the "bias_frequency" which is actually the period.
@@ -277,7 +277,8 @@ def determine_bias_modulation(self,TES,timeline_index=None):
     timeline_npts=len(timeline)
 
     sample_period=self.sample_period(timeline_index)
-    time_axis=self.timeline_timeaxis(timeline_index)
+    self.printmsg('DEBUG: calling timeline_timeaxis from determine_bias_modulation() with axistype=%s' % timeaxis, verbosity=4)
+    time_axis=self.timeline_timeaxis(timeline_index,axistype=timeaxis)
     measured_sample_period = (time_axis[-1] - time_axis[0])/(timeline_npts-1)
 
     # use the bias_phase if it exists
@@ -370,7 +371,10 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     warning_str = ''
     if 'WARNING' in keys and tdata['WARNING']:
         warning_str = '\n'.join(tdata['WARNING'])
-                                 
+
+    if 'R_FEEDBK' in keys:
+        self.Rfeedback = tdata['R_FEEDBK']
+        
     if 'NSAMPLES' in keys:
         self.nsamples = tdata['NSAMPLES']
         
@@ -400,7 +404,17 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             tempstr='unknown'
         else:
             tempstr=str('%.0f mK' % (1000*self.temperature))
-    subttl=str('Array %s, ASIC #%i, Pixel #%i, Temperature %s' % (self.detector_name,self.asic,tes2pix(TES,self.asic),tempstr))
+
+    fbstr = ''
+    if 'R_FEEDBK' in keys:
+        if tdata['FB_ONOFF']==1:
+            onoff = 'ON'
+        else:
+            onoff = 'OFF'
+        fbstr = ', Feedback Relay: %s with %.0fk$\Omega$' % (onoff,tdata['R_FEEDBK']*1e-3)
+        
+    subttl=str('Array %s, ASIC #%i, Pixel #%i, Temperature %s%s' %
+               (self.detector_name,self.asic,tes2pix(TES,self.asic),tempstr,fbstr))
     if warning_str: subttl += '\n'+warning_str
                                 
     if xwin: plt.ion()
@@ -417,7 +431,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     current=self.ADU2I(timeline) # uAmps
     timeline_npts=len(timeline)
 
-    self.printmsg('DEBUG: calling timeline_timeaxis from plot_timeline()',verbosity=4)
+    self.printmsg('DEBUG: calling timeline_timeaxis from plot_timeline() with axistype=%s' % timeaxis,verbosity=4)
     time_axis=self.timeline_timeaxis(timeline_index,axistype=timeaxis)
 
     fitparms=None
@@ -431,7 +445,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     peak1=time_axis[ipeak1]
     if plot_bias:
         if self.timeline_conversion is None:
-            self.timeline2adu(TES=TES,timeline_index=timeline_index)
+            self.timeline2adu(TES=TES,timeline_index=timeline_index,timeaxis=timeaxis)
 
         if self.timeline_conversion is None or self.min_bias is None or self.max_bias is None:
             plot_bias = False
@@ -587,11 +601,12 @@ def plot_timeline_physical_layout(self,
     return args
 
 
-def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.0):
+def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.0,timeaxis='pps'):
     '''
     transfer timeline data with I-V curves to the ADU matrix 
     this is done so that we can directly use all the I-V methods
     '''
+    self.printmsg('timeline2adu()',verbosity=4)
     if not self.exist_timeline_data():return None
     ntimelines=self.ntimelines()
     if timeline_index>=ntimelines:
@@ -602,7 +617,7 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
         self.printmsg('Please enter a TES which is the reference for extracting the bias timeline')
         return None
 
-    biasmod = self.determine_bias_modulation(TES,timeline_index)
+    biasmod = self.determine_bias_modulation(TES,timeline_index,timeaxis=timeaxis)
     ip0 = biasmod['ipeak0']
     ip1 = biasmod['ipeak1']
     peak0 = biasmod['peak0']
@@ -619,8 +634,8 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
     self.timeline_conversion['timeline_index']=timeline_index
     self.timeline_conversion['shift']=shift
     
-    self.printmsg('DEBUG: calling timeline_timeaxis from timeline2adu()',verbosity=4)
-    time_axis=self.timeline_timeaxis(timeline_index)
+    self.printmsg('DEBUG: calling timeline_timeaxis from timeline2adu() with axistype=%s' % timeaxis,verbosity=4)
+    time_axis=self.timeline_timeaxis(timeline_index,axistype=timeaxis)
     peak0=time_axis[ipeak0]
     if ipeak1<len(time_axis):
         peak1=time_axis[ipeak1]
@@ -666,15 +681,25 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
         
     self.min_bias=min(self.vbias)
     self.max_bias=max(self.vbias)
-    if 'BEG-OBS' in self.tdata[timeline_index].keys():
-        self.obsdate=self.tdata[timeline_index]['BEG-OBS']
+
+    tdata = self.tdata[timeline_index]
+    keys = tdata.keys()
+    if 'BEG-OBS' in keys:
+        self.obsdate=tdata['BEG-OBS']
     else:
-        self.obsdate=self.tdata[timeline_index]['DATE-OBS']
-    if 'TES_TEMP' in self.tdata[timeline_index].keys():
-        self.temperature=self.tdata[timeline_index]['TES_TEMP']
+        self.obsdate=tdata['DATE-OBS']
+    if 'TES_TEMP' in keys:
+        self.temperature=tdata['TES_TEMP']
     else:
         self.temperature=None
-    
+
+    if 'R_FEEDBK' in keys:
+        self.Rfeedback = tdata['R_FEEDBK']
+        
+    if 'NSAMPLES' in keys:
+        self.nsamples = tdata['NSAMPLES']
+        
+        
     npts=len(self.vbias)
     self.adu=np.empty((self.NPIXELS,npts))
     for idx in range(self.NPIXELS):
@@ -692,7 +717,7 @@ def model_timeline(self,t,period,phaseshift,offset,amplitude):
     ysine=offset + amplitude*np.sin( 2*np.pi * (t/period + phaseshift) )
     return ysine
     
-def fit_timeline(self,TES,timeline_index=None,ipeak0=None,ipeak1=None):
+def fit_timeline(self,TES,timeline_index=None,ipeak0=None,ipeak1=None,timeaxis='pps'):
     '''
     fit the timeline to a sine curve
     '''
@@ -716,11 +741,11 @@ def fit_timeline(self,TES,timeline_index=None,ipeak0=None,ipeak1=None):
     current=self.ADU2I(timeline)
     timeline_npts=len(timeline)
 
-    self.printmsg('DEBUG: calling timeline_timeaxis from fit_timeline()',verbosity=4)
-    time_axis=self.timeline_timeaxis(timeline_index)
+    self.printmsg('DEBUG: calling timeline_timeaxis from fit_timeline() with axistype=%s' % timeaxis,verbosity=4)
+    time_axis=self.timeline_timeaxis(timeline_index,axistype=timeaxis)
 
     # first guess;  use the peak search algorithm
-    biasmod = self.determine_bias_modulation(TES,timeline_index)
+    biasmod = self.determine_bias_modulation(TES,timeline_index,timeaxis=timeaxis)
     if biasmod is None:
         self.printmsg('ERROR! Could not determine bias modulation.',verbosity=2)
         return None

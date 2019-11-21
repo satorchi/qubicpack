@@ -186,7 +186,37 @@ def args_ok(self,TES=None,asic=None):
         return False
 
     return True
-    
+
+
+#### wrappers to return values
+def Rfeedback(self,asic=None):
+    '''
+    return the feedback resistance for a given asic
+    '''
+    if asic is None:
+        self.printmsg('Please enter an asic number')
+        return None
+
+    asic_idx = asic-1
+    return self.asic_list[asic_idx].Rfeedback
+
+def feedback_on(self,asic=None,timeline_index=0):
+    '''
+    return the state of the feedback relay On or Off
+    '''
+    if asic is None:
+        self.printmsg('Please enter an asic number')
+        return None
+
+    asic_idx = asic-1
+    asicobj = self.asic_list[asic_idx]
+    tdata = asicobj.tdata[timeline_index]
+    if 'FB_ONOFF' in tdata.keys():
+        if tdata['FB_ONOFF']==1:
+            return 'ON'
+        return 'OFF'
+    return 'UNKNOWN'
+
 
 #### timeline methods
 def sample_period(self,asic=None):

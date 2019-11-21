@@ -78,6 +78,8 @@ class qubicfp:
         read_qubicstudio_asic_fits,\
         read_qubicpack_fits,\
         args_ok,\
+        Rfeedback,\
+        feedback_on,\
         sample_period,\
         timeline,\
         timeline_array,\

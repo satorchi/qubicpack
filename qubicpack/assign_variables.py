@@ -36,6 +36,7 @@ def assign_defaults(self):
     self.FLL_P=None
     self.FLL_I=None
     self.FLL_D=None
+    self.Rfeedback=10e3 # 10kOhm, this is selectable between 10kOhm and 100kOhm (also called "relay" resistance)
     self.asic=None
     self.assign_integration_time()
     self.adu=None
@@ -123,7 +124,6 @@ def assign_constants(self):
     self.kBoltzmann=1.3806485279e-23
     self.Rshunt=10.e-3  # 10mOhm, mail from M.Piat to M.Salatino 2017-08-10
     self.Rbias =10.e3   # 10kOhm, mail from M.Piat to M.Salatino 2017-08-10
-    self.Rfeedback=10e3 # 10kOhm, this is selectable between 10kOhm and 100kOhm (also called "relay" resistance)
     self.figsize=(12.80,6.40)
     self.colours=['blue','green','red','cyan','magenta','yellow','black']
     self.Vinfinity=0.0 # used to calculate the I-V offset (force the line through 0,0)

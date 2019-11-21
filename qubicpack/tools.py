@@ -591,7 +591,11 @@ def read_qubicstudio_science_fits(self,hdu):
     # get the time axis
     computertime_idx = 0
     gpstime_idx = 1
-    self.hk[extname]['GPSDate'] = 1e-3*hdu.data.field(gpstime_idx)
+    gpstime = 1e-3*hdu.data.field(gpstime_idx)
+    self.hk[extname]['GPSDate'] = gpstime
+    if len(np.unique(gpstime))<2:
+        msg="ERROR!  Bad GPS data!"
+        tdata['WARNING'].append(msg)
 
     ppstime_idx = 2
     self.hk[extname]['PPS'] = hdu.data.field(ppstime_idx)
@@ -648,6 +652,10 @@ def read_qubicstudio_asic_fits(self,hdulist):
     gpstime_idx = 1
     dateobs = []
     timestamp = 1e-3*hdu.data.field(computertime_idx)
+    gpstime = 1e-3*hdu.data.field(gpstime_idx)
+    if len(np.unique(gpstime))<2:
+        msg="ERROR!  Bad GPS data!"
+        tdata['WARNING'].append(msg)
     npts = len(timestamp)
     for tstamp in timestamp:
         dateobs.append(dt.datetime.utcfromtimestamp(tstamp))

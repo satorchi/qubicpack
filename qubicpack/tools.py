@@ -705,6 +705,29 @@ def read_qubicstudio_asic_fits(self,hdulist):
         msg = 'WARNING! nsample changed during the measurement!'
         tdata['WARNING'].append(msg)
 
+    # Relay feedback resistance (bit0: on/off and bit1: 10kOhm/100kOhm)
+    onoff_list = []
+    rfb_list = []
+    relay_list = self.read_fits_field(hdu,'Relays state')
+    for val in relay_list:
+        onoff_list.append(val & 1)
+        rfb_bit = val >> 1 & 1
+        if rfb_bit==1:
+            rfb_list.append(100e3)
+        else:
+            rfb_list.append(10e3)
+            
+    tdata['RFB_LST'] = rfb_list
+    tdata['R_FEEDBK'] = rfb_list[-1]
+    self.Rfeedback = tdata['R_FEEDBK']
+    tdata['FB_LST'] =  onoff_list
+    tdata['FB_ONOFF'] = onoff_list[-1]
+    difflist1 = np.unique(rfb_list)
+    difflist2 = np.unique(onoff_list)
+    if len(difflist1)!=1 or len(difflist2)!=1:
+        msg = 'WARNING! Feedback Relay parameters changed during the measurement!'
+        tdata['WARNING'].append(msg)
+
     # read all the stuff in the asic file as an HK file
     return self.read_qubicstudio_hkfits(hdu)
 

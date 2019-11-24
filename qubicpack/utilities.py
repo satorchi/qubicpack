@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 '''
 $Id: utilities.py
 $auth: Steve Torchinsky <satorchi@apc.in2p3.fr>
@@ -10,7 +9,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
           permitted by law.
 
 common utilities used in the qubicpack classes
-(see also pix2tex.py)
+(see also pix2tes.py)
 '''
 from __future__ import division, print_function
 import sys,os

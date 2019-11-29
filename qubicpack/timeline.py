@@ -235,25 +235,33 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None):
         return self.timeline_timeaxis(axistype=axistype)
 
     # otherwise, return the time axis from one of the housekeeping sections
+    tstart = self.hk[datatype]['ComputerDate'][0]
+    tend   = self.hk[datatype]['ComputerDate'][-1]
+    span = tend - tstart
+    npts = len(self.hk[datatype]['ComputerDate'])
+    tindex = (span/npts)*np.arange(npts)
     if axistype.lower()=='index':
-        tstart = self.hk[datatype]['ComputerDate'][0]
-        tend   = self.hk[datatype]['ComputerDate'][-1]
-        span = tend - tstart
-        npts = len(self.hk[datatype]['ComputerDate'])
-        taxis = (span/npts)*np.arange(npts)
-        return taxis
+        return tindex
 
     if axistype.lower()=='computertime':
         return self.hk[datatype]['ComputerDate']
 
     # the only remaining option is pps
     pps = self.pps(hk=datatype)
-    if pps is None: return None
-    if pps.max() == 0: return None
+    if pps is None:
+        self.printmsg('No PPS.  Using index time instead')
+        return tindex
+    if pps.max() == 0:
+        self.printmsg('PPS is zero.  Using index time instead')
+        return tindex
 
     gps = self.gps(hk=datatype)
-    if gps is None: return None
-    if gps.max() == 0.0: return None
+    if gps is None:
+        self.printmsg('No GPS.  Using index time instead')
+        return tindex
+    if gps.max() == 0.0:
+        self.printmsg('GPS is zero.  Using index time instead')
+        return tindex
 
     tstamp = self.pps2date(pps,gps)
     return tstamp

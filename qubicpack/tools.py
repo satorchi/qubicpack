@@ -1335,12 +1335,8 @@ def azel_etc(self,TES=None):
     retval['hwp_position'] = self.hwp_position()
 
     calsource = self.calsource()
-    if calsource is None:
-        t_src = -1
-        data_src = -1
-    else:
-        t_src = calsource[0]
-        data_src = calsource[1]
+    t_src = calsource[0]
+    data_src = calsource[1]
     retval['t_src'] = t_src
     retval['data_src'] = data_src
 

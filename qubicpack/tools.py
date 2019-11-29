@@ -1270,7 +1270,7 @@ def calsource(self):
     return the calibration source data
     '''    
     if 'CALSOURCE' not in self.hk.keys():
-        return None
+        return None, None
     
     t_src = self.hk['CALSOURCE']['timestamp']
     data_src = self.hk['CALSOURCE']['Value']

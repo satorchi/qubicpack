@@ -294,6 +294,10 @@ def find_calsource(self,datadir):
     # the files are in FITS format as of Wed 10 Apr 2019 10:21:35 CEST
     self.printmsg('trying to find calsource data corresponding to %s' % self.dataset_name,verbosity=2)
 
+    if self.obsdate is None:
+        self.printmsg('No date for observation!',verbosity=1)
+        return
+
     # calsource directory is normally two up
     calsource_dir = '%s/calsource' % os.path.dirname(os.path.dirname(datadir))
     filetype = 'calsource'

@@ -1316,6 +1316,8 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper().find('EL')==0: return 'INTERN_HK'
     if ftype.upper() == 'ASIC': return 'CONF_ASIC1'
     if ftype.upper() == 'EXTERN': return 'EXTERN_HK'
+    if ftype.upper() == 'TEMPERATURE': return 'EXTERN_HK'
+    if ftype.upper() == 'CALSOURCE': return 'CALSOURCE'
     if ftype.upper().find('SCI')==0: return 'ASIC_SUMS'
     return ftype.upper()
 

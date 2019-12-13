@@ -48,7 +48,6 @@ class qubicfp:
         azimuth,\
         elevation,\
         hwp_position,\
-        bias_phase,\
         calsource,\
         qubicstudio_filetype_truename,\
         azel_etc
@@ -78,6 +77,7 @@ class qubicfp:
         read_qubicstudio_asic_fits,\
         read_qubicpack_fits,\
         args_ok,\
+        bias_phase,\
         Rfeedback,\
         feedback_on,\
         sample_period,\

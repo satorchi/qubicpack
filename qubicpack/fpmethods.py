@@ -189,6 +189,17 @@ def args_ok(self,TES=None,asic=None):
 
 
 #### wrappers to return values
+def bias_phase(self,asic=None):
+    '''
+    return the bias on the detectors
+    '''
+    if asic is None:
+        self.printmsg('Please enter an asic number')
+        return None
+
+    asic_idx = asic-1
+    return self.asic_list[asic_idx].bias_phase()
+    
 def Rfeedback(self,asic=None):
     '''
     return the feedback resistance for a given asic

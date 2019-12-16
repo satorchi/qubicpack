@@ -232,5 +232,6 @@ class qubicpack:
 
     def __init__(self):
         self.assign_defaults()
+        print('WARNING!  The qubicpack object is DEPRECATED.  Please use qubicfp() instead.')
         return
 

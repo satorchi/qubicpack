@@ -162,7 +162,7 @@ def timeline_npts(self):
 
 def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
     '''
-    the timeline time axis.  
+    the timeline time axis for scientific data (TES)
     This is determined from the sample period and the number of points
     or, possibly given as a list of datetime
     '''
@@ -210,13 +210,16 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None):
     wrapper to return the time axis for data.
     the datatypes are the various hk or scientific
     '''
-    
-    valid_axistypes = ['pps','index','computertime']
+
+    # valid axistypes in order of preference
+    valid_axistypes = ['pps','timestamp','index','computertime']
     if axistype.lower() not in valid_axistypes:
         self.printmsg('Invalid axistype request.  Please choose one of: %s' % ', '.join(valid_axistypes))
         return None
     
     datatype = self.qubicstudio_filetype_truename(datatype)
+    self.printmsg('timeaxis(): datatype=%s' % datatype,verbosity=3)
+    
     if datatype is None: datatype = 'ASIC_SUMS'
 
     if datatype not in self.hk.keys():
@@ -240,6 +243,26 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None):
     span = tend - tstart
     npts = len(self.hk[datatype]['ComputerDate'])
     tindex = (span/npts)*np.arange(npts)
+    t_default = tindex
+    t_default_str = 'index time'
+
+    tstamp = None
+    if 'RaspberryDate' in self.hk[datatype].keys():
+        tstamp_key = 'RaspberryDate'
+    else:
+        tstamp_key = 'timestamp'
+    
+    if tstamp_key in self.hk[datatype].keys():
+        tstamp = self.hk[datatype][tstamp_key]
+        t_default = tstamp
+        t_default_str = 'timestamp'
+
+    if axistype.lower()=='timestamp':
+        if 'timestamp' not in self.hk[datatype].keys():
+            self.printmsg('No timestamp.  Using %s instead' % t_default_str)
+            return t_default            
+        return tstamp
+
     if axistype.lower()=='index':
         return tindex
 
@@ -249,22 +272,22 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None):
     # the only remaining option is pps
     pps = self.pps(hk=datatype)
     if pps is None:
-        self.printmsg('No PPS.  Using index time instead')
-        return tindex
+        self.printmsg('No PPS.  Using %s instead' % t_default_str)
+        return t_default
     if pps.max() == 0:
-        self.printmsg('PPS is zero.  Using index time instead')
-        return tindex
+        self.printmsg('PPS is zero.  Using %s instead' % t_default_str)
+        return t_default
 
     gps = self.gps(hk=datatype)
     if gps is None:
-        self.printmsg('No GPS.  Using index time instead')
-        return tindex
+        self.printmsg('No GPS.  Using %s instead' % t_default_str)
+        return t_default
+    
     if gps.max() == 0.0:
-        self.printmsg('GPS is zero.  Using index time instead')
-        return tindex
+        self.printmsg('GPS is zero.  Using %s instead' % t_default_str)
+        return t_default
 
-    tstamp = self.pps2date(pps,gps)
-    return tstamp
+    return self.pps2date(pps,gps)
     
 
 def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):

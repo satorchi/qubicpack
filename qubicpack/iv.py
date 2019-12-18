@@ -1207,7 +1207,7 @@ def responsivity_func(self,Vtes,I,f_prime):
     the responsivity is dI/dP
 
     f_prime is the derivative of the model I=f(Vbias), dI/dVbias = f'(Vbias) at the point I,Vbias
-    for more details see plot_responsivity() below
+    for more details see calculate_responsivity() below
     '''
     responsivity = 1.0/( I*self.Rshunt * (1.0/(self.Rbias*f_prime) - 1) + Vtes )
     return responsivity
@@ -1217,13 +1217,35 @@ def conductance_func(self,f_prime):
     the conducance G0
 
     f_prime is the derivative of the model I=f(Vbias), dI/dVbias = f'(Vbias) at the point I,Vbias
-    for more details see plot_responsivity() below
+    for more details see calculate_responsivity() below
     '''
     G0=1.0/( self.Rshunt*(1.0/(self.Rbias*f_prime) - 1) )
     return G0
 
-def plot_responsivity(self,TES,xwin=True,npts_region=500,window_size=51,filter_sigma=10,
-                      plot_model=True,rmax=None,rmin=None):
+def etf_func(self,Vtes,I,f_prime):
+    '''
+    the Electro Thermal Feedback 
+    also called Li
+    Li = (Z0-R0)/(Z0+R0)
+
+    f_prime is the derivative of the model I=f(Vbias), dI/dVbias = f'(Vbias) at the point I,Vbias
+    for more details see calculate_responsivity() below
+    '''
+    if not self.exist_iv_data():
+        self.printmsg('No I-V data!')
+        return None
+
+    R0 = Vtes/I
+    try:
+        Z0 = 1/f_prime
+    except: # infinite impedence
+        return 1.0
+    
+    etf =  (Z0-R0)/(Z0+R0)
+    return etf
+    
+
+def calculate_responsivity(self,TES,npts_region=500,window_size=51,filter_sigma=10):
     '''
     plot the responsivity of the TES
 
@@ -1321,34 +1343,37 @@ def plot_responsivity(self,TES,xwin=True,npts_region=500,window_size=51,filter_s
     Vnormal=filterinfo['fit']['Vnormal']
 
     # take npts_region points in each region: super,combined,normal
-    dVscale=1./npts_region
-    responsivity=[]
-    voltage=[]
-    Z0_model=[]
-    G0_model=[]
-    Imodel=[]
+    dVscale = 1./npts_region
+    responsivity = []
+    voltage = []
+    Z0_model = []
+    G0_model = []
+    Imodel = []
+    ETFmodel = []
 
     # super region
-    range_min=self.bias_factor*self.min_bias
-    range_max=self.bias_factor*Vsuper
-    dV=dVscale*(range_max-range_min)
-    vbias=np.arange(range_min,range_max,dV)
-    V=range_min
-    C0=fitparms[2] * 1e-6 # units of Amps
-    C1=fitparms[3] * 1e-6 # units of Amps * Volt
-    Isuper_TES=self.model_iv_super(Vsuper,C0,C1) + Ioffset_TES
-    Vsuper_TES=self.Vbias2Vtes(Vsuper,Isuper_TES)
+    range_min = self.bias_factor*self.min_bias
+    range_max = self.bias_factor*Vsuper
+    dV = dVscale*(range_max-range_min)
+    vbias = np.arange(range_min,range_max,dV)
+    V = range_min
+    C0 = fitparms[2] * 1e-6 # units of Amps
+    C1 = fitparms[3] * 1e-6 # units of Amps * Volt
+    Isuper_TES = self.model_iv_super(Vsuper,C0,C1) + Ioffset_TES
+    Vsuper_TES = self.Vbias2Vtes(Vsuper,Isuper_TES)
     for V in vbias:
-        Ites=self.model_iv_super(V,C0,C1) + Ioffset_TES
+        Ites = self.model_iv_super(V,C0,C1) + Ioffset_TES
         Imodel.append(Ites)
-        Vtes=self.Vbias2Vtes(V,Ites)
-        f_prime=-C1/V**2
+        Vtes = self.Vbias2Vtes(V,Ites)
+        f_prime = -C1/V**2
         R0 = Vtes/Ites
         G0 = self.conductance_func(f_prime)
         Si = self.responsivity_func(Vtes,Ites,f_prime)
+        Li = self.etf_func(Vtes,Ites,f_prime)
         responsivity.append(Si)
         voltage.append(Vtes)
         G0_model.append(G0)
+        ETFmodel.append(Li)
 
     # mixed region
     range_min=self.bias_factor*Vsuper
@@ -1370,9 +1395,11 @@ def plot_responsivity(self,TES,xwin=True,npts_region=500,window_size=51,filter_s
         R0 = Vtes/Ites
         G0 = self.conductance_func(f_prime)
         Si = self.responsivity_func(Vtes,Ites,f_prime)
+        Li = self.etf_func(Vtes,Ites,f_prime)
         responsivity.append(Si)
         voltage.append(Vtes)
         G0_model.append(G0)
+        ETFmodel.append(Li)
         
     # normal region
     range_min=self.bias_factor*Vnormal
@@ -1391,13 +1418,15 @@ def plot_responsivity(self,TES,xwin=True,npts_region=500,window_size=51,filter_s
         R0 = Vtes/Ites
         G0 = self.conductance_func(f_prime)
         Si = self.responsivity_func(Vtes,Ites,f_prime)
+        Li = self.etf_func(Vtes,Ites,f_prime)
         responsivity.append(Si)
         voltage.append(Vtes)
         G0_model.append(G0)
+        ETFmodel.append(Li)
 
     # convert to numpy arrays
-    responsivity=np.array(responsivity)
-    
+    responsivity = np.array(responsivity)
+    ETFmodel = np.array(ETFmodel)
 
     # Now make the calculation based on the smoothed measurement, instead of using the model
     istart,iend=self.selected_iv_curve(TES)
@@ -1420,12 +1449,57 @@ def plot_responsivity(self,TES,xwin=True,npts_region=500,window_size=51,filter_s
     R0 = Vsmooth/Ismooth
     Psmooth = Ismooth*Vsmooth
     meas_responsivity = np.gradient(Ismooth,Psmooth)
+    meas_ETF = (G0-R0)/(G0+R0)
     
     self.debugmsg('min(G0_model),max(G0_model)=%.4e,%.4e' % (min(G0_model),max(G0_model)))
     bias,Imodel_intrinsic=self.fitted_iv_curve(TES)
     Imodel_intrinsic*=1.0e-6
     Pmodel=Imodel_intrinsic*V
+
+    retval={}
+    retval['window_size'] = window_size
+    retval['npts_smooth'] = npts_smooth
+    retval['Vbias'] = Vbias
+    retval['V'] = V
+    retval['voltage'] = np.array(voltage)
+    retval['Vsuper_TES'] = Vsuper_TES
+    retval['Vnormal_TES'] = Vnormal_TES
+    retval['Vsmooth'] = Vsmooth
+    retval['Vturnover_TES'] = Vturnover_TES
+    retval['Ismooth'] = Ismooth
+    retval['responsivity'] = responsivity
+    retval['meas_responsivity'] = meas_responsivity
+    retval['Pmodel'] = Pmodel
+    retval['Imodel_intrinsic'] = Imodel_intrinsic
+    retval['ETFmodel'] = ETFmodel
+    retval['meas_ETF'] = meas_ETF
     
+    
+
+    return retval
+
+def plot_responsivity(self,TES,xwin=True,npts_region=500,window_size=51,filter_sigma=10,
+                      plot_model=True,rmax=None,rmin=None):
+
+    '''
+    plot the responsivity.
+    '''
+
+    vals = self.calculate_responsivity(TES,npts_region,window_size,filter_sigma)
+    responsivity = vals['responsivity']
+    # rescale V axis to uV
+    voltage = vals['voltage']*1e6
+    Vsuper_TES = vals['Vsuper_TES']*1e6
+    Vnormal_TES = vals['Vnormal_TES']*1.0e6
+
+    npts_smooth = vals['npts_smooth']
+    meas_responsivity = vals['meas_responsivity']
+    Vsmooth = vals['Vsmooth']
+    Ismooth = vals['Ismooth']
+    Vbias = vals['Vbias']
+    V = vals['V']
+    Vturnover_TES = vals['Vturnover_TES']
+
     ttl=str('QUBIC Responsivity curve for TES#%3i (%s)' % (TES,self.obsdate.strftime('%Y-%b-%d %H:%M UTC')))
     if self.temperature is None:
         tempstr='unknown'
@@ -1440,10 +1514,6 @@ def plot_responsivity(self,TES,xwin=True,npts_region=500,window_size=51,filter_s
     ax.set_xlabel('TES Voltage  /  $\mu$V')
     ax.set_ylabel('S$_\mathrm{i}$  /  A$\cdot\mathrm{W}^{-1}$')
 
-    # rescale V axis to uV
-    voltage=1e6*np.array(voltage)
-    Vsuper_TES*=1.0e6
-    Vnormal_TES*=1.0e6
     plot_xrange=max(voltage)-min(voltage)
     ax.set_xlim([min(voltage)-0.1*plot_xrange,max(voltage)+0.1*plot_xrange])
 
@@ -1473,9 +1543,6 @@ def plot_responsivity(self,TES,xwin=True,npts_region=500,window_size=51,filter_s
     if plot_model:
         ax.plot(voltage,responsivity,label='responsivity from model')
 
-    self.debugmsg('len(Vsmooth)=%i' % len(Vsmooth))
-    self.debugmsg('len(Ismooth)=%i' % len(Ismooth))
-    self.debugmsg('window_size=%i' % window_size)
 
     ax.plot(Vbias,0.5/V,label='$\dfrac{1}{2\mathrm{V}_\mathrm{TES}}$',color='red')
 
@@ -1494,11 +1561,8 @@ def plot_responsivity(self,TES,xwin=True,npts_region=500,window_size=51,filter_s
     if xwin: plt.show()
     else: plt.close('all')
 
-    retval={}
-    retval['responsivity']=responsivity
-    retval['meas_responsivity']=meas_responsivity
     
-    return retval
+    return vals
 
 
 

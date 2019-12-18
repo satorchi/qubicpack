@@ -194,11 +194,19 @@ def bias_phase(self,asic=None):
     return the bias on the detectors
     '''
     if asic is None:
-        self.printmsg('Please enter an asic number')
-        return None
+        asic_idx = 0
+    else:
+        asic_idx = asic - 1
 
-    asic_idx = asic-1
-    return self.asic_list[asic_idx].bias_phase()
+    for idx,asicobj in enumerate(self.asic_list):
+        if asicobj is not None:
+            bp = asicobj.bias_phase()
+            if idx==asic_idx:
+                biasphase = bp
+
+    self.printmsg('Returning bias phase for ASIC %i' % (asic_idx+1),verbosity=2)
+    return biasphase
+
     
 def Rfeedback(self,asic=None):
     '''

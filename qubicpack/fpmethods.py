@@ -266,7 +266,6 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps'):
     '''
     wrapper to plot timeline of the asic object
     '''
-
     if not self.args_ok(TES,asic):return
     asic_idx = asic-1
     return self.asic_list[asic_idx].plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis)
@@ -305,6 +304,14 @@ def plot_iv(self,TES=None,asic=None,multi=False,xwin=True,best=True):
     asic_idx = asic - 1
     return self.asic_list[asic_idx].plot_iv(TES=TES,multi=multi,xwin=xwin,best=best)
 
+def plot_responsivity(self,TES=None,asic=None,xwin=True,npts_region=500,window_size=51,filter_sigma=10,
+                      plot_model=True,rmax=None,rmin=None):
+    if not self.args_ok(TES,asic):return None
+    asic_idx = asic - 1
+    return self.asic_list[asic_idx].plot_responsivity(TES,xwin,npts_region,window_size,filter_sigma,plot_model,rmax,rmin)
+
+
+        
 def plot_iv_focalplane(self,labels=True):
     '''
     plot all the I-V curves in the focal plane

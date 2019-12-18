@@ -78,6 +78,7 @@ class qubicfp:
         read_qubicpack_fits,\
         args_ok,\
         bias_phase,\
+        timeline_vbias,\
         Rfeedback,\
         feedback_on,\
         sample_period,\

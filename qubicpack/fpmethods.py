@@ -168,16 +168,20 @@ def read_qubicpack_fits(self,hdulist):
     return
 
 
+#### wrappers to return values
 def args_ok(self,TES=None,asic=None):
     '''
     check if arguments are okay for the wrapper
+
+    if TES or asic is None, then it is requested
+    if TES or asic is 0, then it is ignored (argument not required)
     '''
     if asic is None:
         self.printmsg('Please give an asic number')
         return False
 
     asic_idx = asic - 1
-    if self.asic_list[asic_idx] is None:
+    if asic>len(self.asic_list) or self.asic_list[asic_idx] is None:
         self.printmsg('No data for ASIC %i' % asic)
         return False
 
@@ -186,26 +190,6 @@ def args_ok(self,TES=None,asic=None):
         return False
 
     return True
-
-
-#### wrappers to return values
-def bias_phase(self,asic=None):
-    '''
-    return the bias on the detectors
-    '''
-    if asic is None:
-        asic_idx = 0
-    else:
-        asic_idx = asic - 1
-
-    for idx,asicobj in enumerate(self.asic_list):
-        if asicobj is not None:
-            bp = asicobj.bias_phase()
-            if idx==asic_idx:
-                biasphase = bp
-
-    self.printmsg('Returning bias phase for ASIC %i' % (asic_idx+1),verbosity=2)
-    return biasphase
 
     
 def Rfeedback(self,asic=None):
@@ -238,6 +222,60 @@ def feedback_on(self,asic=None,timeline_index=0):
 
 
 #### timeline methods
+def bias_phase(self,asic=0):
+    '''
+    return the bias on the detectors
+    '''
+    if not self.args_ok(TES=0,asic=asic):return None
+    asic_idx = asic-1
+    if asic_idx >= 0:
+        self.printmsg('Returning bias phase for ASIC %i' % (asic_idx+1),verbosity=2)
+        return self.asic_list[asic_idx].bias_phase()
+
+    # check all the values against the first non-None ASIC object
+    bp0 = None
+    warning_msg = 'WARNING: Bias phase value not equal to that of ASIC %i at index %i: %f != %f'
+    for asic_idx,asicobj in enumerate(self.asic_list):
+        if asicobj is not None:
+            bp = asicobj.bias_phase()
+            if bp0 is None:
+                bp0 = bp
+                compare_idx = asic_idx
+                continue
+            
+            for idx,chk in enumerate(bp==bp0):
+                if not chk:
+                    self.printmsg(warning_msg % (compare_idx+1,idx,vb[idx],vb0[idx]),verbosity=2)
+                    
+
+    return bp0
+
+def timeline_vbias(self,asic=0):
+    '''
+    wrapper to get the bias voltage for the TES timeline
+    '''
+    if not self.args_ok(TES=0,asic=asic):return None
+    asic_idx = asic-1
+    if asic_idx >= 0:
+        self.printmsg('Returning bias voltage for ASIC %i' % (asic_idx+1),verbosity=2)
+        return self.asic_list[asic_idx].timeline_vbias
+    
+    vb0 = None
+    warning_msg = 'WARNING: Bias voltage value not equal to that of ASIC %i at index %i: %f != %f'
+    for asic_idx,asic_obj in enumerate(self.asic_list):
+        if asic_obj is not None:
+            vb = asic_obj.timeline_vbias
+            if vb0 is None:
+                vb0 = vb
+                compare_idx = asic_idx
+                continue
+            
+            for idx,chk in enumerate(vb==vb0): 
+                if not chk:
+                    self.printmsg(warning_msg % (compare_idx+1,idx,vb[idx],vb0[idx]),verbosity=2)
+            
+    return vb0
+
 def sample_period(self,asic=None):
     '''
     wrapper to get the sample period for an asic
@@ -268,7 +306,7 @@ def timeline(self,TES=None,asic=None):
     if not self.args_ok(TES,asic):return
     asic_idx = asic-1
     return self.asic_list[asic_idx].timeline(TES=TES)
-    
+
 
 def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps'):
     '''

@@ -86,6 +86,7 @@ class qubicfp:
         plot_timeline,\
         plot_timeline_focalplane,\
         plot_iv,\
+        plot_responsivity,\
         plot_iv_focalplane,\
         filter_iv_all,\
         ngood,\

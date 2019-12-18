@@ -100,6 +100,8 @@ class qubicasic:
         plot_iv,\
         responsivity_func,\
         conductance_func,\
+        etf_func,\
+        calculate_responsivity,\
         plot_responsivity,\
         plot_ip,\
         plot_pv,\

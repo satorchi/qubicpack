@@ -466,6 +466,9 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     # and try to find corresponding hornswitch files
     self.hornswitch_files = self.find_hornswitch(datadir)
 
+    # run biasphase() in order to assign timeline_vbias
+    biasphase = self.bias_phase()
+
     return True
 
 def read_calsource_fits(self,hdu):
@@ -621,7 +624,7 @@ def read_qubicstudio_science_fits(self,hdu):
     # Sine phase is the phase of the bias voltage
     keys = ['CN','TES Sinus phase']
     for key in keys:
-        self.hk[extname][key] = self.read_fits_field(hdu,key) 
+        self.hk[extname][key] = self.read_fits_field(hdu,key)
 
     # try to guess the name of the detector array (P87, or whatever)
     self.guess_detector_name()

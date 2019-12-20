@@ -46,23 +46,29 @@ def plot_timestamp_diagnostic(self,hk=None,zoomx=None,zoomy=None,asic=None):
             HK = self.asic_list[asic-1].hk
         else:
             HK = self.hk
+            asic = None
             
     if not hk in HK.keys():
         self.printmsg('Please give a valid HK.  Valid names are: %s' % ', '.join(HK.keys()))
         return None
               
+    asic_txt = ''
+    if asic is not None:
+        asic_txt = ' (ASIC %i)' % asic
+
     if hk=='ASIC_SUMS':
-        pps_title = 'PPS Scientific Data'
-        tstamps_title = 'Timestamps diagnostic for Scientific Data'
-        nsamples_title = 'Number of samples between PPS events for Scientific Data'
+        pps_title = 'PPS Scientific Data'+asic_txt
+        tstamps_title = 'Timestamps diagnostic for Scientific Data'+asic_txt
+        nsamples_title = 'Number of samples between PPS events for Scientific Data'+asic_txt
     elif hk=='INTERN_HK':
         pps_title = 'PPS Platform'
         tstamps_title = 'Timestamps diagnostic for Platform Data'
         nsamples_title = 'Number of samples between PPS events for Platform Data'
     else:
-        pps_title = 'PPS %s' % hk
-        tstamps_title = 'Timestamps diagnostic for %s' % hk
-        nsamples_title = 'Number of samples between PPS events for %s' % hk
+        pps_title = 'PPS %s%s' % (hk,asic_txt)
+        tstamps_title = 'Timestamps diagnostic for %s%s' % (hk,asic_txt)
+        nsamples_title = 'Number of samples between PPS events for %s%s' % (hk,asic_txt)
+
         
     
     pps = self.pps(hk=hk,asic=asic)

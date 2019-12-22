@@ -1346,7 +1346,6 @@ def calculate_responsivity(self,TES,npts_region=500,window_size=51,filter_sigma=
     dVscale = 1./npts_region
     responsivity = []
     voltage = []
-    Z0_model = []
     G0_model = []
     Imodel = []
     ETFmodel = []
@@ -1446,10 +1445,11 @@ def calculate_responsivity(self,TES,npts_region=500,window_size=51,filter_sigma=
         Vsmooth=V[npts_diff+window_size//2:-window_size//2]
     npts_smooth=Vsmooth.size
     G0 = np.gradient(Ismooth,Vsmooth)
+    Z0 = 1/G0
     R0 = Vsmooth/Ismooth
     Psmooth = Ismooth*Vsmooth
     meas_responsivity = np.gradient(Ismooth,Psmooth)
-    meas_ETF = (G0-R0)/(G0+R0)
+    meas_ETF = (Z0-R0)/(Z0+R0)
     
     self.debugmsg('min(G0_model),max(G0_model)=%.4e,%.4e' % (min(G0_model),max(G0_model)))
     bias,Imodel_intrinsic=self.fitted_iv_curve(TES)
@@ -1473,8 +1473,6 @@ def calculate_responsivity(self,TES,npts_region=500,window_size=51,filter_sigma=
     retval['Imodel_intrinsic'] = Imodel_intrinsic
     retval['ETFmodel'] = ETFmodel
     retval['meas_ETF'] = meas_ETF
-    
-    
 
     return retval
 

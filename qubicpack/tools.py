@@ -1139,10 +1139,20 @@ def RawMask(self,asic=None):
     rawmask = HK[hktype][keyname]
     return rawmask
 
-def get_hk(self,data='PPS',hk=None,asic=None):
+def get_hk(self,data=None,hk=None,asic=None):
     '''
     return the data for a requested housekeeping
     '''
+    data = self.qubicstudio_hk_truename(data)
+    if data is None:
+        self.printmsg('Please enter a valid housekeeping type')
+        return None
+
+    if hk is None: # try to find which Housekeeping
+        for key in self.hk.keys():
+            if data in self.hk[key].keys():
+                hk = key
+                break
     
     hk = self.qubicstudio_filetype_truename(hk)
     if hk is None:
@@ -1277,6 +1287,7 @@ def calsource(self):
     return the calibration source data
     '''    
     if 'CALSOURCE' not in self.hk.keys():
+        self.printmsg('No calibration source data')
         return None, None
     
     t_src = self.hk['CALSOURCE']['timestamp']
@@ -1324,6 +1335,16 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper().find('SCI')==0: return 'ASIC_SUMS'
     return ftype.upper()
 
+def qubicstudio_hk_truename(self,hktype):
+    '''
+    return the valid key name for a given housekeeping nickname
+    '''
+    if hktype.upper() == 'SWITCH1': return 'RFSwitch 1 closed'
+    if hktype.upper() == 'SWITCH2': return 'RFSwitch 2 closed'
+    if hktype.upper() == 'AZ': return 'Platform-Azimut'
+    if hktype.upper() == 'EL': return 'Platform-Elevation'
+    
+    return hktype
 
 def azel_etc(self,TES=None):
     '''

@@ -50,6 +50,7 @@ class qubicfp:
         hwp_position,\
         calsource,\
         qubicstudio_filetype_truename,\
+        qubicstudio_hk_truename,\
         azel_etc
 
     from .assign_variables import\
@@ -97,6 +98,9 @@ class qubicfp:
 
     from .iv import\
         ADU2I
+
+    from .quicklook import\
+        plot_calsource
     
     def __init__(self):
 

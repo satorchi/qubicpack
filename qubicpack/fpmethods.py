@@ -234,7 +234,8 @@ def bias_phase(self,asic=0):
 
     # check all the values against the first non-None ASIC object
     bp0 = None
-    warning_msg = 'WARNING: Bias phase value not equal to that of ASIC %i at index %i: %f != %f'
+    warning_msg = 'WARNING! Bias phase value not equal to that of ASIC %i at index %i: %f != %f'
+    warn = False
     for asic_idx,asicobj in enumerate(self.asic_list):
         if asicobj is not None:
             bp = asicobj.bias_phase()
@@ -245,9 +246,12 @@ def bias_phase(self,asic=0):
             
             for idx,chk in enumerate(bp==bp0):
                 if not chk:
-                    self.printmsg(warning_msg % (compare_idx+1,idx,bp[idx],bp0[idx]),verbosity=2)
+                    warn = True
+                    self.printmsg(warning_msg % (compare_idx+1,idx,bp[idx],bp0[idx]),verbosity=3)
                     
 
+    if warn:
+        self.printmsg('WARNING! The bias phase is different between the ASICs.  To see where, please set verbosity>2 and rerun bias_phase()')
     return bp0
 
 def timeline_vbias(self,asic=0):
@@ -261,7 +265,8 @@ def timeline_vbias(self,asic=0):
         return self.asic_list[asic_idx].timeline_vbias
     
     vb0 = None
-    warning_msg = 'WARNING: Bias voltage value not equal to that of ASIC %i at index %i: %f != %f'
+    warning_msg = 'WARNING! Bias voltage value not equal to that of ASIC %i at index %i: %f != %f'
+    warn = False
     for asic_idx,asic_obj in enumerate(self.asic_list):
         if asic_obj is not None:
             vb = asic_obj.timeline_vbias
@@ -272,8 +277,10 @@ def timeline_vbias(self,asic=0):
             
             for idx,chk in enumerate(vb==vb0): 
                 if not chk:
-                    self.printmsg(warning_msg % (compare_idx+1,idx,vb[idx],vb0[idx]),verbosity=2)
-            
+                    warn = True
+                    self.printmsg(warning_msg % (compare_idx+1,idx,vb[idx],vb0[idx]),verbosity=3)
+    if warn:
+        self.printmsg('WARNING! The Vbias is different between the ASICs.  To see where, please set verbosity>2 and rerun timeline_vbias()')
     return vb0
 
 def sample_period(self,asic=None):

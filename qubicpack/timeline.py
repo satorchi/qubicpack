@@ -379,7 +379,7 @@ def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):
     retval['peak1'] = peak1
     return retval
 
-def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None,plot_bias=True,xwin=True,timeaxis='pps'):
+def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None,plot_bias=True,xwin=True,timeaxis='pps',ax=None):
     '''
     plot the timeline
     '''
@@ -451,11 +451,18 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     if xwin: plt.ion()
     else: plt.ioff()
 
-    fig=plt.figure(figsize=self.figsize)
-    fig.canvas.set_window_title('plt: '+ttl) 
-    ax=plt.gca()
-    ax.set_xlabel('time  /  seconds')
-    ax.set_ylabel('Current  /  $\mu$A')
+    if ax is None:
+        newplot = True
+        fontsize = 12
+        fig=plt.figure(figsize=self.figsize)
+        fig.canvas.set_window_title('plt: '+ttl) 
+        ax=plt.gca()
+    else:
+        newplot = False
+        fontsize = 8
+        
+    ax.set_xlabel('time  /  seconds',fontsize=fontsize)
+    ax.set_ylabel('Current  /  $\mu$A',fontsize=fontsize)
     
     TES_idx=TES_index(TES)
     timeline=self.timeline(TES,timeline_index)
@@ -509,7 +516,11 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             ysine=self.model_timeline(time_axis,bias_period,shift,offset,amplitude)
         
 
-    fig.suptitle(ttl+'\n'+subttl,fontsize=16)
+    if newplot:
+        fig.suptitle(ttl+'\n'+subttl,fontsize=fontsize)
+    else:
+        ax.text(0.5,1.0,ttl+'\n'+subttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
+
     
     curve1=ax.plot(time_axis,current,label='I-V timeline',color='blue')
 
@@ -542,7 +553,8 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     pngname=str('TES%03i_array-%s_ASIC%i_timeline_%s.png' % (TES,self.detector_name,self.asic,timeline_start.strftime('%Y%m%dT%H%M%SUTC')))
     pngname_fullpath=self.output_filename(pngname)
-    if isinstance(pngname_fullpath,str): plt.savefig(pngname_fullpath,format='png',dpi=100,bbox_inches='tight')
+    if newplot and isinstance(pngname_fullpath,str):
+        plt.savefig(pngname_fullpath,format='png',dpi=100,bbox_inches='tight')
     if xwin:plt.show()
     else: plt.close('all')
     

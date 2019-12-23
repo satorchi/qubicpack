@@ -70,10 +70,10 @@ def infotext(self):
             modshapes = ['square wave','sinusoidal','DC']
             shape = modshapes[int(calconf['Mod_shap'][0])]
             if shape=='DC':                
-                ttl += 'Modulation: DC, amplitude %.1fV, offset %.1fV' % (calconf['Mod_ampl'][0],
+                ttl += ' Modulation: DC, amplitude %.1fV, offset %.1fV' % (calconf['Mod_ampl'][0],
                                                                           calconf['Mod_offs'][0])
             else:
-                ttl += 'Modulation: %.1fHz, %s, amplitude %.1fV, offset %.1fV' % (calconf['Mod_freq'][0],
+                ttl += ' Modulation: %.1fHz, %s, amplitude %.1fV, offset %.1fV' % (calconf['Mod_freq'][0],
                                                                                   shape,
                                                                                   calconf['Mod_ampl'][0],
                                                                                   calconf['Mod_offs'][0])
@@ -315,13 +315,13 @@ def timeline(self,TES=None,asic=None):
     return self.asic_list[asic_idx].timeline(TES=TES)
 
 
-def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps'):
+def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps',ax=None):
     '''
     wrapper to plot timeline of the asic object
     '''
     if not self.args_ok(TES,asic):return
     asic_idx = asic-1
-    return self.asic_list[asic_idx].plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis)
+    return self.asic_list[asic_idx].plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax)
     
 def plot_timeline_focalplane(self):
     '''

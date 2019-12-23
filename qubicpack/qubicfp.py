@@ -100,7 +100,11 @@ class qubicfp:
         ADU2I
 
     from .quicklook import\
-        plot_calsource
+        plot_calsource,\
+        plot_temperatures,\
+        plot_300mKtemperatures,\
+        plot_1Ktemperatures,\
+        quicklook
     
     def __init__(self):
 

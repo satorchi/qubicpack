@@ -64,7 +64,8 @@ class qubicasic:
         pps,\
         bias_phase,\
         infotext,\
-        qubicstudio_filetype_truename
+        qubicstudio_filetype_truename,\
+        qubicstudio_hk_truename
 
     from .iv import\
         exist_iv_data,\

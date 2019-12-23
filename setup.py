@@ -13,6 +13,7 @@ setup.py for qubicpack only.
 Use this to install qubicpack without pystudio
 '''
 from __future__ import division, print_function
+import os,sys,subprocess
 from setuptools import setup
 
 DISTNAME         = 'qubicpack'
@@ -53,4 +54,17 @@ setup(install_requires=['numpy'],
           'License :: OSI Approved :: GNU General Public License (GPL)',
           'Topic :: Scientific/Engineering'],
 )
+
+# install the executable scripts
+exec_dir = '/usr/local/bin'
+scripts = ['scripts/quicklook.py']
+if len(sys.argv)>1 and sys.argv[1]=='install':
+    print('installing executable scripts...')
+    for F in scripts:
+        basename = os.path.basename(F)
+        cmd = 'rm -f %s/%s; cp -puv %s %s;chmod +x %s/%s' % (exec_dir,basename,F,exec_dir,exec_dir,basename)
+        proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        out,err=proc.communicate()
+        if out:print(out.decode().strip())
+        if err:print(err.decode().strip())
 

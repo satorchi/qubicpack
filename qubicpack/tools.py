@@ -1343,6 +1343,7 @@ def qubicstudio_hk_truename(self,hktype):
     if hktype.upper() == 'SWITCH2': return 'RFSwitch 2 closed'
     if hktype.upper() == 'AZ': return 'Platform-Azimut'
     if hktype.upper() == 'EL': return 'Platform-Elevation'
+    if hktype.upper().find('AV')==0: return hktype.upper()
     
     return hktype
 

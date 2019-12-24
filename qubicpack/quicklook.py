@@ -241,6 +241,55 @@ def plot_azel(self,ax=None):
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     return ax
 
+def plot_hwp(self,ax):
+    '''
+    plot Half Wave Plate position
+    '''
+
+    v = self.get_hk('HWP-Position')
+    t = self.timeaxis('hwp')    
+    if t is None:
+        self.printmsg('No housekeeping information!')
+        return
+
+    ttl = 'Half Wave Plate position'
+    dset_shortname = self.dataset_name.split('__')[-1]
+    pngname = 'QUBIC_%s_%s_%s.png' % (ttl.replace(' ','_'),dset_shortname,self.obsdate.strftime('%Y%m%d-%H%M%S'))
+
+    if ax is None:
+        newplot = True
+        fontsize = 12
+        ttl += '\n'+self.infotext()
+        plt.ion()
+        fig = plt.figure()
+        fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
+        fig.suptitle(ttl,fontsize=fontsize)
+        ax = fig.add_axes((0.05,0.1,0.9,0.75))
+    else:
+        newplot = False
+        fontsize = 6
+        ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
+    
+    tdate = []
+    for tstamp in t:
+        tdate.append(dt.datetime.fromtimestamp(tstamp))
+
+    if v is not None:
+        ax.plot(tdate,v,marker='D',ls='none',label='HWP Position')
+        
+    if v is None:
+        ax.text(0.5,0.5,'No Half Wave Plate information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+        
+    ax.set_ylabel('Position number',fontsize=fontsize)    
+    ax.set_xlabel('Date / UT',fontsize=fontsize)
+    ax.legend(fontsize=fontsize)
+    ax.tick_params(axis='both',labelsize=fontsize)
+    
+    if newplot:
+        fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+    return ax
+    
+
 def quicklook(self,TES=(54,54)):
     '''
     make a page with diagnostic info
@@ -255,10 +304,10 @@ def quicklook(self,TES=(54,54)):
     fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
     fig.suptitle(ttl)
 
-    width = 0.4
+    width = 0.37
     height = 0.15
     vspacing = 0.19
-    hspacing = 0.48
+    hspacing = 0.51
 
     hpos1 = 0.07
     hpos2 = hpos1 + hspacing
@@ -285,6 +334,9 @@ def quicklook(self,TES=(54,54)):
     # horn switches activated
     ax = fig.add_axes((hpos1,vpos,width,height))
     self.plot_switchstatus(ax)
+
+    ax = fig.add_axes((hpos2,vpos,width,height))
+    self.plot_hwp(ax)
 
     vpos -= vspacing
     # example timeline from ASIC 1

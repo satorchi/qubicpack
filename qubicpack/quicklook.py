@@ -241,7 +241,7 @@ def plot_azel(self,ax=None):
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     return ax
 
-def plot_hwp(self,ax):
+def plot_hwp(self,ax=None):
     '''
     plot Half Wave Plate position
     '''

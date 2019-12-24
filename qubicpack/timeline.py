@@ -459,10 +459,11 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         ax=plt.gca()
     else:
         newplot = False
-        fontsize = 8
+        fontsize = 6
         
     ax.set_xlabel('time  /  seconds',fontsize=fontsize)
     ax.set_ylabel('Current  /  $\mu$A',fontsize=fontsize)
+    ax.tick_params(axis='both',labelsize=fontsize)
     
     TES_idx=TES_index(TES)
     timeline=self.timeline(TES,timeline_index)
@@ -536,8 +537,9 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     if plot_bias:
         if fitparms is None:
             ax_bias = ax.twinx()
-            ax_bias.set_ylabel('Bias / V',rotation=270,va='bottom')
+            ax_bias.set_ylabel('Bias / V',rotation=270,va='bottom',fontsize=fontsize)
             ax_bias.set_ylim([self.min_bias,self.max_bias])
+            ax_bias.tick_params(axis='both',labelsize=fontsize)
             curve2_ax=ax_bias
         else:
             curve2_ax=ax
@@ -549,7 +551,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         curves = curve1
         
     labs = [l.get_label() for l in curves]
-    ax.legend(curves, labs, loc=0)
+    ax.legend(curves, labs, loc=0, fontsize=fontsize)
 
     pngname=str('TES%03i_array-%s_ASIC%i_timeline_%s.png' % (TES,self.detector_name,self.asic,timeline_start.strftime('%Y%m%dT%H%M%SUTC')))
     pngname_fullpath=self.output_filename(pngname)

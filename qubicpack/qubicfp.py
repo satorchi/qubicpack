@@ -104,6 +104,8 @@ class qubicfp:
         plot_temperatures,\
         plot_300mKtemperatures,\
         plot_1Ktemperatures,\
+        plot_switchstatus,\
+        plot_azel,\
         quicklook
     
     def __init__(self):

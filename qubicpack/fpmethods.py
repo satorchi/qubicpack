@@ -58,15 +58,20 @@ def infotext(self):
             txt.append(asic_obj.infotext())
     ttl = '\n'.join(txt)
     
-    if 'CALSOURCE-CONF' in self.hk.keys():
+    if 'CALSOURCE-CONF' not in self.hk.keys():
+        ttl += '\nNo Calsource information!'
+    else:        
         ttl += '\n'
         calconf = self.hk['CALSOURCE-CONF']
-        if int(calconf['Modulator'][0])==1:
-            if int(calconf['CalSource'][0])==0:
-                ttl += 'Calsource OFF!'
-            else:
-                ttl += 'Calsource frequency: %.2fGHz' % calconf['Cal_freq'][0]
 
+        if int(calconf['CalSource'][0])==0:
+            ttl += 'Calsource OFF!'
+        else:
+            ttl += 'Calsource frequency: %.2fGHz' % calconf['Cal_freq'][0]
+            
+        if int(calconf['Modulator'][0])==0:
+            ttl += ' Modulation OFF'
+        else:
             modshapes = ['square wave','sinusoidal','DC']
             shape = modshapes[int(calconf['Mod_shap'][0])]
             if shape=='DC':                
@@ -80,8 +85,13 @@ def infotext(self):
             if shape=='square wave':
                 ttl += ', duty cycle: %.1f\%' % calconf['Mod_duty'][0]
 
-            if int(calconf['Amplifier'][0])==0:
-                ttl += ' ERROR: Amplifier OFF!'
+
+        if int(calconf['Amplifier'][0])==0:
+            ttl += ' Amplifier OFF'
+        else:
+            gain = int(calconf['Amp_gain'][0])
+            ttl += ' Gain %i' % gain
+
 
     return ttl
 

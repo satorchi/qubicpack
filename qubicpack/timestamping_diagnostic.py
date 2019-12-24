@@ -297,10 +297,10 @@ def lost_packets(self,hk='sci',asic=None):
         asic = self.asic
         HK = self.hk
     else:
-        if asic is None:
-            self.printmsg('Please enter a valid ASIC.')
-            return None
         if hk=='ASIC_SUMS':
+            if asic is None:
+                self.printmsg('Please enter a valid ASIC.')
+                return None
             HK = self.asic_list[asic-1].hk
         else:
             HK = self.hk

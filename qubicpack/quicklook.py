@@ -13,7 +13,7 @@ methods for plots of housekeeping and a quicklook at science data
 from matplotlib import pyplot as plt
 import datetime as dt
 
-def plot_calsource(self,ax=None):
+def plot_calsource(self,ax=None,fontsize=12):
     '''
     plot the calibration source
     '''
@@ -27,12 +27,19 @@ def plot_calsource(self,ax=None):
     tdate = []
     for tstamp in t:
         tdate.append(dt.datetime.fromtimestamp(tstamp))
-        
+
+    info = self.calsource_info()
+    
     ttl = 'Calibration Source'
+    if info['calsource']['status']=='OFF':
+        ttl += ' OFF'
+    else:
+        ttl += ' frequency=%.2fGHz' % info['calsource']['frequency']
+    
+
 
     if ax is None:
         newplot = True
-        fontsize = 12
         ttl += '\n'+self.infotext()
         plt.ion()
         fig = plt.figure()
@@ -41,8 +48,7 @@ def plot_calsource(self,ax=None):
         ax = fig.add_axes((0.05,0.1,0.9,0.8))
     else:
         newplot = False
-        fontsize = 6
-        ax.text(0.5,1.0,'Calibration Source',va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
+        ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
             
     ax.plot(tdate,v)
     ax.set_ylabel('Calibration Source Power / arbitrary units',fontsize=fontsize)
@@ -53,7 +59,7 @@ def plot_calsource(self,ax=None):
     return ax
 
 
-def plot_temperatures(self,ax,label,ttl):
+def plot_temperatures(self,ax,label,ttl,fontsize=12):
     '''
     plot a collection of temperatures
     arguments:
@@ -77,7 +83,6 @@ def plot_temperatures(self,ax,label,ttl):
 
     if ax is None:
         newplot = True
-        fontsize = 12
         ttl += '\n'+self.infotext()
         plt.ion()
         fig = plt.figure()
@@ -86,7 +91,6 @@ def plot_temperatures(self,ax,label,ttl):
         ax = fig.add_axes((0.05,0.1,0.9,0.8))
     else:
         newplot = False
-        fontsize = 6
         ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
         
         
@@ -102,7 +106,7 @@ def plot_temperatures(self,ax,label,ttl):
     return ax
     
 
-def plot_300mKtemperatures(self,ax=None):
+def plot_300mKtemperatures(self,ax=None,fontsize=12):
     '''
     plot the 300mK temperatures
     '''
@@ -112,11 +116,11 @@ def plot_300mKtemperatures(self,ax=None):
     label['AVS47_1_CH5'] = 'Film breaker'
     label['AVS47_1_CH6'] = '0.3K fridge CH'
 
-    ax = self.plot_temperatures(ax,label,'300mK Temperatures')
+    ax = self.plot_temperatures(ax,label,'300mK Temperatures',fontsize)
     return ax
 
 
-def plot_1Ktemperatures(self,ax=None):
+def plot_1Ktemperatures(self,ax=None,fontsize=12):
     '''
     plot the 1K temperatures
     '''
@@ -130,10 +134,10 @@ def plot_1Ktemperatures(self,ax=None):
     label['AVS47_2_ch3'] = '1K stage back'
     label['AVS47_2_ch4'] = '4K shield Cu braids'
 
-    ax = self.plot_temperatures(ax,label,'1K Temperatures')
+    ax = self.plot_temperatures(ax,label,'1K Temperatures',fontsize)
     return ax
     
-def plot_switchstatus(self,ax=None):
+def plot_switchstatus(self,ax=None,fontsize=12):
     '''
     plot which horn switches are closed
     '''
@@ -150,7 +154,6 @@ def plot_switchstatus(self,ax=None):
 
     if ax is None:
         newplot = True
-        fontsize = 12
         ttl += '\n'+self.infotext()
         plt.ion()
         fig = plt.figure()
@@ -159,7 +162,6 @@ def plot_switchstatus(self,ax=None):
         ax = fig.add_axes((0.05,0.1,0.9,0.8))
     else:
         newplot = False
-        fontsize = 6
         ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
 
     
@@ -187,7 +189,7 @@ def plot_switchstatus(self,ax=None):
     return ax
 
 
-def plot_azel(self,ax=None):
+def plot_azel(self,ax=None,fontsize=12):
     '''
     plot the azimuth and elevation positions
     '''
@@ -204,7 +206,6 @@ def plot_azel(self,ax=None):
 
     if ax is None:
         newplot = True
-        fontsize = 12
         ttl += '\n'+self.infotext()
         plt.ion()
         fig = plt.figure()
@@ -213,7 +214,6 @@ def plot_azel(self,ax=None):
         ax = fig.add_axes((0.05,0.1,0.9,0.75))
     else:
         newplot = False
-        fontsize = 6
         ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
     
     tdate = []
@@ -241,7 +241,7 @@ def plot_azel(self,ax=None):
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     return ax
 
-def plot_hwp(self,ax=None):
+def plot_hwp(self,ax=None,fontsize=12):
     '''
     plot Half Wave Plate position
     '''
@@ -258,7 +258,6 @@ def plot_hwp(self,ax=None):
 
     if ax is None:
         newplot = True
-        fontsize = 12
         ttl += '\n'+self.infotext()
         plt.ion()
         fig = plt.figure()
@@ -267,7 +266,6 @@ def plot_hwp(self,ax=None):
         ax = fig.add_axes((0.05,0.1,0.9,0.75))
     else:
         newplot = False
-        fontsize = 6
         ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
     
     tdate = []
@@ -279,7 +277,8 @@ def plot_hwp(self,ax=None):
         
     if v is None:
         ax.text(0.5,0.5,'No Half Wave Plate information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
-        
+
+    ax.set_ylim(0,8)
     ax.set_ylabel('Position number',fontsize=fontsize)    
     ax.set_xlabel('Date / UT',fontsize=fontsize)
     ax.legend(fontsize=fontsize)
@@ -302,50 +301,51 @@ def quicklook(self,TES=(54,54)):
     plt.ion()
     fig = plt.figure(figsize=(10.5,14))
     fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
-    fig.suptitle(ttl)
+    fig.suptitle(ttl,fontsize=10)
 
+    fontsize = 5
     width = 0.37
-    height = 0.15
-    vspacing = 0.19
+    height = 0.14
+    vspacing = 0.18
     hspacing = 0.51
 
     hpos1 = 0.07
     hpos2 = hpos1 + hspacing
 
-    vpos = 0.75
+    vpos = 0.71
     # calsource
     ax = fig.add_axes((hpos1,vpos,width,height))
-    self.plot_calsource(ax)
+    self.plot_calsource(ax,fontsize=fontsize)
 
     # platform position
     ax = fig.add_axes((hpos2,vpos,width,height))
-    self.plot_azel(ax)
+    self.plot_azel(ax,fontsize=fontsize)
 
     vpos -= vspacing
     # 300mK temperatures
     ax = fig.add_axes((hpos1,vpos,width,height))
-    self.plot_300mKtemperatures(ax)
+    self.plot_300mKtemperatures(ax,fontsize=fontsize)
 
     # 1K temperatures
     ax = fig.add_axes((hpos2,vpos,width,height))
-    self.plot_1Ktemperatures(ax)
+    self.plot_1Ktemperatures(ax,fontsize=fontsize)
 
     vpos -= vspacing
     # horn switches activated
     ax = fig.add_axes((hpos1,vpos,width,height))
-    self.plot_switchstatus(ax)
+    self.plot_switchstatus(ax,fontsize=fontsize)
 
     ax = fig.add_axes((hpos2,vpos,width,height))
-    self.plot_hwp(ax)
+    self.plot_hwp(ax,fontsize=fontsize)
 
     vpos -= vspacing
     # example timeline from ASIC 1
     ax = fig.add_axes((hpos1,vpos,width,height))
-    self.plot_timeline(asic=1,TES=TES[0],ax=ax)
+    self.plot_timeline(asic=1,TES=TES[0],ax=ax,fontsize=fontsize)
 
     # example timeline from ASIC 2
     ax = fig.add_axes((hpos2,vpos,width,height))
-    self.plot_timeline(asic=2,TES=TES[1],ax=ax)
+    self.plot_timeline(asic=2,TES=TES[1],ax=ax,fontsize=fontsize)
 
     pngname = 'QUBIC_quicklook_%s.png' % self.dataset_name
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')    

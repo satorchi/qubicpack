@@ -379,7 +379,7 @@ def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):
     retval['peak1'] = peak1
     return retval
 
-def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None,plot_bias=True,xwin=True,timeaxis='pps',ax=None):
+def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None,plot_bias=True,xwin=True,timeaxis='pps',ax=None,fontsize=12):
     '''
     plot the timeline
     '''
@@ -453,13 +453,11 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     if ax is None:
         newplot = True
-        fontsize = 12
         fig=plt.figure(figsize=self.figsize)
         fig.canvas.set_window_title('plt: '+ttl) 
         ax=plt.gca()
     else:
         newplot = False
-        fontsize = 6
         
     ax.set_xlabel('time  /  seconds',fontsize=fontsize)
     ax.set_ylabel('Current  /  $\mu$A',fontsize=fontsize)

@@ -57,45 +57,107 @@ def infotext(self):
         if asic_obj is not None:
             txt.append(asic_obj.infotext())
     ttl = '\n'.join(txt)
-    
-    if 'CALSOURCE-CONF' not in self.hk.keys():
-        ttl += '\nNo Calsource information!'
-    else:        
-        ttl += '\n'
-        calconf = self.hk['CALSOURCE-CONF']
 
-        if int(calconf['CalSource'][0])==0:
-            ttl += 'Calsource OFF!'
-        else:
-            ttl += 'Calsource frequency: %.2fGHz' % calconf['Cal_freq'][0]
-            
-        if int(calconf['Modulator'][0])==0:
-            ttl += ' Modulation OFF'
-        else:
-            modshapes = ['square wave','sinusoidal','DC']
-            shape = modshapes[int(calconf['Mod_shap'][0])]
-            if shape=='DC':                
-                ttl += ' Modulation: DC, amplitude %.1fV, offset %.1fV' % (calconf['Mod_ampl'][0],
-                                                                          calconf['Mod_offs'][0])
-            else:
-                ttl += ' Modulation: %.1fHz, %s, amplitude %.1fV, offset %.1fV' % (calconf['Mod_freq'][0],
-                                                                                  shape,
-                                                                                  calconf['Mod_ampl'][0],
-                                                                                  calconf['Mod_offs'][0])
-            if shape=='square wave':
-                ttl += ', duty cycle: %.1f\%' % calconf['Mod_duty'][0]
-
-
-        if int(calconf['Amplifier'][0])==0:
-            ttl += ' Amplifier OFF'
-        else:
-            gain = int(calconf['Amp_gain'][0])
-            ttl += ' Gain %i' % gain
-
+    calsource_infotext = self.calsource_infotext()
+    ttl += '\n'+calsource_infotext
 
     return ttl
 
+def calsource_info(self):
+    '''
+    return a dictionary of calibration source configuration information
+    '''
+    if 'CALSOURCE-CONF' not in self.hk.keys():
+        return None
+
     
+    info_txt = self.hk['CALSOURCE-CONF']['MsgStr'][0]
+    info_rawlist = info_txt.split()
+    info = {}
+
+    info_tstamp = float(info_rawlist[0])
+    info_date = dt.datetime.fromtimestamp(info_tstamp)
+    info['date'] = info_date
+
+    info['amplifier'] = {}
+    info['modulator'] = {}
+    info['calsource'] = {}
+
+    munits = ['mHz','mVpp','mVdc']
+    units = ['GHz','Hz','Vpp','Vdc','%']
+    for item in info_rawlist[2:]:
+        cols = item.split(':')
+        dev = cols[0]
+        if dev=='lamp' or dev=='arduino' or dev=='synthesiser':
+            continue
+
+        val_list = cols[1].split('=')
+        if len(val_list)==1:
+            info[dev]['status'] = val_list[0]
+            continue
+
+        parm = val_list[0]
+        val = val_list[1]
+        
+        if val=='--':
+            info[dev][parm.lower()] = -1
+            continue
+
+        goto_next_item = False
+        for munit in munits:
+            if val.find(munit)>0:
+                info[dev][parm.lower()] = 0.001*float(val.replace(munit,''))
+                goto_next_item = True
+                break
+        if goto_next_item: continue
+        
+        if parm=='gain':
+            info[dev][parm] = int(val)
+            continue
+
+        for unit in units:
+            if val.find(unit)>1:
+                info[dev][parm.lower()] = float(val.replace(unit,''))
+                goto_next_item = True
+                break
+        if goto_next_item: continue
+
+        info[dev][parm.lower()] = val
+
+    return info
+
+def calsource_infotext(self):
+    '''
+    return a calsource info in a string suitable for plot subtitle
+    '''
+    info = self.calsource_info()
+    if info is None:
+        return 'Calsource: No information'
+
+    if info['calsource']['status'] == 'OFF':
+        return 'Calsource OFF'
+
+    calsrc_txt = 'Calsource: '
+    calsrc_txt += 'frequency=%.2fGHz' % info['calsource']['frequency']
+
+    if info['modulator']['status'] == 'OFF':
+        calsrc_txt += ' modulator OFF'
+    elif info['modulator']['shape'] == 'DC':
+        calsrc_txt += ' No modulation, offset=%.2fVdc' % info['modulator']['offset']
+    else:
+        calsrc_txt += '\nmodulator: frequency=%.3fHz, amplitude=%.3fVpp, offset=%.3fVdc, duty=%.1f%%'\
+            % (info['modulator']['frequency'],info['modulator']['amplitude'],info['modulator']['offset'],info['modulator']['duty_cycle'])
+
+    if info['amplifier']['status'] == 'OFF':
+        calsrc_txt += 'amplifier OFF'
+    else:
+        calsrc_txt += '\namplifier:'
+        for parm in info['amplifier'].keys():
+            if parm!='status':
+                calsrc_txt += ' %s=%s' % (parm,info['amplifier'][parm])
+
+    return calsrc_txt
+
 def read_qubicstudio_science_fits(self,hdu):
     '''
     read the science data for an ASIC
@@ -325,13 +387,13 @@ def timeline(self,TES=None,asic=None):
     return self.asic_list[asic_idx].timeline(TES=TES)
 
 
-def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps',ax=None):
+def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps',ax=None,fontsize=12):
     '''
     wrapper to plot timeline of the asic object
     '''
     if not self.args_ok(TES,asic):return
     asic_idx = asic-1
-    return self.asic_list[asic_idx].plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax)
+    return self.asic_list[asic_idx].plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
     
 def plot_timeline_focalplane(self):
     '''

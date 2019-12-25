@@ -72,6 +72,8 @@ class qubicfp:
 
     from .fpmethods import\
         infotext,\
+        calsource_info,\
+        calsource_infotext,\
         assign_defaults,\
         assign_temperature,\
         read_qubicstudio_science_fits,\

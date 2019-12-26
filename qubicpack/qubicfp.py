@@ -67,7 +67,12 @@ class qubicfp:
         timeaxis
 
     from .timestamping_diagnostic import\
+        timestamp_diagnostic,\
         plot_timestamp_diagnostic,\
+        plot_pps,\
+        plot_pps_nsamples,\
+        plot_timestamp_diagnostic_fig1,\
+        plot_timestamp_diagnostic_fig2,\
         lost_packets
 
     from .fpmethods import\

@@ -52,16 +52,11 @@ def infotext(self):
     '''
     some basic info to put on plots
     '''
-    txt = []
-    for asic_obj in self.asic_list:
-        if asic_obj is not None:
-            txt.append(asic_obj.infotext())
-    ttl = '\n'.join(txt)
 
-    calsource_infotext = self.calsource_infotext()
-    ttl += '\n'+calsource_infotext
+    txt = self.dataset_name
+    txt += ' T$_\mathrm{bath}$=%.1fmK' % (1000*self.temperature)
 
-    return ttl
+    return txt
 
 def calsource_info(self):
     '''
@@ -314,6 +309,11 @@ def bias_phase(self,asic=0):
             if bp0 is None:
                 bp0 = bp
                 compare_idx = asic_idx
+                continue
+
+            if len(bp)!=len(bp0):
+                warn = True
+                self.printmsg('WARNING! not the same number of samples between ASICs',verbosity=3)
                 continue
             
             for idx,chk in enumerate(bp==bp0):

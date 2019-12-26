@@ -36,24 +36,23 @@ def plot_calsource(self,ax=None,fontsize=12):
     else:
         ttl += ' frequency=%.2fGHz' % info['calsource']['frequency']
     
-
-
     if ax is None:
         newplot = True
-        ttl += '\n'+self.infotext()
+        ttl += ' '+self.infotext()
         plt.ion()
         fig = plt.figure()
         fig.canvas.set_window_title('plt: Calibration Source for dataset %s' % self.dataset_name)
         fig.suptitle(ttl,fontsize=fontsize)
-        ax = fig.add_axes((0.05,0.1,0.9,0.8))
+        ax = fig.add_axes((0.05,0.1,0.9,0.78))
     else:
         newplot = False
-        ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
+        #ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
             
     ax.plot(tdate,v)
     ax.set_ylabel('Calibration Source Power / arbitrary units',fontsize=fontsize)
     ax.set_xlabel('Date / UT',fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)
+    ax.text(0.01,1.0,self.calsource_infotext(),va='bottom',ha='left',fontsize=fontsize,transform=ax.transAxes)
     if newplot:
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     return ax
@@ -297,7 +296,7 @@ def quicklook(self,TES=(54,54)):
 
     ttl = 'Diagnostic for %s' % self.dataset_name
     
-    ttl += '\n'+self.infotext()
+    #ttl += '\n'+self.infotext()
     plt.ion()
     fig = plt.figure(figsize=(10.5,14))
     fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
@@ -312,7 +311,7 @@ def quicklook(self,TES=(54,54)):
     hpos1 = 0.07
     hpos2 = hpos1 + hspacing
 
-    vpos = 0.71
+    vpos = 0.80
     # calsource
     ax = fig.add_axes((hpos1,vpos,width,height))
     self.plot_calsource(ax,fontsize=fontsize)
@@ -339,6 +338,14 @@ def quicklook(self,TES=(54,54)):
     self.plot_hwp(ax,fontsize=fontsize)
 
     vpos -= vspacing
+    # PPS diagnostic
+    ax = fig.add_axes((hpos1,vpos,width,height))
+    self.plot_pps_nsamples(hk='platform',ax=ax,fontsize=fontsize)
+
+    ax = fig.add_axes((hpos2,vpos,width,height))
+    self.plot_pps_nsamples(hk='sci',asic=1,ax=ax,fontsize=fontsize)
+
+    vpos -= vspacing
     # example timeline from ASIC 1
     ax = fig.add_axes((hpos1,vpos,width,height))
     self.plot_timeline(asic=1,TES=TES[0],ax=ax,fontsize=fontsize)
@@ -346,6 +353,8 @@ def quicklook(self,TES=(54,54)):
     # example timeline from ASIC 2
     ax = fig.add_axes((hpos2,vpos,width,height))
     self.plot_timeline(asic=2,TES=TES[1],ax=ax,fontsize=fontsize)
+
+    
 
     pngname = 'QUBIC_quicklook_%s.png' % self.dataset_name
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')    

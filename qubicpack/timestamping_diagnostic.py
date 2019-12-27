@@ -201,10 +201,12 @@ def plot_pps(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
         newplot = True
 
-    ax.text(0.5,1.0,ttl,ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
-    ax.text(0.9,1.0,analysis['sample_period_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.01,1.00,ttl,ha='left',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.99,1.01,analysis['sample_period_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.01,1.05,'avg number of samples between events: %.2f' % analysis['samples_per_pps'].mean(),fontsize=fontsize,transform=ax.transAxes)
     if analysis['lost_txt'] is not None:
-        ax.text(0.5,1.0,analysis['lost_txt'],ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+        ax.text(0.99,1.1,analysis['lost_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+
     ax.plot(analysis['pps'])
     ax.set_ylabel('PPS Level')
     ax.set_xlabel('sample number')
@@ -243,12 +245,11 @@ def plot_pps_nsamples(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None
         fig.suptitle(self.infotext(),fontsize=fontsize)
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
 
-    ax.text(0.5,1.0,ttl,ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
-    ax.text(0.9,0.9,analysis['sample_period_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
-    ax.text(0.1,0.9,'avg number of samples between events: %.2f' % analysis['samples_per_pps'].mean(),fontsize=fontsize,transform=ax.transAxes)
-
+    ax.text(0.01,1.00,ttl,ha='left',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.99,1.01,analysis['sample_period_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.01,1.05,'avg number of samples between events: %.2f' % analysis['samples_per_pps'].mean(),fontsize=fontsize,transform=ax.transAxes)
     if analysis['lost_txt'] is not None:
-        ax.text(0.5,0.92,analysis['lost_txt'],ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+        ax.text(0.99,1.1,analysis['lost_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
         
     ax.plot(analysis['samples_per_pps'])
     ax.set_ylabel('Number of samples per PPS event',fontsize=fontsize)
@@ -280,9 +281,6 @@ def plot_timestamp_diagnostic_fig1(self,analysis=None,hk=None,zoomx=None,zoomy=N
     ttl = analysis['tstamps_title']
     png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))
 
-    # mark problems with a vertical line
-    yminmax = (analysis['compstamps'].min(),analysis['compstamps'].max())
-
     newplot = False
     if ax is None:
         newplot = True
@@ -291,13 +289,14 @@ def plot_timestamp_diagnostic_fig1(self,analysis=None,hk=None,zoomx=None,zoomy=N
         fig.suptitle(self.infotext(),fontsize=fontsize)
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
         
-    ax.text(0.5,1.0,ttl,ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
-    ax.text(0.9,0.9,analysis['sample_period_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
-    ax.text(0.1,0.9,'avg number of samples between events: %.2f' % analysis['samples_per_pps'].mean(),fontsize=fontsize,transform=ax.transAxes)
-
+    ax.text(0.50,1.00,ttl,ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.99,1.01,analysis['sample_period_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.01,1.05,'avg number of samples between events: %.2f' % analysis['samples_per_pps'].mean(),fontsize=fontsize,transform=ax.transAxes)
     if analysis['lost_txt'] is not None:
-        ax.text(0.5,0.92,analysis['lost_txt'],ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+        ax.text(0.99,1.1,analysis['lost_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
 
+    # mark problems with a vertical line
+    yminmax = (analysis['compstamps'].min(),analysis['compstamps'].max())
     pps_high = analysis['pps_high']
     pps_indexes = analysis['pps_indexes']
     ax.plot(analysis['indextime'],                       ls='none',marker='d',label='index time')
@@ -346,10 +345,12 @@ def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=N
         fig.suptitle(ttl,fontsize=fontsize)
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
 
-    ax.text(0.5,1.0,self.infotext(),va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
-    ax.text(0.9,0.9,analysis['sample_period_txt'],ha='right',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.50,1.00,ttl,ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.99,1.01,analysis['sample_period_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.01,1.05,'avg number of samples between events: %.2f' % analysis['samples_per_pps'].mean(),fontsize=fontsize,transform=ax.transAxes)
     if analysis['lost_txt'] is not None:
-        ax.text(0.5,0.92,analysis['lost_txt'],ha='center',fontsize=fontsize,transform=ax.transAxes)
+        ax.text(0.99,1.1,analysis['lost_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+
 
     tstamps_horiz = analysis['tstamps'] - analysis['indextime']
     compstamps_horiz = analysis['compstamps'] - analysis['indextime']
@@ -361,7 +362,7 @@ def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=N
     peak2peak = tstamps_horiz_between_pps.max() - tstamps_horiz_between_pps.min()
     peak2peak_txt = 'peak to peak variation: %.2f msec' % (1000*peak2peak)
     self.printmsg(peak2peak_txt,verbosity=2)
-    ax.text(0.1,1.0,peak2peak_txt,ha='left',va='bottom',fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.01,1.0,peak2peak_txt,ha='left',va='bottom',fontsize=fontsize,transform=ax.transAxes)
 
     
     

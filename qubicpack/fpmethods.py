@@ -163,7 +163,8 @@ def read_qubicstudio_science_fits(self,hdu):
     asic_no = hdu.header['ASIC_NUM']
     asic_ctr = asic_no - 1
     qubicasic.verbosity = self.verbosity
-    self.asic_list[asic_ctr] = qubicasic()
+    if self.asic_list[asic_ctr] is None:
+        self.asic_list[asic_ctr] = qubicasic()
     self.asic_list[asic_ctr].read_qubicstudio_science_fits(hdu)
 
     obsdate = self.asic_list[asic_ctr].obsdate
@@ -319,7 +320,7 @@ def bias_phase(self,asic=0):
             for idx,chk in enumerate(bp==bp0):
                 if not chk:
                     warn = True
-                    self.printmsg(warning_msg % (compare_idx+1,idx,bp[idx],bp0[idx]),verbosity=3)
+                    self.printmsg(warning_msg % (compare_idx+1,idx,bp[idx],bp0[idx]),verbosity=5)
                     
 
     if warn:

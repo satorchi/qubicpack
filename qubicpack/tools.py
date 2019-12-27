@@ -544,10 +544,19 @@ def read_qubicstudio_science_fits(self,hdu):
     The HDU passed here as the argument should already have been identified as the Science HDU
     '''
     self.printmsg('DEBUG: read_qubicstudio_science_fits object type is %s' % self.__object_type__,verbosity=3)
+
+    extname = hdu.header['EXTNAME'].strip()
+    # save PPS/GPS etc as we do for HK files
+    if extname not in self.hk.keys():
+        self.hk[extname] = {}
+
+    self.printmsg("existing keys for hk['%s']: %s" % (extname,self.hk[extname].keys()),verbosity=3)
+
     if self.tdata is None:self.tdata = [{}]
     tdata = self.tdata[-1]
     if 'WARNING' not in tdata.keys(): tdata['WARNING'] = []
-        
+
+    
     # check which ASIC
     asic = hdu.header['ASIC_NUM']
     if self.asic is None:
@@ -559,9 +568,7 @@ def read_qubicstudio_science_fits(self,hdu):
         self.asic = asic
     self.printmsg('Reading science data for ASIC %i' % asic,verbosity=2)
 
-    # save PPS/GPS etc as we do for HK files
-    extname = hdu.header['EXTNAME'].strip()
-    self.hk[extname] = {}
+
 
     # read the science data
     npts = hdu.header['NAXIS2']
@@ -570,7 +577,18 @@ def read_qubicstudio_science_fits(self,hdu):
         pix_no = pix_idx+1
         fieldname = 'pixel%i' % pix_no
         adu[pix_idx,:] = self.read_fits_field(hdu,fieldname)
-    tdata['TIMELINE'] = adu
+
+    if 'TIMELINE' not in tdata.keys():
+        tdata['TIMELINE'] = adu
+        self.printmsg('storing new timeline data for ASIC %i' % asic,verbosity=2)
+    else: # multi file data set
+        tstamp_start = 0.001*hdu.data.field(0)[0]
+        start_str = dt.datetime.fromtimestamp(tstamp_start).strftime('%Y-%m-%d %H:%M%S')
+        tstamp_end = 0.001*hdu.data.field(0)[-1]
+        self.printmsg('concatenating detector timeline data to pre-existing timeline: starting at %s' % start_str,verbosity=2)
+        tdata['TIMELINE'] = np.concatenate((tdata['TIMELINE'],adu),axis=1)
+        
+        
 
     # get number of samples per sum
     #################################################################
@@ -586,10 +604,18 @@ def read_qubicstudio_science_fits(self,hdu):
     ## les 100 échantillons pris sur chaque TES.
     #################################################################
     nbsamplespersum_list  =  self.read_fits_field(hdu,'NbSamplesPerSum')
-    tdata['NSAMSUM_LST'] = nbsamplespersum_list
-    self.hk[extname]['NbSamplesPerSum'] = nbsamplespersum_list
+    if 'NSAMSUM_LST' not in tdata.keys():
+        tdata['NSAMSUM_LST'] = nbsamplespersum_list
+        self.printmsg('storing new NsamplesPerSum data',verbosity=2)
+    else:
+        tdata['NSAMSUM_LST'] = np.concatenate((tdata['NSAMSUM_LST'],nbsamplespersum_list))
+        self.printmsg('concatenating NsamplesPerSum data to pre-existing',verbosity=2)
+
+    
+    self.hk[extname]['NbSamplesPerSum'] = tdata['NSAMSUM_LST']
     NbSamplesPerSum = nbsamplespersum_list[-1]
     tdata['NbSamplesPerSum'] = NbSamplesPerSum
+        
     ## check if they're all the same
     difflist = np.unique(nbsamplespersum_list)
     if len(difflist)!=1:
@@ -602,21 +628,45 @@ def read_qubicstudio_science_fits(self,hdu):
     computertime_idx = 0
     gpstime_idx = 1
     gpstime = 1e-3*hdu.data.field(gpstime_idx)
-    self.hk[extname]['GPSDate'] = gpstime
     if len(np.unique(gpstime))<2:
         msg="ERROR!  Bad GPS data!"
         tdata['WARNING'].append(msg)
 
-    ppstime_idx = 2
-    self.hk[extname]['PPS'] = hdu.data.field(ppstime_idx)
+    if 'GPSDate' not in self.hk[extname].keys():
+        self.hk[extname]['GPSDate'] = gpstime
+        self.printmsg('storing new GPS data',verbosity=2)
+    else:
+        self.hk[extname]['GPSDate'] = np.concatenate((self.hk[extname]['GPSDate'],gpstime))
+        self.printmsg('concatenating GPSDate to pre-existing',verbosity=2)
 
+    ppstime_idx = 2
+    pps = hdu.data.field(ppstime_idx)
+    if 'PPS' not in self.hk[extname].keys():
+        self.hk[extname]['PPS'] = pps
+        self.printmsg('storing new PPS data',verbosity=2)
+    else:
+        self.printmsg('len(PPS) = %i' % len(self.hk[extname]['PPS']),verbosity=3)
+        self.printmsg('concatenating PPS to pre-existing',verbosity=2)
+        self.hk[extname]['PPS'] = np.concatenate((self.hk[extname]['PPS'],pps))
+                                                 
     dateobs = []
     timestamp = 1e-3*hdu.data.field(computertime_idx)
-    self.hk[extname]['ComputerDate'] = timestamp
-
+    if 'ComputerDate' not in self.hk[extname].keys():
+        self.hk[extname]['ComputerDate'] = timestamp
+        self.printmsg('storing new ComputerDate data',verbosity=2)
+    else:
+        self.hk[extname]['ComputerDate'] = np.concatenate((self.hk[extname]['ComputerDate'],timestamp))
+        self.printmsg('concatenating ComputerDate to pre-existing',verbosity=2)
+                                                 
+        
     for tstamp in timestamp:
         dateobs.append(dt.datetime.utcfromtimestamp(tstamp))
-    tdata['DATE-OBS'] = dateobs
+
+    if 'DATE-OBS' not in tdata.keys():
+        tdata['DATE-OBS'] = dateobs
+    else:
+        tdata['DATE-OBS'] += dateobs
+        
     tdata['BEG-OBS'] = dateobs[0]
     self.obsdate = tdata['BEG-OBS']
     tdata['END-OBS'] = dateobs[-1]
@@ -627,7 +677,12 @@ def read_qubicstudio_science_fits(self,hdu):
     # Sine phase is the phase of the bias voltage
     keys = ['CN','TES Sinus phase']
     for key in keys:
-        self.hk[extname][key] = self.read_fits_field(hdu,key)
+        if key not in self.hk[extname].keys():
+            self.hk[extname][key] = self.read_fits_field(hdu,key)
+            self.printmsg('storing new %s' % key,verbosity=2)
+        else:
+            self.hk[extname][key] = np.concatenate((self.hk[extname][key],self.read_fits_field(hdu,key)))
+            self.printmsg('concatenating %s to pre-existing' % key,verbosity=2)
 
     # try to guess the name of the detector array (P87, or whatever)
     self.guess_detector_name()

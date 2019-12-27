@@ -312,6 +312,7 @@ def find_calsource(self,datadir):
     if len(files)==0:
         self.printmsg('No %s data found in directory: %s' % (filetype,datadir),verbosity=1)
         return
+    files.sort()
 
     # find the file which starts before and nearest to obsdate
     filename = None
@@ -381,7 +382,8 @@ def find_hornswitch(self,datadir):
     if len(files)==0:
         self.printmsg('No %s data found in directory: %s' % (filetype,datadir),verbosity=1)
         return None
-
+    files.sort()
+    
     self.printmsg('found %i hornswitch files' % len(files),verbosity=2)
     
     return files
@@ -438,6 +440,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         if len(files)==0:
             self.printmsg('No %s data found in directory: %s/%s' % (filetype,datadir,subdir[filetype]),verbosity=1)
             continue
+        files.sort()
 
         # we expect only one file of each type (per ASIC) unless we're reading all ASIC
         if asic!='ALL' and len(files)>1:

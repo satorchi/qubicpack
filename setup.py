@@ -14,6 +14,7 @@ Use this to install qubicpack without pystudio
 '''
 from __future__ import division, print_function
 import os,sys,subprocess
+import datetime as dt
 from setuptools import setup
 
 DISTNAME         = 'qubicpack'
@@ -55,10 +56,17 @@ setup(install_requires=['numpy'],
           'Topic :: Scientific/Engineering'],
 )
 
-# install the executable scripts
+
+
+# install the executable scripts, if we have permission
 exec_dir = '/usr/local/bin'
+tmp_file = 'qubicpack_installation_temporary_file_%s.txt' % dt.datetime.now().strftime('%Y%m%dT%H%M%S')
+cmd = 'touch %s/%s' % (exec_dir,tmp_file)
+proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+out,err=proc.communicate()
+
 scripts = ['scripts/quicklook.py']
-if len(sys.argv)>1 and sys.argv[1]=='install':
+if len(sys.argv)>1 and sys.argv[1]=='install' and not err:
     print('installing executable scripts...')
     for F in scripts:
         basename = os.path.basename(F)
@@ -67,4 +75,8 @@ if len(sys.argv)>1 and sys.argv[1]=='install':
         out,err=proc.communicate()
         if out:print(out.decode().strip())
         if err:print(err.decode().strip())
+    
+    cmd = 'rm -f %s/%s' % (exec_dir,tmp_file)
+    proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    out,err=proc.communicate()
 

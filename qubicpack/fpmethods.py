@@ -43,6 +43,7 @@ def assign_verbosity(self,verbosity):
     '''
     assign the verbosity level for messages on the screen
     '''
+    self.verbosity = verbosity
     for asic_obj in self.asic_list:
         if asic_obj is not None:
             asic_obj.verbosity = verbosity
@@ -87,10 +88,20 @@ def calsource_info(self):
     info['modulator'] = {}
     info['calsource'] = {}
 
+    if info_txt.find('busy')>0:
+        for dev in ['amplifier','modulator','calsource']:
+            info[dev]['status'] = 'busy'
+        return info
+
     munits = ['mHz','mVpp','mVdc']
     units = ['GHz','Hz','Vpp','Vdc','%']
     for item in info_rawlist[2:]:
         cols = item.split(':')
+
+        if len(cols)==1:
+            info['calsource']['status'] = info_txt
+            continue
+        
         dev = cols[0]
         if dev=='lamp' or dev=='arduino' or dev=='synthesiser':
             continue
@@ -103,7 +114,7 @@ def calsource_info(self):
         parm = val_list[0]
         val = val_list[1]
         
-        if val=='--':
+        if val=='--' or val.upper()=='UNKNOWN':
             info[dev][parm.lower()] = -1
             continue
 
@@ -143,11 +154,15 @@ def calsource_infotext(self):
     if info is None:
         return 'Calsource: No information'
 
-    if info['calsource']['status'] == 'OFF':
-        return 'Calsource OFF'
+    if info['calsource']['status'] != 'ON':
+        return 'Calsource %s' % info['calsource']['status']
 
     calsrc_txt = 'Calsource: '
-    calsrc_txt += 'frequency=%.2fGHz' % info['calsource']['frequency']
+    if info['calsource']['frequency'] > 0:
+        calsrc_txt += 'frequency=%.2fGHz' % info['calsource']['frequency']
+    else:
+        calsrc_txt += 'frequency=UNKNOWN'
+
 
     if info['modulator']['status'] == 'OFF':
         calsrc_txt += ' modulator OFF'

@@ -26,8 +26,8 @@ def plot_calsource(self,ax=None,fontsize=12):
     
     if info is None:
         ttl += ' NO INFORMATION'
-    elif info['calsource']['status']=='OFF':
-        ttl += ' OFF'
+    elif info['calsource']['status']!='ON':
+        ttl += ' %s' % info['calsource']['status']
     else:
         ttl += ' frequency=%.2fGHz' % info['calsource']['frequency']
     
@@ -294,7 +294,7 @@ def plot_hwp(self,ax=None,fontsize=12):
     return ax
     
 
-def quicklook(self,TES=(54,54)):
+def quicklook(self,TES=(54,54),xwin=True):
     '''
     make a page with diagnostic info
     argument: TES is a list of TES to show as examples (one from ASIC1 and one form ASIC2)
@@ -303,9 +303,14 @@ def quicklook(self,TES=(54,54)):
     ttl = 'Diagnostic for %s' % self.dataset_name
     
     #ttl += '\n'+self.infotext()
-    plt.ion()
+    if xwin:
+        plt.ion()
+    else:
+        plt.close('all')
+        plt.ioff()
+        
     fig = plt.figure(figsize=(10.5,14))
-    fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
+    if xwin: fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
     fig.suptitle(ttl,fontsize=10)
 
     fontsize = 5
@@ -360,9 +365,9 @@ def quicklook(self,TES=(54,54)):
     ax = fig.add_axes((hpos2,vpos,width,height))
     self.plot_timeline(asic=2,TES=TES[1],ax=ax,fontsize=fontsize)
 
-    
-
     pngname = 'QUBIC_quicklook_%s.png' % self.dataset_name
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')    
+
+    if not xwin: plt.close(fig)
     
     return

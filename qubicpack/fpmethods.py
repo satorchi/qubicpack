@@ -39,6 +39,15 @@ def assign_defaults(self):
     self.assign_fitsblurbs()
     return
 
+def assign_verbosity(self,verbosity):
+    '''
+    assign the verbosity level for messages on the screen
+    '''
+    for asic_obj in self.asic_list:
+        if asic_obj is not None:
+            asic_obj.verbosity = verbosity
+    return
+
 def assign_temperature(self,temp):
     '''
     assign the bath temperature to the asic objects

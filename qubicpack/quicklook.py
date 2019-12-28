@@ -18,27 +18,22 @@ def plot_calsource(self,ax=None,fontsize=12):
     plot the calibration source
     '''
 
-    t,v = self.calsource()
-    if t is None: return None
-
     dset_shortname = self.dataset_name.split('__')[-1]
     pngname = 'QUBIC_calsource_%s_%s.png' % (dset_shortname,self.obsdate.strftime('%Y%m%d-%H%M%S'))
-
-    tdate = []
-    for tstamp in t:
-        tdate.append(dt.datetime.fromtimestamp(tstamp))
+    ttl = 'Calibration Source'
 
     info = self.calsource_info()
     
-    ttl = 'Calibration Source'
-    if info['calsource']['status']=='OFF':
+    if info is None:
+        ttl += ' NO INFORMATION'
+    elif info['calsource']['status']=='OFF':
         ttl += ' OFF'
     else:
         ttl += ' frequency=%.2fGHz' % info['calsource']['frequency']
     
     if ax is None:
         newplot = True
-        ttl += ' '+self.infotext()
+        ttl = '%s %s' % (self.infotext(),ttl)
         plt.ion()
         fig = plt.figure()
         fig.canvas.set_window_title('plt: Calibration Source for dataset %s' % self.dataset_name)
@@ -48,11 +43,22 @@ def plot_calsource(self,ax=None,fontsize=12):
         newplot = False
         #ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
             
-    ax.plot(tdate,v)
     ax.set_ylabel('Calibration Source Power / arbitrary units',fontsize=fontsize)
     ax.set_xlabel('Date / UT',fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)
     ax.text(0.01,1.0,self.calsource_infotext(),va='bottom',ha='left',fontsize=fontsize,transform=ax.transAxes)
+
+    t,v = self.calsource()
+    if t is None:
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        ax.text(0.5,0.5,'No Calsource Data',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)        
+    else:
+        tdate = []
+        for tstamp in t:
+            tdate.append(dt.datetime.fromtimestamp(tstamp))
+        ax.plot(tdate,v)
+
     if newplot:
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     return ax
@@ -314,8 +320,7 @@ def quicklook(self,TES=(54,54)):
     vpos = 0.80
     # calsource
     ax = fig.add_axes((hpos1,vpos,width,height))
-    if self.plot_calsource(ax,fontsize=fontsize) is None:
-        ax.text(0.5,0.5,'No Calsource Data',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+    self.plot_calsource(ax,fontsize=fontsize)
 
     # platform position
     ax = fig.add_axes((hpos2,vpos,width,height))

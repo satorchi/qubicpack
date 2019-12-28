@@ -76,6 +76,7 @@ class qubicfp:
         lost_packets
 
     from .fpmethods import\
+        assign_verbosity,\
         infotext,\
         calsource_info,\
         calsource_infotext,\

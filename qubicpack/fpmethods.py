@@ -117,7 +117,12 @@ def calsource_info(self):
                 break
         if goto_next_item: continue
 
-        info[dev][parm.lower()] = val
+        if val.upper()=='ON' or val.upper()=='OFF':
+            info[dev][parm.lower()] = val.upper()
+            continue
+
+        info[dev][parm.lower()] = val.lower()
+
 
     return info
 
@@ -140,8 +145,12 @@ def calsource_infotext(self):
     elif info['modulator']['shape'] == 'DC':
         calsrc_txt += ' No modulation, offset=%.2fVdc' % info['modulator']['offset']
     else:
-        calsrc_txt += '\nmodulator: frequency=%.3fHz, amplitude=%.3fVpp, offset=%.3fVdc, duty=%.1f%%'\
-            % (info['modulator']['frequency'],info['modulator']['amplitude'],info['modulator']['offset'],info['modulator']['duty_cycle'])
+        calsrc_txt += '\nmodulator: frequency=%.3fHz, shape=%s, amplitude=%.3fVpp, offset=%.3fVdc, duty=%.1f%%'\
+            % (info['modulator']['frequency'],
+               info['modulator']['shape'],
+               info['modulator']['amplitude'],
+               info['modulator']['offset'],
+               info['modulator']['duty_cycle'])
 
     if info['amplifier']['status'] == 'OFF':
         calsrc_txt += 'amplifier OFF'

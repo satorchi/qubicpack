@@ -315,7 +315,7 @@ def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):
     # use the bias_phase if it exists
     bias_phase = self.bias_phase()
     if bias_phase is not None:
-        self.printmsg('getting bias variation from the saved data')
+        self.printmsg('getting bias variation from the saved data',verbosity=2)
         imin = np.argmin(bias_phase)
         imax = np.argmax(bias_phase)
         iperiod = 2*abs(imax-imin)
@@ -536,7 +536,10 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         if fitparms is None:
             ax_bias = ax.twinx()
             ax_bias.set_ylabel('Bias / V',rotation=270,va='bottom',fontsize=fontsize)
-            ax_bias.set_ylim([self.min_bias,self.max_bias])
+            if self.min_bias==self.max_bias:
+                ax_bias.set_ylim([self.min_bias-1,self.max_bias+1])
+            else:
+                ax_bias.set_ylim([self.min_bias,self.max_bias])
             ax_bias.tick_params(axis='both',labelsize=fontsize)
             curve2_ax=ax_bias
         else:

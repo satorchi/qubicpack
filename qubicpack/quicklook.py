@@ -19,7 +19,7 @@ def plot_calsource(self,ax=None,fontsize=12):
     '''
 
     t,v = self.calsource()
-    if t is None: return
+    if t is None: return None
 
     dset_shortname = self.dataset_name.split('__')[-1]
     pngname = 'QUBIC_calsource_%s_%s.png' % (dset_shortname,self.obsdate.strftime('%Y%m%d-%H%M%S'))
@@ -274,7 +274,7 @@ def plot_hwp(self,ax=None,fontsize=12):
     if v is not None:
         ax.plot(tdate,v,marker='D',ls='none',label='HWP Position')
         
-    if v is None:
+    if v is None or min(v)==255:
         ax.text(0.5,0.5,'No Half Wave Plate information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
 
     ax.set_ylim(0,8)
@@ -314,7 +314,8 @@ def quicklook(self,TES=(54,54)):
     vpos = 0.80
     # calsource
     ax = fig.add_axes((hpos1,vpos,width,height))
-    self.plot_calsource(ax,fontsize=fontsize)
+    if self.plot_calsource(ax,fontsize=fontsize) is None:
+        ax.text(0.5,0.5,'No Calsource Data',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
 
     # platform position
     ax = fig.add_axes((hpos2,vpos,width,height))

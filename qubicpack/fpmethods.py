@@ -177,7 +177,7 @@ def read_qubicstudio_science_fits(self,hdu):
     self.asic_list[asic_ctr].read_qubicstudio_science_fits(hdu)
 
     obsdate = self.asic_list[asic_ctr].obsdate
-    self.printmsg('ASIC%i Observation date: %s' % (asic_no,obsdate.strftime('%Y-%m-%d %H:%M:%S.%f')))
+    self.printmsg('ASIC%i     Observation date: %s' % (asic_no,obsdate.strftime('%Y-%m-%d %H:%M:%S.%f')))
     if self.obsdate is None:
         self.printmsg('DEBUG: setting obsdate which was None: %s' % obsdate.strftime('%Y-%m-%d %H:%M:%S.%f'),verbosity=3)
         self.obsdate = obsdate

@@ -152,11 +152,11 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     analysis['weird_event'] = weird_event
 
     mean_separation = separations.mean()
-    self.printmsg('mean separation between pulses is %.4f second' % mean_separation)
+    self.printmsg('mean separation between pulses is %.4f second' % mean_separation,verbosity=2)
     max_separation = separations.max()
-    self.printmsg('max separation between pulses is %.4f second' % max_separation)
+    self.printmsg('max separation between pulses is %.4f second' % max_separation,verbosity=2)
     min_separation = separations.min()
-    self.printmsg('min separation between pulses is %.4f second' % min_separation)
+    self.printmsg('min separation between pulses is %.4f second' % min_separation,verbosity=2)
     
     tstamps = self.pps2date(pps,gps)
     t0 = tstamps[0]
@@ -173,7 +173,7 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     analysis['offset'] = offset
     sample_period_txt = 'expected sample period: %.6f msec\nderived sample period: %.6f msec' % (sample_period*1000,slope*1000)
     analysis['sample_period_txt'] = sample_period_txt
-    self.printmsg(sample_period_txt)
+    self.printmsg(sample_period_txt,verbosity=2)
 
     # subtract the progression to view only the residues (horizontal line)
     indextime = slope*xpts + offset
@@ -472,8 +472,8 @@ def lost_packets(self,hk='sci',asic=None):
     idx_lost = np.where(delta!=0)[0]
 
     if len(idx_lost)==0:
-        self.printmsg('No lost packets!')
+        self.printmsg('No lost packets!',verbosity=2)
     else:
-        self.printmsg('%i lost packets.' % len(idx_lost))
+        self.printmsg('%i lost packets.' % len(idx_lost),verbosity=2)
     
     return idx_lost

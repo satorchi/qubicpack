@@ -848,8 +848,8 @@ def read_qubicstudio_hkextern_fits(self,hdu):
     min_temp = testemp.min()
     max_temp = testemp.max()
     temperature = testemp.mean()
-    self.printmsg('TES temperatures varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
-    self.printmsg('Using TES temperature %.1fmK' % (1000*temperature))
+    self.printmsg('TES temperature varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
+    self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
     self.tdata[0]['TES_TEMP'] = temperature
     self.temperature = temperature
 
@@ -1114,9 +1114,9 @@ def pps2date(self,pps,gps):
 
     separations = np.array(separations[1:])
 
-    self.printmsg('mean pps interval is %.4f second' % separations.mean())
-    self.printmsg('max pps interval is  %.4f second' % separations.max())
-    self.printmsg('min pps interval is  %.4f second' % separations.min())
+    self.printmsg('mean pps interval is %.4f second' % separations.mean(),verbosity=2)
+    self.printmsg('max pps interval is  %.4f second' % separations.max(),verbosity=2)
+    self.printmsg('min pps interval is  %.4f second' % separations.min(),verbosity=2)
             
     # find the GPS date corresponding to the PPS
     tstamp = -np.ones(npts)
@@ -1345,7 +1345,7 @@ def calsource(self):
     return the calibration source data
     '''    
     if 'CALSOURCE' not in self.hk.keys():
-        self.printmsg('No calibration source data')
+        self.printmsg('No calibration source data',verbosity=2)
         return None, None
     
     t_src = self.hk['CALSOURCE']['timestamp']

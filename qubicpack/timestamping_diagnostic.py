@@ -94,7 +94,7 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     analysis['sample_period'] = sample_period
         
     lost_txt = None
-    lost_idx = self.lost_packets(hk=hk)
+    lost_idx = self.lost_packets(hk=hk,asic=asic)
     if lost_idx is not None:
         lost_txt = '%i lost packets' % len(lost_idx)
     analysis['lost_idx'] = lost_idx

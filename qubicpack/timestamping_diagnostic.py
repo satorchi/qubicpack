@@ -102,6 +102,13 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     
     
     ########## find where we have potential problems
+    if max(gps)==0:
+        refclock = compstamps
+        self.printmsg('Bad GPS data.  Using the computer time instead.',verbosity=2)
+        analysis['tstamps_title'] += ' (based on computer clock.  Bad GPS data)'
+    else:
+        refclock = gps
+    
     separations = []
     separations_idx = []
     pps_high = np.where(pps==1)[0]
@@ -109,12 +116,12 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     prev = gps[0]
     for idx in pps_high:
         if (idx>0 and pps[idx-1]==0) or (idx<npts-1 and pps[idx+1]==0):
-            sep = gps[idx] - prev
+            sep = refclock[idx] - prev
             if sep != 0:
                 pps_indexes.append(idx)
                 separations.append(sep)
                 separations_idx.append(idx)
-                prev = gps[idx]
+                prev = refclock[idx]
 
     separations = np.array(separations[1:])
     separations_idx = np.array(separations_idx[1:])
@@ -168,7 +175,7 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     min_separation = separations.min()
     self.printmsg('min separation between pulses is %.4f second' % min_separation,verbosity=2)
     
-    tstamps = self.pps2date(pps,gps)
+    tstamps = self.pps2date(pps,refclock)
     t0 = tstamps[0]
     analysis['tstamps'] = tstamps
 

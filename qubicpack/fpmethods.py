@@ -64,7 +64,8 @@ def infotext(self):
     '''
 
     txt = self.dataset_name
-    txt += ' T$_\mathrm{bath}$=%.1fmK' % (1000*self.temperature)
+    if self.temperature is not None:
+        txt += ' T$_\mathrm{bath}$=%.1fmK' % (1000*self.temperature)
 
     return txt
 

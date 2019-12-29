@@ -123,6 +123,15 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     analysis['pps_high'] = pps_high
     analysis['separations'] = separations
     analysis['pps_indexes'] = pps_indexes
+
+    if len(pps_indexes)<2:
+        analysis['samples_per_pps'] = None
+        analysis['sample_period_txt'] = 'Insufficient PPS data'
+        analysis['avg samples_per_pps txt'] = 'Insufficient PPS data'
+        analysis['weird_idx'] = []
+        analysis['weird_event'] = []
+        self.printmsg('ERROR! insufficient PPS data',verbosity=2)
+        return analysis
     
     samples_per_pps = []
     idx_prev = pps_indexes[0]
@@ -138,6 +147,7 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     self.printmsg('sigma samples between pulses: %.1f' % sigma_samples_per_pps,verbosity=2)
     analysis['samples_per_pps'] = samples_per_pps
     analysis['mean_samples_per_pps'] = mean_samples_per_pps
+    analysis['avg samples_per_pps txt'] = 'avg number of samples between events: %.2f' % mean_samples_per_pps
     analysis['sigma_samples_per_pps'] = sigma_samples_per_pps
 
     weird_event = []
@@ -203,7 +213,7 @@ def plot_pps(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,
 
     ax.text(0.01,1.00,ttl,ha='left',va='bottom',fontsize=fontsize,transform=ax.transAxes)
     ax.text(0.99,1.01,analysis['sample_period_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
-    ax.text(0.01,1.05,'avg number of samples between events: %.2f' % analysis['samples_per_pps'].mean(),fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.01,1.05,analysis['avg samples_per_pps txt'],fontsize=fontsize,transform=ax.transAxes)
     if analysis['lost_txt'] is not None:
         ax.text(0.99,1.1,analysis['lost_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
 
@@ -247,11 +257,14 @@ def plot_pps_nsamples(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None
 
     ax.text(0.01,1.00,ttl,ha='left',va='bottom',fontsize=fontsize,transform=ax.transAxes)
     ax.text(0.99,1.01,analysis['sample_period_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
-    ax.text(0.01,1.05,'avg number of samples between events: %.2f' % analysis['samples_per_pps'].mean(),fontsize=fontsize,transform=ax.transAxes)
+    ax.text(0.01,1.05,analysis['avg samples_per_pps txt'],fontsize=fontsize,transform=ax.transAxes)
     if analysis['lost_txt'] is not None:
         ax.text(0.99,1.1,analysis['lost_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
-        
-    ax.plot(analysis['samples_per_pps'])
+
+    if analysis['samples_per_pps'] is not None:
+        ax.plot(analysis['samples_per_pps'])
+    else:
+        ax.text(0.5,0.5,'Insufficient PPS data',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
     ax.set_ylabel('Number of samples per PPS event',fontsize=fontsize)
     ax.set_xlabel('PPS event number',fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)

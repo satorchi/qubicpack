@@ -527,6 +527,8 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     ymax=max(current)
     ymin=min(current)
     yrange=ymax-ymin
+    if yrange==0:
+        yrange = 0.1
     yminmax=(ymin-0.02*yrange,ymax+0.02*yrange)
     ax.plot([peak0,peak0],yminmax,color='red')
     ax.plot([peak1,peak1],yminmax,color='red')

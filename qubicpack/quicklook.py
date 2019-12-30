@@ -77,11 +77,7 @@ def plot_temperatures(self,ax,label,ttl,fontsize=12):
         val[sensor]  = self.get_hk(sensor)
 
     t = self.get_hk(data='RaspberryDate',hk='EXTERN_HK')
-    if t is None: return
     
-    tdate = []
-    for tstamp in t:
-        tdate.append(dt.datetime.fromtimestamp(tstamp))
         
     dset_shortname = self.dataset_name.split('__')[-1]
     pngname = 'QUBIC_%s_%s_%s.png' % (ttl.replace(' ','_'),dset_shortname,self.obsdate.strftime('%Y%m%d-%H%M%S'))
@@ -97,8 +93,19 @@ def plot_temperatures(self,ax,label,ttl,fontsize=12):
     else:
         newplot = False
         ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
+
+    if t is None:
+        ax.text(0.5,0.5,'No Temperature Information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        if newplot:
+            fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+        return ax
         
-        
+    tdate = []
+    for tstamp in t:
+        tdate.append(dt.datetime.fromtimestamp(tstamp))
+
     for key in val.keys():
         if val[key] is not None:
             plt.plot(tdate,val[key],label=label[key],marker='D')
@@ -149,9 +156,6 @@ def plot_switchstatus(self,ax=None,fontsize=12):
     v1 = self.get_hk('switch1')
     v2 = self.get_hk('switch2')
     t = self.timeaxis('INTERN_HK')
-    if t is None:
-        self.printmsg('No housekeeping information!')
-        return
 
     ttl = 'Closed Horn Switches'
     dset_shortname = self.dataset_name.split('__')[-1]
@@ -169,26 +173,29 @@ def plot_switchstatus(self,ax=None,fontsize=12):
         newplot = False
         ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
 
-    
-    tdate = []
-    for tstamp in t:
-        tdate.append(dt.datetime.fromtimestamp(tstamp))
 
-    if v1 is not None:
-        ax.plot(tdate,v1,marker='D',ls='none',label='Switch 1 Closed')
-    if v2 is not None:
-        ax.plot(tdate,v2,marker='D',ls='none',label='Switch 2 Closed')
-        
-    if v1 is None and v2 is None:
+    if t is None or (v1 is None and v2 is None):
         ax.text(0.5,0.5,'No Horn Switch Information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
-    elif max(v1)==0 and max(v2)==0:
-        ax.text(0.5,0.5,'All horns open',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
+    else:
+        tdate = []
+        for tstamp in t:
+            tdate.append(dt.datetime.fromtimestamp(tstamp))
+        if v1 is not None:
+            ax.plot(tdate,v1,marker='D',ls='none',label='Switch 1 Closed')
+        if v2 is not None:
+            ax.plot(tdate,v2,marker='D',ls='none',label='Switch 2 Closed')
+
+        if max(v1)==0 and max(v2)==0:
+            ax.text(0.5,0.5,'All horns open',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+            
+        ax.set_ylabel('Horn number',fontsize=fontsize)
+        ax.set_xlabel('Date / UT',fontsize=fontsize)
+        ax.tick_params(axis='both',labelsize=fontsize)
+        ax.set_ylim((-1,65))
+        ax.legend(fontsize=fontsize)
         
-    ax.set_ylabel('Horn number',fontsize=fontsize)
-    ax.set_xlabel('Date / UT',fontsize=fontsize)
-    ax.legend(fontsize=fontsize)
-    ax.tick_params(axis='both',labelsize=fontsize)
-    ax.set_ylim((-1,65))
     if newplot:
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     return ax
@@ -201,9 +208,6 @@ def plot_azel(self,ax=None,fontsize=12):
     az = self.azimuth()
     el = self.elevation()
     t = self.timeaxis('platform')
-    if t is None:
-        self.printmsg('No housekeeping information!')
-        return
 
     ttl = 'Platform position'
     dset_shortname = self.dataset_name.split('__')[-1]
@@ -220,12 +224,20 @@ def plot_azel(self,ax=None,fontsize=12):
     else:
         newplot = False
         ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
+
+    if t is None:
+        ax.text(0.5,0.5,'No Platform information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        self.printmsg('No housekeeping information!',verbosity=2)
+        if newplot:
+            fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+        return ax
+        
     
     tdate = []
     for tstamp in t:
         tdate.append(dt.datetime.fromtimestamp(tstamp))
-
-    #ax_el = ax.twinx()
     
     if az is not None:
         ax.plot(tdate,az,marker='D',ls='none',color='blue',label='Azimuth')
@@ -253,9 +265,6 @@ def plot_hwp(self,ax=None,fontsize=12):
 
     v = self.get_hk('HWP-Position')
     t = self.timeaxis('hwp')    
-    if t is None:
-        self.printmsg('No housekeeping information!')
-        return
 
     ttl = 'Half Wave Plate position'
     dset_shortname = self.dataset_name.split('__')[-1]
@@ -272,6 +281,15 @@ def plot_hwp(self,ax=None,fontsize=12):
     else:
         newplot = False
         ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
+
+    if t is None:
+        self.printmsg('No housekeeping information!',verbosity=2)
+        ax.text(0.5,0.5,'No Half Wave Plate information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        if newplot:
+            fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+        return ax
     
     tdate = []
     for tstamp in t:
@@ -279,15 +297,17 @@ def plot_hwp(self,ax=None,fontsize=12):
 
     if v is not None:
         ax.plot(tdate,v,marker='D',ls='none',label='HWP Position')
+        ax.set_ylim(0,8)
+        ax.set_ylabel('Position number',fontsize=fontsize)    
+        ax.set_xlabel('Date / UT',fontsize=fontsize)
+        ax.legend(fontsize=fontsize)
+        ax.tick_params(axis='both',labelsize=fontsize)
         
     if v is None or min(v)==255:
         ax.text(0.5,0.5,'No Half Wave Plate information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
 
-    ax.set_ylim(0,8)
-    ax.set_ylabel('Position number',fontsize=fontsize)    
-    ax.set_xlabel('Date / UT',fontsize=fontsize)
-    ax.legend(fontsize=fontsize)
-    ax.tick_params(axis='both',labelsize=fontsize)
     
     if newplot:
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')

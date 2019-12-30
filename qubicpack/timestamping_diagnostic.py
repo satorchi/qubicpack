@@ -249,7 +249,14 @@ def plot_pps_nsamples(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None
 
     if analysis is None:
         analysis = self.timestamp_diagnostic(hk=hk,asic=asic)
-    if analysis is None: return
+    if analysis is None:
+        if ax is None:
+            return
+        ax.text(0.5,0.5,'Insufficient PPS Data',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        return ax
+
 
     ttl = analysis['nsamples_title']
     png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))

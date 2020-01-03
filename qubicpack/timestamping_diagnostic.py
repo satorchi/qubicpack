@@ -493,6 +493,9 @@ def lost_packets(self,hk='sci',asic=None):
     for idx in range(npts):
         if counter==counter_max: counter = 0
         generated_cn[idx] = counter
+        delta = cn[idx] - generated_cn[idx]
+        if delta!=0:
+            counter += delta # lost packet. resync
         counter += 1
         
     delta = cn - generated_cn

@@ -385,6 +385,27 @@ def quicklook(self,TES=(54,54),xwin=True):
     ax = fig.add_axes((hpos2,vpos,width,height))
     self.plot_timeline(asic=2,TES=TES[1],ax=ax,fontsize=fontsize)
 
+    # elapsed time
+    delta = self.endobs - self.obsdate
+    days = delta.days
+    seconds = delta.seconds
+    hours = seconds // 3600
+    remain_secs = seconds % 3600
+    mins = remain_secs // 60
+    secs = remain_secs % 60
+    usecs = delta.microseconds
+    elapsed_time_txt = 'elapsed time:  '
+    if days>0:
+        elapsed_time_txt += '%i days, ' % days
+    elapsed_time_txt += '%i hours, %i minutes, %i.%06i seconds' % (hours,mins,secs,usecs)
+    
+    vpos -= 0.3*vspacing
+    # bottom of page to show elapsed time
+    ax = fig.add_axes((hpos1,vpos,width+hspacing,0.2*height))
+    ax.text(0.5,0.5,elapsed_time_txt,va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+    ax.get_yaxis().set_visible(False)
+    ax.get_xaxis().set_visible(False)
+
     pngname = 'QUBIC_quicklook_%s.png' % self.dataset_name
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')    
 

@@ -1243,7 +1243,8 @@ def etf_func(self,Vtes,I,f_prime):
 
     
     R0 = Vtes/I
-    Z0 = 1/f_prime
+    G0 = self.conductance_func(f_prime)
+    Z0 = 1/G0
     
     etf =  (Z0-R0)/(Z0+R0)
     return etf
@@ -1432,6 +1433,7 @@ def calculate_responsivity(self,TES,npts_region=500,window_size=51,filter_sigma=
         ETFmodel.append(Li)
 
     # convert to numpy arrays
+    voltage = np.array(voltage)
     responsivity = np.array(responsivity)
     ETFmodel = np.array(ETFmodel)
     Imodel = np.array(Imodel)
@@ -1473,7 +1475,7 @@ def calculate_responsivity(self,TES,npts_region=500,window_size=51,filter_sigma=
     retval['npts_smooth'] = npts_smooth
     retval['Vbias'] = Vbias
     retval['V'] = V
-    retval['voltage'] = np.array(voltage)
+    retval['voltage'] = voltage
     retval['Vsuper_TES'] = Vsuper_TES
     retval['Vnormal_TES'] = Vnormal_TES
     retval['Vsmooth'] = Vsmooth

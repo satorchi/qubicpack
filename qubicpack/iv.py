@@ -1228,18 +1228,22 @@ def etf_func(self,Vtes,I,f_prime):
     also called Li
     Li = (Z0-R0)/(Z0+R0)
 
-    f_prime is the derivative of the model I=f(Vbias), dI/dVbias = f'(Vbias) at the point I,Vbias
+    f_prime is the derivative of the model I=f(Vbias), dI/dVbias = f'(Vbias) at the point Vbias, I
     for more details see calculate_responsivity() below
     '''
     if not self.exist_iv_data():
         self.printmsg('No I-V data!')
         return None
 
-    R0 = Vtes/I
-    try:
-        Z0 = 1/f_prime
-    except: # infinite impedence
+    if np.abs(f_prime)<0.001: # infinite impedence.  ETF -> 1.0
         return 1.0
+
+    if np.abs(I)<1e-9: # infinite resistance.  ETV -> -1.0
+        return -1.0
+
+    
+    R0 = Vtes/I
+    Z0 = 1/f_prime
     
     etf =  (Z0-R0)/(Z0+R0)
     return etf
@@ -1426,6 +1430,7 @@ def calculate_responsivity(self,TES,npts_region=500,window_size=51,filter_sigma=
     # convert to numpy arrays
     responsivity = np.array(responsivity)
     ETFmodel = np.array(ETFmodel)
+    Imodel = np.array(Imodel)
 
     # Now make the calculation based on the smoothed measurement, instead of using the model
     istart,iend=self.selected_iv_curve(TES)
@@ -1471,6 +1476,8 @@ def calculate_responsivity(self,TES,npts_region=500,window_size=51,filter_sigma=
     retval['meas_responsivity'] = meas_responsivity
     retval['Pmodel'] = Pmodel
     retval['Imodel_intrinsic'] = Imodel_intrinsic
+    retval['Imodel'] = Imodel
+    retval['G0model'] = G0_model
     retval['ETFmodel'] = ETFmodel
     retval['meas_ETF'] = meas_ETF
 

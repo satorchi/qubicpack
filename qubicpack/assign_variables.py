@@ -106,6 +106,7 @@ def assign_fitsblurbs(self):
     self.fitsblurbs['FLL_D']   ='Flux Lock Loop D level'
     self.fitsblurbs['DET_NAME']='ID of the detector array'
     self.fitsblurbs['R_FEEDBK']='Feedback resistance in Flux Lock Loop'
+    self.fitsblurbs['R_HEATER']='Heater in feedback loop:  On/Off'
     self.fitsblurbs['CHUNK']='data chunk size delivered by QubicStudio'
     return
 

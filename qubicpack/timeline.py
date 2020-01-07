@@ -438,11 +438,11 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     fbstr = ''
     if 'R_FEEDBK' in keys:
-        if tdata['FB_ONOFF']==1:
+        if tdata['R_HEATER']==1:
             onoff = 'ON'
         else:
             onoff = 'OFF'
-        fbstr = ', Feedback Relay: %s with %.0fk$\Omega$' % (onoff,tdata['R_FEEDBK']*1e-3)
+        fbstr = ', Feedback Relay: %.0fk$\Omega$, Heater %s' % (tdata['R_FEEDBK']*1e-3,onoff)
         
     subttl=str('Array %s, ASIC #%i, Pixel #%i, Temperature %s%s' %
                (self.detector_name,self.asic,tes2pix(TES,self.asic),tempstr,fbstr))

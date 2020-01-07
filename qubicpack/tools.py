@@ -778,7 +778,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
         msg = 'WARNING! nsample changed during the measurement!'
         tdata['WARNING'].append(msg)
 
-    # Relay feedback resistance (bit0: on/off and bit1: 10kOhm/100kOhm)
+    # Relay feedback resistance (bit0: heater on/off and bit1: 10kOhm/100kOhm)
     onoff_list = []
     rfb_list = []
     relay_list = self.read_fits_field(hdu,'Relays state')
@@ -793,8 +793,8 @@ def read_qubicstudio_asic_fits(self,hdulist):
     tdata['RFB_LST'] = rfb_list
     tdata['R_FEEDBK'] = rfb_list[-1]
     self.Rfeedback = tdata['R_FEEDBK']
-    tdata['FB_LST'] =  onoff_list
-    tdata['FB_ONOFF'] = onoff_list[-1]
+    tdata['R_HEATER_LST'] =  onoff_list
+    tdata['R_HEATER'] = onoff_list[-1]
     difflist1 = np.unique(rfb_list)
     difflist2 = np.unique(onoff_list)
     if len(difflist1)!=1 or len(difflist2)!=1:

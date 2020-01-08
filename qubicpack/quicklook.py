@@ -314,10 +314,19 @@ def plot_hwp(self,ax=None,fontsize=12):
     return ax
     
 
-def quicklook(self,TES=(54,54),xwin=True):
+def quicklook(self,TES=(54,54),xwin=True, figsize=(10.5, 14), filename=None, dpi=100):
     '''
     make a page with diagnostic info
-    argument: TES is a list of TES to show as examples (one from ASIC1 and one form ASIC2)
+    arguments:
+      - `TES`: list of TES to show as examples (one from ASIC1 and one form ASIC2)
+      - `xwin`: if `True` (the default), the plot will be shown in a window
+      - `figsize`: size of the figure
+      - `filename`: name of the file where to save the plot. The extension will determine the image type
+        (e.g., `out.png` will produce a PNG file, `out.pdf` will produce a PDF file)
+      - 'dpi': the resolution of the figure, in dots-per-inch (default: 100)
+      
+    Return value:
+      The name of the image file created by the function
     '''
 
     ttl = 'Diagnostic for %s' % self.dataset_name
@@ -329,7 +338,7 @@ def quicklook(self,TES=(54,54),xwin=True):
         plt.close('all')
         plt.ioff()
         
-    fig = plt.figure(figsize=(10.5,14))
+    fig = plt.figure(figsize=figsize)
     if xwin: fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
     fig.suptitle(ttl,fontsize=10)
 
@@ -406,9 +415,13 @@ def quicklook(self,TES=(54,54),xwin=True):
     ax.get_yaxis().set_visible(False)
     ax.get_xaxis().set_visible(False)
 
-    pngname = 'QUBIC_quicklook_%s.png' % self.dataset_name
-    fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')    
+    if filename:
+        image_file_name = filename
+    else:
+        image_file_name = 'QUBIC_quicklook_%s.png' % self.dataset_name
+
+    fig.savefig(image_file_name,dpi=dpi,bbox_inches='tight')    
 
     if not xwin: plt.close(fig)
     
-    return
+    return image_file_name

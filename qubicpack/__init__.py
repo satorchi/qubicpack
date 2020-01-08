@@ -119,7 +119,7 @@ class qubicpack:
         plot_iv,\
         responsivity_func,\
         conductance_func,\
-        plot_responsivity,\
+        plot_fom,\
         plot_ip,\
         plot_pv,\
         plot_rp,\

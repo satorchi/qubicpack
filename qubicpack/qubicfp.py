@@ -86,6 +86,7 @@ class qubicfp:
         read_qubicstudio_asic_fits,\
         read_qubicpack_fits,\
         args_ok,\
+        asic,\
         bias_phase,\
         timeline_vbias,\
         Rfeedback,\

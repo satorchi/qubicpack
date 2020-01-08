@@ -293,6 +293,13 @@ def args_ok(self,TES=None,asic=None):
 
     return True
 
+def asic(self,asic=None):
+    '''
+    return the requested asic object
+    '''
+    if not self.args_ok(0,asic):return
+    asic_idx = asic - 1
+    return self.asic_list[asic_idx]
     
 def Rfeedback(self,asic=None):
     '''

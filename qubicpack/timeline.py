@@ -446,7 +446,6 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         
     subttl=str('Array %s, ASIC #%i, Pixel #%i, Temperature %s%s' %
                (self.detector_name,self.asic,tes2pix(TES,self.asic),tempstr,fbstr))
-    if warning_str: subttl += '\n'+warning_str
                                 
     if xwin: plt.ion()
     else: plt.ioff()
@@ -462,6 +461,13 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     ax.set_xlabel('time  /  seconds',fontsize=fontsize)
     ax.set_ylabel('Current  /  $\mu$A',fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)
+    if warning_str:
+        boxprops = {}
+        boxprops['alpha'] = 0.4
+        boxprops['color'] = 'red'
+        boxprops['boxstyle'] = 'round'
+        ax.text(0.5,0.5,warning_str,ha='center',va='center',fontsize=2*fontsize,transform=ax.transAxes,bbox=boxprops)
+
     
     TES_idx=TES_index(TES)
     timeline=self.timeline(TES,timeline_index)

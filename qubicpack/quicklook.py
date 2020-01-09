@@ -315,10 +315,21 @@ def plot_hwp(self,ax=None,fontsize=12):
     return ax
     
 
-def quicklook(self,TES=(54,54),xwin=True,savedir=None):
+def quicklook(self,TES=(54,54),
+              xwin=True,
+              savedir=None,
+              filename=None,
+              figsize=(10.5,14),
+              dpi=100):
     '''
     make a page with diagnostic info
-    argument: TES is a list of TES to show as examples (one from ASIC1 and one form ASIC2)
+    arguments: 
+      - TES       : a list of TES to show as examples (one from ASIC1 and one form ASIC2)
+      - xwin      : plot to screen if True, otherwise, just make a file
+      - savedir   : directory name for the image file
+      - filename  : override the default filename
+      - figsize   : override the default figure size.  Note that the intention is for quicklook to fit on A4 size
+      - dpi       : override the default dots per inch for the saved image file
     '''
 
     ttl = 'Diagnostic for %s' % self.dataset_name
@@ -330,7 +341,7 @@ def quicklook(self,TES=(54,54),xwin=True,savedir=None):
         plt.close('all')
         plt.ioff()
         
-    fig = plt.figure(figsize=(10.5,14))
+    fig = plt.figure(figsize=figsize)
     if xwin: fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
     fig.suptitle(ttl,fontsize=10)
 
@@ -407,13 +418,17 @@ def quicklook(self,TES=(54,54),xwin=True,savedir=None):
     ax.get_yaxis().set_visible(False)
     ax.get_xaxis().set_visible(False)
 
-    pngname = 'QUBIC_quicklook_%s.png' % self.dataset_name
-    if savedir is not None and os.path.isdir(savedir):
-        png_fullname = '%s/%s' % (savedir,pngname)
+    if filename is None:
+        imagename = 'QUBIC_quicklook_%s.png' % self.dataset_name
     else:
-        png_fullname = pngname
+        imagename = filename
         
-    fig.savefig(png_fullname,format='png',dpi=100,bbox_inches='tight')    
+    if savedir is not None and os.path.isdir(savedir):
+        image_fullname = '%s/%s' % (savedir,imagename)
+    else:
+        image_fullname = imagename
+        
+    fig.savefig(image_fullname,dpi=dpi,bbox_inches='tight')    
 
     if not xwin: plt.close(fig)
     

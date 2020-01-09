@@ -13,6 +13,7 @@ methods for plots of housekeeping and a quicklook at science data
 import os
 from matplotlib import pyplot as plt
 import datetime as dt
+import numpy as np
 
 def plot_calsource(self,ax=None,fontsize=12):
     '''
@@ -342,10 +343,12 @@ def quicklook(self,TES=(54,54),
         plt.ioff()
         
     fig = plt.figure(figsize=figsize)
+    scalesize = np.sqrt(np.sum(np.array(figsize)**2))
+    
     if xwin: fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
     fig.suptitle(ttl,fontsize=10)
 
-    fontsize = 5
+    fontsize = 0.3*scalesize
     width = 0.37
     height = 0.14
     vspacing = 0.18

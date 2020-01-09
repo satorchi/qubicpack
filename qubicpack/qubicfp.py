@@ -109,6 +109,7 @@ class qubicfp:
         ADU2I
 
     from .quicklook import\
+        assign_imagename,\
         plot_calsource,\
         plot_temperatures,\
         plot_300mKtemperatures,\

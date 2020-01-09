@@ -46,6 +46,9 @@ def timestamp_diagnostic(self,hk=None,asic=None):
             if asic is None:
                 self.printmsg('Please enter a valid ASIC.')
                 return None
+            if self.asic_list[asic-1] is None:
+                self.printmsg('Error! No data for ASIC %i.' % asic)
+                return None
             HK = self.asic_list[asic-1].hk
         else:
             HK = self.hk

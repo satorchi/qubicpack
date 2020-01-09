@@ -15,15 +15,26 @@ from matplotlib import pyplot as plt
 import datetime as dt
 import numpy as np
 
+def assign_imagename(self,plotname):
+    '''
+    assign a name to use for the png output
+    '''
+    dset_shortname = self.dataset_name.split('__')[-1]
+    if self.obsdate is None:
+        datestr = 'NO-DATE'
+    else:
+        datestr = self.obsdate.strftime('%Y%m%d-%H%M%S')
+        
+    imagename = 'QUBIC_%s_%s_%s.png' % (plotname,dset_shortname,datestr)
+    return imagename
+
 def plot_calsource(self,ax=None,fontsize=12):
     '''
     plot the calibration source
     '''
 
-    dset_shortname = self.dataset_name.split('__')[-1]
-    pngname = 'QUBIC_calsource_%s_%s.png' % (dset_shortname,self.obsdate.strftime('%Y%m%d-%H%M%S'))
     ttl = 'Calibration Source'
-
+    pngname = self.assign_imagename('calsource')
     info = self.calsource_info()
     
     if info is None:
@@ -80,9 +91,7 @@ def plot_temperatures(self,ax,label,ttl,fontsize=12):
 
     t = self.get_hk(data='RaspberryDate',hk='EXTERN_HK')
     
-        
-    dset_shortname = self.dataset_name.split('__')[-1]
-    pngname = 'QUBIC_%s_%s_%s.png' % (ttl.replace(' ','_'),dset_shortname,self.obsdate.strftime('%Y%m%d-%H%M%S'))
+    pngname = self.assign_imagename(ttl.replace(' ','_'))
 
     if ax is None:
         newplot = True
@@ -110,7 +119,7 @@ def plot_temperatures(self,ax,label,ttl,fontsize=12):
 
     for key in val.keys():
         if val[key] is not None:
-            plt.plot(tdate,val[key],label=label[key],marker='D')
+            plt.plot(tdate,val[key],label=label[key],marker='D',markersize=0.2*fontsize)
     ax.set_ylabel('Temperature / K',fontsize=fontsize)
     ax.set_xlabel('Date / UT',fontsize=fontsize)
     ax.legend(fontsize=fontsize)
@@ -160,8 +169,7 @@ def plot_switchstatus(self,ax=None,fontsize=12):
     t = self.timeaxis('INTERN_HK')
 
     ttl = 'Closed Horn Switches'
-    dset_shortname = self.dataset_name.split('__')[-1]
-    pngname = 'QUBIC_%s_%s_%s.png' % (ttl.replace(' ','_'),dset_shortname,self.obsdate.strftime('%Y%m%d-%H%M%S'))
+    pngname = self.assign_imagename(ttl.replace(' ','_'))
 
     if ax is None:
         newplot = True
@@ -185,9 +193,9 @@ def plot_switchstatus(self,ax=None,fontsize=12):
         for tstamp in t:
             tdate.append(dt.datetime.fromtimestamp(tstamp))
         if v1 is not None:
-            ax.plot(tdate,v1,marker='D',ls='none',label='Switch 1 Closed')
+            ax.plot(tdate,v1,marker='D',markersize=0.2*fontsize,ls='none',label='Switch 1 Closed')
         if v2 is not None:
-            ax.plot(tdate,v2,marker='D',ls='none',label='Switch 2 Closed')
+            ax.plot(tdate,v2,marker='D',markersize=0.2*fontsize,ls='none',label='Switch 2 Closed')
 
         if max(v1)==0 and max(v2)==0:
             ax.text(0.5,0.5,'All horns open',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
@@ -212,8 +220,7 @@ def plot_azel(self,ax=None,fontsize=12):
     t = self.timeaxis('platform')
 
     ttl = 'Platform position'
-    dset_shortname = self.dataset_name.split('__')[-1]
-    pngname = 'QUBIC_%s_%s_%s.png' % (ttl.replace(' ','_'),dset_shortname,self.obsdate.strftime('%Y%m%d-%H%M%S'))
+    pngname = self.assign_imagename(ttl.replace(' ','_'))
 
     if ax is None:
         newplot = True
@@ -242,9 +249,9 @@ def plot_azel(self,ax=None,fontsize=12):
         tdate.append(dt.datetime.fromtimestamp(tstamp))
     
     if az is not None:
-        ax.plot(tdate,az,marker='D',ls='none',color='blue',label='Azimuth')
+        ax.plot(tdate,az,marker='D',markersize=0.2*fontsize,ls='none',color='blue',label='Azimuth')
     if el is not None:
-        ax.plot(tdate,el,marker='D',ls='none',color='red',label='Elevation')
+        ax.plot(tdate,el,marker='D',markersize=0.2*fontsize,ls='none',color='red',label='Elevation')
         
     if az is None:
         ax.text(0.5,0.5,'No azimuth information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
@@ -269,8 +276,7 @@ def plot_hwp(self,ax=None,fontsize=12):
     t = self.timeaxis('hwp')    
 
     ttl = 'Half Wave Plate position'
-    dset_shortname = self.dataset_name.split('__')[-1]
-    pngname = 'QUBIC_%s_%s_%s.png' % (ttl.replace(' ','_'),dset_shortname,self.obsdate.strftime('%Y%m%d-%H%M%S'))
+    pngname = self.assign_imagename(ttl.replace(' ','_'))
 
     if ax is None:
         newplot = True
@@ -298,7 +304,7 @@ def plot_hwp(self,ax=None,fontsize=12):
         tdate.append(dt.datetime.fromtimestamp(tstamp))
 
     if v is not None:
-        ax.plot(tdate,v,marker='D',ls='none',label='HWP Position')
+        ax.plot(tdate,v,marker='D',markersize=0.2*fontsize,ls='none',label='HWP Position')
         ax.set_ylim(0,8)
         ax.set_ylabel('Position number',fontsize=fontsize)    
         ax.set_xlabel('Date / UT',fontsize=fontsize)

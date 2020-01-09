@@ -472,7 +472,21 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     # run biasphase() in order to assign timeline_vbias
     biasphase = self.bias_phase()
 
-    return True
+    if self.obsdate is not None: return True
+    
+    # check if there's an observation date.  If not, get it from the first available housekeeping
+    if self.hk is None:
+        self.printmsg('Error! No Data!',verbosity=1)
+        self.obsdate = dt.datetime.strptime('2017-05-11T09:00:00','%Y-%m-%dT%H:%M:%S')
+        return False
+        
+    for hktype in self.hk.keys():
+        if 'ComputerDate' in self.hk[hktype].keys():
+            self.obsdate = dt.datetime.fromtimestamp(self.hk[hktype]['ComputerDate'][0])
+            self.endobs = dt.datetime.fromtimestamp(self.hk[hktype]['ComputerDate'][-1])
+            return True
+
+    return False
 
 def read_calsource_fits(self,hdu):
     '''

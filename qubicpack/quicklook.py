@@ -10,6 +10,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 methods for plots of housekeeping and a quicklook at science data
 '''
+import os
 from matplotlib import pyplot as plt
 import datetime as dt
 
@@ -314,7 +315,7 @@ def plot_hwp(self,ax=None,fontsize=12):
     return ax
     
 
-def quicklook(self,TES=(54,54),xwin=True):
+def quicklook(self,TES=(54,54),xwin=True,savedir=None):
     '''
     make a page with diagnostic info
     argument: TES is a list of TES to show as examples (one from ASIC1 and one form ASIC2)
@@ -407,7 +408,12 @@ def quicklook(self,TES=(54,54),xwin=True):
     ax.get_xaxis().set_visible(False)
 
     pngname = 'QUBIC_quicklook_%s.png' % self.dataset_name
-    fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')    
+    if savedir is not None and os.path.isdir(savedir):
+        png_fullname = '%s/%s' % (savedir,pngname)
+    else:
+        png_fullname = pngname
+        
+    fig.savefig(png_fullname,format='png',dpi=100,bbox_inches='tight')    
 
     if not xwin: plt.close(fig)
     

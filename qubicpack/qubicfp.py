@@ -78,6 +78,7 @@ class qubicfp:
     from .fpmethods import\
         assign_verbosity,\
         infotext,\
+        calsource_oldinfo,\
         calsource_info,\
         calsource_infotext,\
         assign_defaults,\

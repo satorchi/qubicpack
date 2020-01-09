@@ -69,6 +69,44 @@ def infotext(self):
 
     return txt
 
+def calsource_oldinfo(self):
+    '''
+    return calsource info for data before the implementation of MsgStr
+    (see calsource_info() below)
+    '''
+    if 'CALSOURCE-CONF' not in self.hk.keys():
+        return None
+
+    conf = self.hk['CALSOURCE-CONF']
+
+    info = {}
+
+    info_tstamp = conf['timestamp'][0]
+    info_date = dt.datetime.fromtimestamp(info_tstamp)
+    info['date'] = info_date
+
+    devlist = ['calsource','modulator','amplifier']
+    for dev in devlist:
+        info[dev] = {}
+        status = int(conf['Modulator'][0])
+        if status==1:
+            info[dev]['status'] = 'ON'
+        elif status==0:
+            info[dev]['status'] = 'OFF'
+        else:
+            info[dev]['status'] = 'UNKNOWN'
+
+    info['calsource']['frequency'] = conf['Cal_freq'][0]
+    info['modulator']['frequency'] = conf['Mod_freq'][0]
+    info['modulator']['amplitude'] = conf['Mod_ampl'][0]
+    info['modulator']['duty_cycle'] = conf['Mod_duty'][0]
+    info['modulator']['offset'] = conf['Mod_offs'][0]
+    shape_idx = int(conf['Mod_shap'][0])
+    shapes = ['square','sine','DC']
+    info['modulator']['shape'] = shapes[shape_idx]
+
+    return info
+
 def calsource_info(self):
     '''
     return a dictionary of calibration source configuration information
@@ -76,6 +114,8 @@ def calsource_info(self):
     if 'CALSOURCE-CONF' not in self.hk.keys():
         return None
 
+    if 'MsgStr' not in self.hk['CALSOURCE-CONF'].keys():
+        return self.calsource_oldinfo()
     
     info_txt = self.hk['CALSOURCE-CONF']['MsgStr'][0]
     info_rawlist = info_txt.split()
@@ -155,10 +195,14 @@ def calsource_infotext(self):
     if info is None:
         return 'Calsource: No information'
 
-    if info['calsource']['status'] != 'ON':
+    if info['calsource']['status'] == 'OFF':
         return 'Calsource %s' % info['calsource']['status']
 
+    
     calsrc_txt = 'Calsource: '
+    if info['calsource']['status'] == 'UNKNOWN':
+        calsrc_txt = 'Calsource:UNKNOWN '
+
     if info['calsource']['frequency'] > 0:
         calsrc_txt += 'frequency=%.2fGHz' % info['calsource']['frequency']
     else:
@@ -181,6 +225,8 @@ def calsource_infotext(self):
         calsrc_txt += 'amplifier OFF'
     else:
         calsrc_txt += '\namplifier:'
+        if info['amplifier']['status'] == 'UNKNOWN':
+            calsrc_txt += 'UNKNOWN'
         for parm in info['amplifier'].keys():
             if parm!='status':
                 calsrc_txt += ' %s=%s' % (parm,info['amplifier'][parm])

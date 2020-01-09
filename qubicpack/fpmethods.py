@@ -424,7 +424,7 @@ def timeline(self,TES=None,asic=None):
     '''
     wrapper to get a timeline for a TES from an asic object
     '''
-    if not self.args_ok(TES,asic):return
+    if not self.args_ok(TES,asic):return None
     asic_idx = asic-1
     return self.asic_list[asic_idx].timeline(TES=TES)
 
@@ -433,7 +433,7 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps',ax=None,
     '''
     wrapper to plot timeline of the asic object
     '''
-    if not self.args_ok(TES,asic):return
+    if not self.args_ok(TES,asic):return None
     asic_idx = asic-1
     return self.asic_list[asic_idx].plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
     

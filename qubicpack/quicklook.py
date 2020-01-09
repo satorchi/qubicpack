@@ -400,11 +400,20 @@ def quicklook(self,TES=(54,54),
     vpos -= vspacing
     # example timeline from ASIC 1
     ax = fig.add_axes((hpos1,vpos,width,height))
-    self.plot_timeline(asic=1,TES=TES[0],ax=ax,fontsize=fontsize)
+    f = self.plot_timeline(asic=1,TES=TES[0],ax=ax,fontsize=fontsize)
+    if f is None:
+        ax.text(0.5,0.5,'No Science Data for ASIC 1',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
+
 
     # example timeline from ASIC 2
     ax = fig.add_axes((hpos2,vpos,width,height))
-    self.plot_timeline(asic=2,TES=TES[1],ax=ax,fontsize=fontsize)
+    f = self.plot_timeline(asic=2,TES=TES[1],ax=ax,fontsize=fontsize)
+    if f is None:
+        ax.text(0.5,0.5,'No Science Data for ASIC 2',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)
 
     # elapsed time
     delta = self.endobs - self.obsdate

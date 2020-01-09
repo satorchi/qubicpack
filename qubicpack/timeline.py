@@ -568,8 +568,9 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         plt.savefig(pngname_fullpath,format='png',dpi=100,bbox_inches='tight')
     if xwin:plt.show()
     else: plt.close('all')
-    
-    return fitparms
+
+    if fitparms: return fitparms
+    return True
 
 
 def plot_timeline_physical_layout(self,

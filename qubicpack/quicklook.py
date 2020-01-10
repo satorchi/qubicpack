@@ -338,7 +338,8 @@ def quicklook(self,TES=(54,54),
       - figsize   : override the default figure size.  Note that the intention is for quicklook to fit on A4 size
       - dpi       : override the default dots per inch for the saved image file
     '''
-
+    if not self.exist_data(): return None
+    
     ttl = 'Diagnostic for %s' % self.dataset_name
     
     #ttl += '\n'+self.infotext()

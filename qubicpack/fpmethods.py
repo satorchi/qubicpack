@@ -315,6 +315,22 @@ def read_qubicpack_fits(self,hdulist):
 
     return
 
+#### check if there is data
+def exist_data(self):
+    '''
+    check if there's any data
+    '''
+    if self.hk: return True
+    for asicobj in self.asic_list:
+        if asicobj is None:continue
+        if asicobj.exist_timeline_data(): return True
+        if asicobj.exist_iv_data(): return True
+        if asicobj.hk: return  True
+
+    self.printmsg('No data!')
+    return False
+
+        
 
 #### wrappers to return values
 def args_ok(self,TES=None,asic=None):

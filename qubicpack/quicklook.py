@@ -451,4 +451,4 @@ def quicklook(self,TES=(54,54),
 
     if not xwin: plt.close(fig)
     
-    return
+    return image_fullname

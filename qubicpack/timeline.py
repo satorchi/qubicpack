@@ -530,8 +530,8 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     curve1=ax.plot(time_axis,current,label='I-V timeline',color='blue')
 
     #ymax=max([current[ipeak0],current[ipeak1]])
-    ymax=max(current)
-    ymin=min(current)
+    ymax=np.nanmax(current)
+    ymin=np.nanmin(current)
     yrange=ymax-ymin
     if yrange==0:
         yrange = 0.1

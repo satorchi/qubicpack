@@ -531,9 +531,13 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     #ymax=max([current[ipeak0],current[ipeak1]])
     ymax=np.nanmax(current)
+    if np.isnan(ymax):
+        ymax = 1.0
     ymin=np.nanmin(current)
+    if np.isnan(ymin):
+        ymin = 1.0
     yrange=ymax-ymin
-    if yrange==0:
+    if np.isnan(yrange) or yrange==0:
         yrange = 0.1
     yminmax=(ymin-0.02*yrange,ymax+0.02*yrange)
     ax.plot([peak0,peak0],yminmax,color='red')

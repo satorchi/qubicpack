@@ -324,9 +324,14 @@ def assign_detector_name(self,det_name):
     '''
     if not isinstance(det_name,str):
         self.printmsg('ERROR! Please enter a valid name of the detector array (eg. P73, P82)')
-        self.detector_name='undefined'
-        return
-    self.detector_name=det_name
+        det_name = 'undefined'
+
+        
+    self.detector_name = det_name
+    if self.__object_type__=='qubicfp':
+        for asicobj in self.asic_list:
+            if asicobj is not None:
+                asicobj.assign_detector_name(det_name)
     return
 
               
@@ -339,21 +344,24 @@ def guess_detector_name(self):
     if not self.detector_name=='undefined':
         return self.detector_name
 
-    P73_lastdate=dt.datetime.strptime('2017-11-05','%Y-%m-%d')
+    P73_lastdate = dt.datetime.strptime('2017-11-05','%Y-%m-%d')
     if self.obsdate<P73_lastdate:
-        self.detector_name='P73'
+        self.assign_detector_name('P73')
+        return self.detector_name
 
-    P82_lastdate=dt.datetime.strptime('2017-11-30','%Y-%m-%d')
+    P82_lastdate = dt.datetime.strptime('2017-11-30','%Y-%m-%d')
     if self.obsdate<P82_lastdate:
-        self.detector_name='P82'
+        self.assign_detector_name('P82')
+        return self.detector_name
 
     QS_firstdate=dt.datetime.strptime('2018-11-19','%Y-%m-%d')
     if self.datafiletype!='QP_FITS':
         if self.obsdate>QS_firstdate:
             if self.asic==1 or self.asic==2:
-                self.detector_name='P87'
+                self.assign_detector_name('P87')
+                return self.detector_name
 
-    self.printmsg('Guessing the detector array is: %s' % self.detector_name,verbosity=2)
+    self.printmsg('Detector array is: %s' % self.detector_name,verbosity=2)
     return self.detector_name
 
 def assign_logfile(self,rootname=None):

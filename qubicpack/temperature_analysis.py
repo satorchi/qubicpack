@@ -172,7 +172,7 @@ def verify_temperature_arguments(fplist,TES,asic):
         print('ERROR!  Please provide a list of qubicpack.qubicfp objects')
         return False
 
-    detector_name=fplist[0].detector_name
+    detector_name=fplist[0].asic_list[asic_idx].detector_name
     for fp in fplist:
         if not isinstance(fp,qubicfp):
             print('ERROR! The list should contain qubicpack.qubicfp objects')
@@ -180,11 +180,11 @@ def verify_temperature_arguments(fplist,TES,asic):
         if TES<1 or TES>NPIXELS:
             print('ERROR! Please enter a valid TES number between 1 and %i.' % NPIXELS)
             return False
-        if fp.detector_name != detector_name:
-            print('ERROR! These data are not for the same detector array.')
-            return False
         if fp.asic_list[asic_idx] is None:
             print('ERROR! There is no data for the requested ASIC.')
+            return False
+        if fp.asic_list[asic_idx].detector_name != detector_name:
+            print('ERROR! These data are not for the same detector array.')
             return False
         
 
@@ -195,8 +195,8 @@ def plot_TES_turnover_temperature(fplist,TES,asic,xwin=True):
     plot the turnover point as a function of temperature for a given TES
     '''
     if not verify_temperature_arguments(fplist,TES,asic):return None
-    detector_name=fplist[0].detector_name
     asic_idx = asic - 1
+    detector_name=fplist[0].asic_list[asic_idx].detector_name
     
     temps_list=[]
     turnover_list=[]
@@ -417,7 +417,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None):
     '''
     if not verify_temperature_arguments(fplist,TES,asic):return None
     asic_idx = asic - 1
-    detector_name=fplist[0].detector_name
+    detector_name=fplist[0].asic_list[asic_idx].detector_name
 
     temps_list=[]
     for fp in fplist:

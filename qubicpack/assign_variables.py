@@ -344,6 +344,10 @@ def guess_detector_name(self):
     if not self.detector_name=='undefined':
         return self.detector_name
 
+    if self.obsdate is None:
+        self.printmsg('no observation date!')
+        return self.detector_name
+
     P73_lastdate = dt.datetime.strptime('2017-11-05','%Y-%m-%d')
     if self.obsdate<P73_lastdate:
         self.assign_detector_name('P73')
@@ -356,7 +360,7 @@ def guess_detector_name(self):
 
     QS_firstdate=dt.datetime.strptime('2018-11-19','%Y-%m-%d')
     if self.datafiletype!='QP_FITS':
-        if self.obsdate>QS_firstdate:
+        if self.obsdate>QS_firstdate:            
             if self.asic==1 or self.asic==2:
                 self.assign_detector_name('P87')
                 return self.detector_name

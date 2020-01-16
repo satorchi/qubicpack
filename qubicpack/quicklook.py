@@ -204,7 +204,7 @@ def plot_switchstatus(self,ax=None,fontsize=12):
         ax.set_xlabel('Date / UT',fontsize=fontsize)
         ax.tick_params(axis='both',labelsize=fontsize)
         ax.set_ylim((-1,65))
-        ax.legend(fontsize=fontsize)
+        ax.legend(fontsize=fontsize,loc='upper right')
         
     if newplot:
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')

@@ -239,7 +239,7 @@ def read_fits(self,filename):
         hdulist = pyfits.open(filename)
         nhdu = len(hdulist)
     except:
-        self.printmsg('FITS Error!',verbosity=1)
+        self.printmsg('FITS Error! %s' % filename,verbosity=1)
         return False
 
     # check if it's a QUBIC file

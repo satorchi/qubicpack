@@ -331,7 +331,7 @@ def fitted_iv_curve(self,TES):
     bias=self.bias_factor*self.vbias[istart:iend]
 
     # polynomial fit
-    if 'fitfunction' not in fit.keys() or fit['fitfunction']=='POLYNOMIAL':
+    if 'fitfunction' not in fit.keys() or fit['fitfunction'].upper()=='POLYNOMIAL':
         func=np.poly1d(fit['fitinfo'][0]) + offset
         f=func(bias)
         return bias,f
@@ -414,7 +414,7 @@ def polynomial_fit_parameters(self,fit):
     # Vinfinity is the virtual point where we calculate the offset
     
     # the coefficients of the polynomial fit
-    if fit['fitfunction']=='POLYNOMIAL':
+    if fit['fitfunction'].upper()=='POLYNOMIAL':
         # one polynomial was used for the entire I-V curve
         a3=fit['fitinfo'][0][0]
         a2=fit['fitinfo'][0][1]
@@ -474,7 +474,7 @@ def polynomial_fit_parameters(self,fit):
     fit['inflection']=inflection_V
 
     # if we're using the combined fit, then we can exit now
-    if fit['fitfunction']=='COMBINED':return fit
+    if fit['fitfunction'].upper()=='COMBINED':return fit
 
     fit['Vsuper'] = None
     fit['Vnormal'] = None
@@ -862,7 +862,7 @@ def fit_iv(self,TES,
         curve=ypts[good_start:good_end]
         bias=xpts[good_start:good_end]
 
-        if fitfunction=='POLYNOMIAL':
+        if fitfunction.upper()=='POLYNOMIAL':
             ivfit=self.do_polyfit(bias,curve)
         else:
             ivfit=self.do_combinedfit(TES,bias,curve,Vsuper,Vnormal)
@@ -893,7 +893,7 @@ def fit_iv(self,TES,
     fit['fit range']=fitranges[curve_index]
     fit['residual']=residuals[curve_index]
 
-    if fitfunction=='POLYNOMIAL':
+    if fitfunction.upper()=='POLYNOMIAL':
         fit=self.polynomial_fit_parameters(fit)
     else:
         fit=self.combined_fit_parameters(fit)
@@ -1037,7 +1037,7 @@ def plot_iv(self,TES=None,multi=False,xwin=True,best=True):
     ax.plot(bias,f,linestyle='dashed',color='red',label='model')
 
     # draw the curve fitting the super conducting region
-    if fit['fitfunction']=='COMBINED':
+    if fit['fitfunction'].upper()=='COMBINED':
         a0=fit['fitinfo'][0][2]
         a1=fit['fitinfo'][0][3]
         Isuper=self.model_iv_super(bias,a0,a1)+self.offset(TES)
@@ -1337,7 +1337,7 @@ def calculate_responsivity(self,TES,npts_region=500,window_size=51,filter_sigma=
     filterinfo=self.filterinfo(TES)
     if filterinfo is None:return None
 
-    if not filterinfo['fit']['fitfunction']=='COMBINED':
+    if not filterinfo['fit']['fitfunction'].upper()=='COMBINED':
         print("I need to have the COMBINED model.  Please rerun the filter and select COMBINED for the fitfunction.")
         return None
 

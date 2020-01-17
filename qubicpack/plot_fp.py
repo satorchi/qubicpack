@@ -19,7 +19,12 @@ from qubicpack.utilities import NPIXELS, NASIC, ASIC_index, FIGSIZE
 from qubicpack.pix2tes import assign_pix_grid, assign_tes_grid
 
 def mylut(v,vmin=3.0,vmax=9.0):
-    vfractional=(v-vmin)/(vmax-vmin)
+    try:
+        vfractional=(v-vmin)/(vmax-vmin)
+    except:
+        print('LUT error: v is %s' % v)
+        return 'white'
+
     colourmap = plt.cm.get_cmap('Spectral_r')
     rgb=colourmap(vfractional)
     return rgb
@@ -175,7 +180,10 @@ def plot_fp(args):
                     label_colour='white'
                     curve_colour='white'
                 elif asicbg_key in args.keys():
-                    face_colour=mylut(args[asicbg_key][TES_idx],lutmin,lutmax)
+                    if args[asicbg_key][TES_idx] is None:
+                        face_colour = 'white'
+                    else:
+                        face_colour=mylut(args[asicbg_key][TES_idx],lutmin,lutmax)
 
 
                 ax[row,col].plot(curve_x,curve,color=curve_colour)

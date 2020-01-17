@@ -2550,7 +2550,7 @@ def best_iv_curve(self,TES=None):
         bias_best.append(bias)
         adu_best.append(self.adu[TES_idx,istart:iend])
         
-    return bias_best,adu_best
+    return np.array(bias_best),np.array(adu_best)
         
 def Ites(self,TES):
     '''

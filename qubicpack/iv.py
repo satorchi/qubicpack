@@ -31,10 +31,17 @@ from qubicpack.plot_fp import plot_fp
 def exist_iv_data(self):
     '''
     check if we have I-V data
-    '''
+    '''    
     if not isinstance(self.adu,np.ndarray):
-        self.printmsg('No I-V data!',verbosity=2)
-        return False
+        # try to convert timeline data to I-V data
+        if not self.exist_timeline_data():
+            self.printmsg('No Data!',verbosity=2)
+            return False
+
+        self.timeline2adu(1)
+        if not isinstance(self.adu,np.ndarray):
+            self.printmsg('No I-V data!',verbosity=2)
+            return False
 
     if not isinstance(self.vbias,np.ndarray):
         self.printmsg('No bias data!',verbosity=2)
@@ -1785,6 +1792,7 @@ def filter_iv(self,TES,
               abs_amplitude_limit=0.01,
               rel_amplitude_limit=0.1,
               bias_margin=0.2,
+              ignore_turnover=False,
               jumplimit=None,
               curve_index=None,
               fitfunction='COMBINED',
@@ -1868,26 +1876,28 @@ def filter_iv(self,TES,
         ret['is_good']=False
         ret['comment']='current peak-to-peak too small'
         return self.assign_filterinfo(TES,ret)
-    
-    # do we find a valid turnover for the Vbias?
+
+    # check for valid turnover, unless asked to ignore it
     ret['turnover']=fit['turnover']
-    if fit['turning'] is None or fit['turnover'] is None:
-        ret['is_good']=False
-        ret['comment']='no turnover'
-        return self.assign_filterinfo(TES,ret)
+    if not ignore_turnover:
+        # do we find a valid turnover for the Vbias?
+        if fit['turning'] is None or fit['turnover'] is None:
+            ret['is_good']=False
+            ret['comment']='no turnover'
+            return self.assign_filterinfo(TES,ret)
 
-    # is the operational point (the turnover) within the acceptable range?
-    if ret['turnover']<self.bias_factor*self.min_bias+bias_margin or ret['turnover']>self.bias_factor*self.max_bias-bias_margin:
-        ret['is_good']=False
-        ret['comment']='operation point outside acceptable range'
-        return self.assign_filterinfo(TES,ret)
+        # is the operational point (the turnover) within the acceptable range?
+        if ret['turnover']<self.bias_factor*self.min_bias+bias_margin or ret['turnover']>self.bias_factor*self.max_bias-bias_margin:
+            ret['is_good']=False
+            ret['comment']='operation point outside acceptable range'
+            return self.assign_filterinfo(TES,ret)
 
-    # do we have both turning points within the bias range?
-    # maybe I should delete this filter
-    #if fit['turnings within range']>1:
-    #    ret['is_good']=False
-    #    ret['comment']='bad I-V profile'
-    #    return self.assign_filterinfo(TES,ret)
+        # do we have both turning points within the bias range?
+        # maybe I should delete this filter
+        #if fit['turnings within range']>1:
+        #    ret['is_good']=False
+        #    ret['comment']='bad I-V profile'
+        #    return self.assign_filterinfo(TES,ret)
     
     
     # we only get this far if it's a good I-V

@@ -1816,6 +1816,7 @@ def filter_iv(self,TES,
     ret['TES']=TES
     ret['is_good']=True
     ret['comment']='no comment'
+    ret['ignore turnover'] = ignore_turnover
 
     # fit to the chosen model. The fit will be for the best measured curve if it's cycled bias
     fit = self.fit_iv(TES,jumplimit,curve_index,fitfunction,Vsuper,Vnormal,istart,iend,R1adjust)
@@ -1878,7 +1879,7 @@ def filter_iv(self,TES,
         return self.assign_filterinfo(TES,ret)
 
     # check for valid turnover, unless asked to ignore it
-    ret['turnover']=fit['turnover']
+    ret['turnover'] = fit['turnover']
     if not ignore_turnover:
         # do we find a valid turnover for the Vbias?
         if fit['turning'] is None or fit['turnover'] is None:

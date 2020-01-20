@@ -557,29 +557,35 @@ def plot_iv_focalplane(self,labels=True):
     tot_npixels = 0
     for idx,asic_obj in enumerate(self.asic_list):
         obsdates.append(asic_obj.obsdate)
-        if asic_obj is not None and asic_obj.exist_iv_data():
-            key = 'ASIC%i' % (idx+1)
+        if asic_obj is None: continue
+        if not asic_obj.exist_iv_data(): continue
+
+        key = 'ASIC%i' % (idx+1)
             
-            subttl_list.append(asic_obj.infotext())
+        subttl_list.append(asic_obj.infotext())
 
-            bias,adu = asic_obj.best_iv_curve()
-            args[key] = adu
+        bias,adu = asic_obj.best_iv_curve()
+        args[key] = adu
+            
+        keyx = '%s x-axis' % key
+        args[keyx] = bias
 
-            keyx = '%s x-axis' % key
-            args[keyx] = bias
+        keygood = '%s good' % key
+        args[keygood] = asic_obj.is_good_iv()
 
-            keygood = '%s good' % key
-            args[keygood] = asic_obj.is_good_iv()
+        keybg = '%s bg' % key
+        args[keybg] = asic_obj.turnover()
+        filtersummary = asic_obj.filterinfo()
+        for idx,f in enumerate(filtersummary):
+            if f['ignore turnover']:
+                args[keybg][idx] = None
 
-            keybg = '%s bg' % key
-            args[keybg] = asic_obj.turnover()
-
-            ngood = asic_obj.ngood()
-            if ngood is not None:
-                tot_ngood += ngood
-                subttl_list.append('%i flagged as bad pixels : yield = %.1f%%' %
-                                   (asic_obj.NPIXELS-ngood,100.0*ngood/asic_obj.NPIXELS))
-            tot_npixels += asic_obj.NPIXELS
+        ngood = asic_obj.ngood()
+        if ngood is not None:
+            tot_ngood += ngood
+            subttl_list.append('%i flagged as bad pixels : yield = %.1f%%' %
+                               (asic_obj.NPIXELS-ngood,100.0*ngood/asic_obj.NPIXELS))
+        tot_npixels += asic_obj.NPIXELS
 
     if tot_npixels>0:
         subttl_list.append('overall yield %i/%i = %.1f%%' % (tot_ngood,tot_npixels,100.0*tot_ngood/tot_npixels))

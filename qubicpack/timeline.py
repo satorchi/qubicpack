@@ -303,6 +303,10 @@ def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):
         return None
 
     retval = {}
+    retval['TES'] = TES
+    retval['timeline_index'] = timeline_index
+    retval['timeaxis'] = timeaxis
+    
     TES_idx=TES_index(TES)
     timeline=self.timeline(TES,timeline_index)
     timeline_npts=len(timeline)
@@ -311,6 +315,7 @@ def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):
     self.printmsg('DEBUG: calling timeline_timeaxis from determine_bias_modulation() with axistype=%s' % timeaxis, verbosity=4)
     time_axis=self.timeline_timeaxis(timeline_index,axistype=timeaxis)
     measured_sample_period = (time_axis[-1] - time_axis[0])/(timeline_npts-1)
+    retval['measured_sample_period'] = measured_sample_period
 
     # use the bias_phase if it exists
     bias_phase = self.bias_phase()
@@ -324,7 +329,7 @@ def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):
             imax = timeline_npts - 1
             iperiod = imax - imin
         ipeak0 = min([imin,imax])
-        ipeak1 = imin + iperiod
+        ipeak1 = ipeak0 + iperiod
         peak0 = time_axis[ipeak0]
         if ipeak1>=timeline_npts:
             peak1 = peak0 + iperiod*measured_sample_period

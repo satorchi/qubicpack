@@ -1267,7 +1267,13 @@ def gps(self,hk=None,asic=None):
     '''
     return GPS data for a given HK
     '''
-    return self.get_hk('GPSDate',hk,asic)
+    gps = self.get_hk('GPSDate',hk,asic)
+    if gps is None: return None
+    t0 = float(self.obsdate.strftime('%s.%f'))
+    delta = np.abs(gps[0] - t0)
+    if delta > 1799:
+        gps -= delta
+    return gps
 
 def azimuth(self):
     '''

@@ -410,7 +410,7 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8):
         
     return ret
 
-def calculate_TES_NEP(fplist,TES,asic,p0=None):
+def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
     '''
     make the list of temperatures and associated P0
     and calculate the NEP
@@ -433,6 +433,8 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None):
     ret['ASIC'] = asic
     ret['Tmin'] = temps_list.min()
     ret['Tmax'] = temps_list.max()
+    ret['mean_istart'] = mean_istart
+    ret['mean_iend'] = mean_iend
 
     # make the arrays of Power and T_bath
     P = []
@@ -460,7 +462,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None):
         Vtes_turnover = go.Rshunt*(go.turnover(TES)/go.Rbias-Iturnover)
         all_P.append(Ptes.mean()*1e-12)
         all_T.append(Tbath)
-        Pbeg = np.mean(Ptes[0:10])
+        Pbeg = np.mean(Ptes[mean_istart:mean_iend])
         if ((Pbeg > 5) and (Pbeg < 40)):
             P.append(Pbeg*1e-12)
             T.append(Tbath)
@@ -531,12 +533,14 @@ def make_TES_NEP_resultslist(fplist,asic):
             
     return results
 
-def plot_TES_NEP(fplist,TES,asic,xwin=True,p0=None):
+def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,mean_istart=0,mean_iend=10):
     '''
     plot the P vs. Temperature for a TES
     '''
 
-    result = calculate_TES_NEP(fplist,TES,asic,p0=p0)
+    if result is None:
+        result = calculate_TES_NEP(fplist,TES,asic,p0=p0,mean_istart=mean_istart,mean_iend=mean_iend)
+        
     if result is None:return None
 
     TES = result['TES']
@@ -589,8 +593,17 @@ def plot_TES_NEP(fplist,TES,asic,xwin=True,p0=None):
         txt+='\nn=%.3f' % n
         txt+='\nG=%.4e' % G
         txt+='\nNEP=%.4e at T$_{bath}$=350mK' % NEP
-            
-    
+
+    P_span=plot_P_max-plot_P_min
+    min_dat = min( [min(P),min(all_P)] )
+    if plot_P_min>min_dat:
+        plot_P_min=min_dat-0.1*P_span
+        
+    max_dat = max( [max(P),max(all_P)] )
+    if plot_P_max>max_dat:
+        plot_P_max=max_dat+0.1*P_span
+    P_span=plot_P_max-plot_P_min
+        
 
     pngname='QUBIC_Array-%s_TES%03i_ASIC%i_NEP.png' % (detector_name,TES,asic)
     ttl='QUBIC Array %s, ASIC %i, TES #%i: NEP' % (detector_name,asic,TES)
@@ -613,16 +626,13 @@ def plot_TES_NEP(fplist,TES,asic,xwin=True,p0=None):
     plt.title(ttl)
     ax.set_xlabel('T$_\mathrm{bath}$ / K')
     ax.set_ylabel('Power / Watt')
-    P_span=plot_P_max-plot_P_min
-    text_y=plot_P_min+0.5*P_span
     if result['fit points'] == 'all':
         ax.plot(all_T,all_P,ls='none',marker='D')
     else:
         ax.plot(T,P,ls='none',marker='D')
     if not NEP is None: plt.plot(fit_T,fit_P,color='red')
-    #ax.text(Tmin,text_y,txt,fontsize=14)
-    ax.text(0.95,0.95,txt,va='top',ha='right',fontsize=14,transform=ax.transAxes,bbox=boxprops)
-    plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+    ax.text(0.99,0.96,txt,va='top',ha='right',fontsize=14,transform=ax.transAxes,bbox=boxprops)
+    fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin:plt.show()
     else:plt.close('all')
     return result

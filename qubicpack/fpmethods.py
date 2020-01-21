@@ -577,7 +577,7 @@ def plot_iv_focalplane(self,labels=True):
         args[keybg] = asic_obj.turnover()
         filtersummary = asic_obj.filterinfo()
         for idx,f in enumerate(filtersummary):
-            if f['ignore turnover']:
+            if f['ignore_turnover']:
                 args[keybg][idx] = None
 
         ngood = asic_obj.ngood()

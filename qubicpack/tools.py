@@ -1025,7 +1025,7 @@ def read_qubicpack_fits(self,h):
 
     if self.exist_iv_data():
         f=self.read_filter()
-        if f is None:f=self.filter_iv_all()
+        #if f is None:f=self.filter_iv_all()
 
     return
 

@@ -505,6 +505,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             shift=self.timeline_conversion['shift']
 
     if plot_bias:
+        ysine = None
         if biasphase is not None:
             self.printmsg('DEBUG: taking ysine from QubicStudio FITS file',verbosity=4)
             ysine = self.timeline_vbias
@@ -522,8 +523,10 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             amplitude=fitparms['amplitude']
             offset=fitparms['offset']
             shift=fitparms['phaseshift']
-            sinelabel='best fit sine curve: period=%.2f seconds, amplitude=%.2f $\mu$A' % (bias_period,amplitude)
-            ysine=self.model_timeline(time_axis,bias_period,shift,offset,amplitude)
+            if bias_period is not None and amplitude is not None:
+                sinelabel='best fit sine curve: period=%.2f seconds, amplitude=%.2f $\mu$A' % (bias_period,amplitude)
+                ysine=self.model_timeline(time_axis,bias_period,shift,offset,amplitude)
+    if ysine is None: plot_bias = False
         
 
     if newplot:
@@ -822,7 +825,17 @@ def fit_timeline(self,TES,timeline_index=None,ipeak0=None,ipeak1=None,timeaxis='
     
     p0=[period,phaseshift,offset,amplitude]
 
-    popt,pcov=curve_fit(self.model_timeline,time_axis,current,p0=p0)
+    try:
+        popt,pcov=curve_fit(self.model_timeline,time_axis,current,p0=p0)
+    except:
+        fit['period'] = None
+        fit['phaseshift'] = None
+        fit['offset'] = None
+        fit['amplitude'] = None
+        fit['R amplitude'] = None
+        return fit
+
+        
     period,phaseshift,offset,amplitude=popt
     fit['period']=period
     fit['phaseshift']=phaseshift

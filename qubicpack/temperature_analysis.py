@@ -433,8 +433,8 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
     ret['ASIC'] = asic
     ret['Tmin'] = temps_list.min()
     ret['Tmax'] = temps_list.max()
-    ret['mean_istart'] = mean_istart
-    ret['mean_iend'] = mean_iend
+    ret['mean_istart'] = []
+    ret['mean_iend'] = []
 
     # make the arrays of Power and T_bath
     P = []
@@ -449,6 +449,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
         filterinfo = go.filterinfo(TES)
         
         istart,iend = go.selected_iv_curve(TES)
+        npts = iend-istart
 
         Iadjusted = go.adjusted_iv(TES)
         I = Iadjusted[istart:iend]
@@ -462,8 +463,21 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
         Vtes_turnover = go.Rshunt*(go.turnover(TES)/go.Rbias-Iturnover)
         all_P.append(Ptes.mean()*1e-12)
         all_T.append(Tbath)
-        Pbeg = np.mean(Ptes[mean_istart:mean_iend])
-        if ((Pbeg > 5) and (Pbeg < 40)):
+
+        if Ptes[-1]<Ptes[0]:
+            curve_mean_istart = npts - mean_istart
+            curve_mean_iend = npts - mean_iend
+        else:
+            curve_mean_istart = mean_istart
+            curve_mean_iend = mean_iend
+            
+            
+        ret['mean_istart'].append(curve_mean_istart)
+        ret['mean_iend'].append(curve_mean_iend)
+        
+        Pbeg = np.mean(Ptes[curve_mean_istart:curve_mean_iend])
+        #if ((Pbeg > 5) and (Pbeg < 40)):
+        if filterinfo['fit']['turnover'] is not None and Pbeg>0.0:
             P.append(Pbeg*1e-12)
             T.append(Tbath)
 
@@ -473,16 +487,20 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
     all_T = np.array(all_T)
     ret['P'] = P
     ret['T'] = T
-    ret['all temperatures'] = all_T
-    ret['all P'] = all_P
+    ret['all_temperatures'] = all_T
+    ret['all_P'] = all_P
     
     temperature_fit = fit_Pbath(T,P,p0=p0)
     ret['fit points'] = 'filter by first points'
-    if temperature_fit is None:
-        # try again with the full range
-        temperature_fit = fit_Pbath(all_T,all_P,p0=p0)
-        ret['fit points'] = 'all'
 
+    if temperature_fit is None:
+        # try again with the full range but only for P>0
+        idx_range = np.where(all_P>0)
+        temperature_fit = fit_Pbath(all_T[idx_range],all_P[idx_range],p0=p0)
+        if len(idx_range)!=len(all_P):
+            ret['fit points'] = 'where P>0'
+        else:
+            ret['fit points'] = 'all'
     
     if temperature_fit is None:
         ret['K'] = None
@@ -547,8 +565,8 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     asic = result['ASIC']
     detector_name = result['DET_NAME']
 
-    all_T = result['all temperatures']
-    all_P = result['all P']
+    all_T = result['all_temperatures']
+    all_P = result['all_P']
     P = result['P']
     T = result['T']
 
@@ -562,29 +580,34 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     Tmax = result['Tmax']
     T_span = Tmax-Tmin
     # add 30% to the plot edges
-    plot_T_min = Tmin - 0.3*T_span
-    plot_T_max = Tmax + 0.3*T_span
-    T_stepsize = 1.1*T_span/100
+    plot_T_min = Tmin - T_span
+    plot_T_max = Tmax + T_span
+    T_span = plot_T_max - plot_T_min
+    T_stepsize = T_span/1000
 
     if NEP is None:
         txt='NEP estimate is not possible'
         if len(P)==1:
-            plot_P_min=P[0]-0.2*P[0]
-            plot_P_max=P[0]+0.2*P[0]
+            plot_P_min=P[0]-0.5*P[0]
+            plot_P_max=P[0]+0.5*P[0]
         elif len(P)==0:
             plot_P_min=0.0
             plot_P_max=5e-11
         else:
-            P_span=max(P)-min(P)
-            plot_P_min=min(P)-0.1*P_span
-            plot_P_max=max(P)+0.1*P_span
+            P_span=np.nanmax(P)-np.nanmin(P)
+            plot_P_min=np.nanmin(P)-0.5*P_span
+            plot_P_max=np.nanmax(P)+0.5*P_span
+        if np.isnan(plot_P_min):
+            plot_P_min = 0.0
+        if np.isnan(plot_P_max):
+            plot_P_max = 5e-11
     else:
         fit_T=np.arange(plot_T_min,plot_T_max,T_stepsize)
         fit_P=P_bath_function(fit_T,K,T0,n)
 
         P_span=max(fit_P)-min(fit_P)
-        plot_P_min=min(fit_P)-0.1*P_span
-        plot_P_max=max(fit_P)+0.1*P_span
+        plot_P_min=min(fit_P)-0.5*P_span
+        plot_P_max=max(fit_P)+0.5*P_span
         
         txt='K=%.4e' % K
         txt+='\nT$_0$=%.1f mK' % (1000*T0)
@@ -594,23 +617,24 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
         txt+='\nG=%.4e' % G
         txt+='\nNEP=%.4e at T$_{bath}$=350mK' % NEP
 
-    P_span=plot_P_max-plot_P_min
-    min_dat = min( [min(P),min(all_P)] )
-    if plot_P_min>min_dat:
-        plot_P_min=min_dat-0.1*P_span
+        P_span=plot_P_max-plot_P_min
+        dat_min = np.nanmin( [np.nanmin(P),np.nanmin(all_P)] )
+        dat_max = np.nanmax( [np.nanmax(P),np.nanmax(all_P)] )
+        dat_span = dat_max - dat_min
+        span = max([dat_span,P_span])
+        if plot_P_min>dat_min:
+            plot_P_min = dat_min-0.5*span
         
-    max_dat = max( [max(P),max(all_P)] )
-    if plot_P_max>max_dat:
-        plot_P_max=max_dat+0.1*P_span
-    P_span=plot_P_max-plot_P_min
+        if plot_P_max>dat_max:
+            plot_P_max = dat_max+0.5*span
         
 
     pngname='QUBIC_Array-%s_TES%03i_ASIC%i_NEP.png' % (detector_name,TES,asic)
     ttl='QUBIC Array %s, ASIC %i, TES #%i: NEP' % (detector_name,asic,TES)
 
     boxprops = {}
-    boxprops['alpha'] = 0.8
-    boxprops['color'] = 'wheat'
+    boxprops['alpha'] = 0.4
+    boxprops['color'] = 'grey'
     boxprops['boxstyle'] = 'round'
     
     if xwin:plt.ion()
@@ -731,10 +755,11 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
           % (go300.obsdate.strftime('%Y-%m-%d %H:%M:%S'),go300.temperature*1000))
     observer=go300.observer.replace('<','$<$').replace('>','$>$')
     detector_name=go300.detector_name
-    show_extra_columns = True
     if go300.transdic is None:
         show_extra_columns = False
-    
+    else:
+        show_extra_columns = True
+
     # generate the plots if not already done
     if NEPresults is None:NEPresults=make_TES_NEP_resultslist(fplist,asic)
 
@@ -742,12 +767,13 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
     TESlist=[]
     for res in NEPresults:
         NEP=res['NEP']
-        if not NEP is None:
+        if NEP is not None:
             NEP_estimate.append(NEP)
             TESlist.append(res['TES'])
     nNEP=len(TESlist)
     NEP_estimate=np.array(NEP_estimate)
     NEPmean=NEP_estimate.mean()
+    NPIXELS = len(NEPresults)
     
     texfilename=str('QUBIC_Array-%s_ASIC%i_NEP.tex' % (detector_name,asic))
     h=open(texfilename,'w')
@@ -856,7 +882,8 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
     h.write('\n\\clearpage')
         
 
-    for TES in np.arange(1,129):
+    for TES_idx in range(NPIXELS):
+        TES = TES_idx + 1
         h.write('\n\\clearpage')
         pngIV ='QUBIC_Array-%s_TES%03i_ASIC%i_I-V_Temperatures.png' % (detector_name,TES,asic)
         if refresh or not os.path.exists(pngIV):
@@ -876,8 +903,7 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
             
         pngNEP='QUBIC_Array-%s_TES%03i_ASIC%i_NEP.png' % (detector_name,TES,asic)
         if refresh or not os.path.exists(pngNEP):
-            res=plot_TES_NEP(fplist,TES,asic,xwin=False)
-
+            res=plot_TES_NEP(result=NEPresults[TES_idx],xwin=False)
         
         pngFiles=[pngIV,pngPV,pngRP,pngTurnover,pngNEP]
         for png in pngFiles:
@@ -888,7 +914,7 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
     h.close()
     return texfilename
 
-def rt_analysis(datlist,TES,asic,xwin=True):
+def rt_analysis(fplist,TES,asic,xwin=True):
     '''
     do the analysis to find the critical temperature (resistance vs. temperature)
     datlist is a list of qubicpack.qubicfp objects containing timeline data
@@ -899,7 +925,7 @@ def rt_analysis(datlist,TES,asic,xwin=True):
     # get all the results, including for multiple timelines in a single qp object
     detector_name=None
     reslist=[]
-    for fs in datlist:
+    for fp in fplist:
         go = fp.asic_list[asic_idx]
         if not go.exist_timeline_data():continue
         if detector_name is None:detector_name=go.detector_name
@@ -927,9 +953,10 @@ def plot_rt_analysis(reslist,xwin=True):
     R=[]
     dates=[]
     for res in reslist:
-        Tbath.append(1000*res['Tbath'])
-        R.append(res['R amplitude'])
-        dates.append(res['date'])
+        if res['R amplitude'] is not None:
+            Tbath.append(1000*res['Tbath'])
+            R.append(res['R amplitude'])
+            dates.append(res['date'])
                      
     ntemps=len(Tbath)
     sorted_index=sorted(range(ntemps), key=lambda i: Tbath[i])
@@ -955,16 +982,18 @@ def plot_rt_analysis(reslist,xwin=True):
     fig.canvas.set_window_title('plt: '+ttl)
     ax=plt.gca()
     plt.title(ttl)
-    ax.plot(Tsorted,1e6*Rsorted,marker='D',color='blue')
+    ax.plot(Tsorted,1e6*Rsorted,ls='none',marker='D',color='blue')
     ax.set_xlabel('T$_\mathrm{bath}$ / mK')
-    ax.set_ylabel('R$_\mathrm{TES}$ / $\mu\Omega$')
+    ax.set_ylabel('R$_\mathrm{TES}$ / $m\Omega$')
 
-    text_x=0.98
-    text_y=0.02
-    boxprops = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(text_x,text_y,date_txt,va='bottom',ha='right',fontsize=10,transform = ax.transAxes,bbox=boxprops)
+    boxprops = dict(boxstyle='round', facecolor='grey', alpha=0.5)
+    ax.text(0.98,0.02,date_txt,va='bottom',ha='right',fontsize=10,transform=ax.transAxes,bbox=boxprops)
 
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin:plt.show()
     else: plt.close('all')
-    return
+
+    retval = {}
+    retval['Tbath'] = Tsorted
+    retval['R'] = Rsorted
+    return retval

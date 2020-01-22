@@ -391,6 +391,9 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8):
 
     # make sure T_pts and P_pts are 1d arrays
     npts = T_pts.size
+    if npts<3:
+        print('insufficient number of points for fit_Pbath: %i' % npts)
+        return None
     T=np.array(T_pts).reshape(npts)
     P=np.array(P_pts).reshape(npts)
 
@@ -490,17 +493,25 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
     ret['all_temperatures'] = all_T
     ret['all_P'] = all_P
     
-    temperature_fit = fit_Pbath(T,P,p0=p0)
-    ret['fit points'] = 'filter by first points'
+    npts = len(P)
+    
+    if npts<3:
+        temperature_fit = None
+    else:
+        temperature_fit = fit_Pbath(T,P,p0=p0)
+        ret['fit points'] = '$<P>$ determined from first points'
+        ret['fit npts'] = npts
 
     if temperature_fit is None:
         # try again with the full range but only for P>0
-        idx_range = np.where(all_P>0)
+        idx_range = np.where(all_P>0)[0]
         temperature_fit = fit_Pbath(all_T[idx_range],all_P[idx_range],p0=p0)
         if len(idx_range)!=len(all_P):
-            ret['fit points'] = 'where P>0'
+            ret['fit points'] = '$<P>$ determined from full range, temperatures filtered for P values>0'
         else:
-            ret['fit points'] = 'all'
+            ret['fit points'] = '$<P>$ determined from full range, all available temperatures'
+        ret['fit npts'] = len(idx_range)
+        
     
     if temperature_fit is None:
         ret['K'] = None
@@ -509,7 +520,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
         ret['NEP'] = None
         ret['G'] = None
         ret['gamma'] = None
-        print ('insufficient data for curve fit:  TES=%i' % TES)
+        print('insufficient data for curve fit:  TES=%i' % TES)
         return ret
     
         
@@ -546,6 +557,7 @@ def make_TES_NEP_resultslist(fplist,asic):
     results=[]
     for idx in range(NPIXELS):
         TES = 1 + idx
+        print('calculating NEP for ASIC%i, TES%03i' % (asic,TES))
         res = calculate_TES_NEP(fplist,TES,asic)
         results.append(res)
             
@@ -575,7 +587,8 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     T0 = result['T0']
     n = result['n']
     G = result['G']
-    
+    npts = result['fit npts']
+        
     Tmin = result['Tmin']
     Tmax = result['Tmax']
     T_span = Tmax-Tmin
@@ -586,46 +599,55 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     T_stepsize = T_span/1000
 
     if NEP is None:
-        txt='NEP estimate is not possible'
-        if len(P)==1:
-            plot_P_min=P[0]-0.5*P[0]
-            plot_P_max=P[0]+0.5*P[0]
-        elif len(P)==0:
+        txt = 'NEP estimate is not possible.'
+        if len(all_P)<3:
+            txt += '\nInsufficient number of points: %i' % len(all_P)
+        
+        if len(all_P)==1:
+            plot_P_min=all_P[0]-0.5*all_P[0]
+            plot_P_max=all_P[0]+0.5*all_P[0]
+        elif len(all_P)==0:
             plot_P_min=0.0
             plot_P_max=5e-11
         else:
-            P_span=np.nanmax(P)-np.nanmin(P)
-            plot_P_min=np.nanmin(P)-0.5*P_span
-            plot_P_max=np.nanmax(P)+0.5*P_span
+            P_span=np.nanmax(all_P)-np.nanmin(all_P)
+            plot_P_min=np.nanmin(all_P)-0.5*P_span
+            plot_P_max=np.nanmax(all_P)+0.5*P_span
         if np.isnan(plot_P_min):
             plot_P_min = 0.0
         if np.isnan(plot_P_max):
             plot_P_max = 5e-11
     else:
-        fit_T=np.arange(plot_T_min,plot_T_max,T_stepsize)
-        fit_P=P_bath_function(fit_T,K,T0,n)
+        fit_T = np.arange(plot_T_min,plot_T_max,T_stepsize)
+        fit_P = P_bath_function(fit_T,K,T0,n)
 
         P_span=max(fit_P)-min(fit_P)
         plot_P_min=min(fit_P)-0.5*P_span
         plot_P_max=max(fit_P)+0.5*P_span
         
-        txt='K=%.4e' % K
-        txt+='\nT$_0$=%.1f mK' % (1000*T0)
+        txt = 'K=%.4e' % K
+        txt += '\nT$_0$=%.1f mK' % (1000*T0)
         if T0<0.3:
-            txt+=' ERROR!  T$_0$<300 mK'
-        txt+='\nn=%.3f' % n
-        txt+='\nG=%.4e' % G
-        txt+='\nNEP=%.4e at T$_{bath}$=350mK' % NEP
+            txt += ' ERROR!  T$_0$<300 mK'
+        txt += '\nn=%.3f' % n
+        txt += '\nG=%.4e' % G
+        txt += '\nNEP=%.4e at T$_{bath}$=350mK' % NEP
+        txt += '\nN$_\mathrm{fit\,\,points}$ = %i' % npts
+        txt += '\n%s' % result['fit points']
 
         P_span=plot_P_max-plot_P_min
-        dat_min = np.nanmin( [np.nanmin(P),np.nanmin(all_P)] )
-        dat_max = np.nanmax( [np.nanmax(P),np.nanmax(all_P)] )
+        if len(P)==0:
+            dat_min = np.nanmin(all_P)
+            dat_max = np.nanmax(all_P)
+        else:
+            dat_min = np.nanmin( [np.nanmin(P),np.nanmin(all_P)] )
+            dat_max = np.nanmax( [np.nanmax(P),np.nanmax(all_P)] )
         dat_span = dat_max - dat_min
         span = max([dat_span,P_span])
         if plot_P_min>dat_min:
             plot_P_min = dat_min-0.5*span
         
-        if plot_P_max>dat_max:
+        if plot_P_max<dat_max:
             plot_P_max = dat_max+0.5*span
         
 
@@ -650,7 +672,7 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     plt.title(ttl)
     ax.set_xlabel('T$_\mathrm{bath}$ / K')
     ax.set_ylabel('Power / Watt')
-    if result['fit points'] == 'all':
+    if result['fit points'].find('full range')>0:
         ax.plot(all_T,all_P,ls='none',marker='D')
     else:
         ax.plot(T,P,ls='none',marker='D')

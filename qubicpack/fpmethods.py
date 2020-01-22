@@ -305,8 +305,8 @@ def read_qubicpack_fits(self,hdulist):
     else:
         self.endobs=None
 
-    if 'DET_NAME' in h[0].header.keys():
-        self.assign_detector_name(h[0].header['DET_NAME'])
+    if 'DET_NAME' in hdulist[0].header.keys():
+        self.assign_detector_name(hdulist[0].header['DET_NAME'])
     # in case detector name is undefined...
     self.guess_detector_name()
 

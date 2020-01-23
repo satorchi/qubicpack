@@ -854,7 +854,7 @@ def make_TES_NEP_tex_report(fplist,asic=None,NEPresults=None,refresh=True):
     NEPmean=NEP_estimate.mean()
     NPIXELS = len(NEPresults)
     
-    texfilename=str('QUBIC_Array-%s_ASIC%i_NEP.tex' % (detector_name,asic))
+    texfilename = 'QUBIC_Array-%s_ASIC%i_NEP_%s.tex' % (detector_name,asic,go300.obsdate.strftime('%Y%m%d'))
     h=open(texfilename,'w')
     h.write('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n')
     h.write('%%%%% WARNING!  Automatically generated file.  Do not edit! %%%%%\n')

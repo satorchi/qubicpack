@@ -30,6 +30,12 @@ from qubicpack.utilities import FIGSIZE, asic_reversal_date, NPIXELS, NASIC, TES
 kBoltzmann=1.3806485279e-23
 temperature_precision = 0.005 # close enough for temperature
 
+# text box in plots
+boxprops = {}
+boxprops['alpha'] = 0.4
+boxprops['color'] = 'grey'
+boxprops['boxstyle'] = 'round'
+    
 def print_datlist(datlist,obsdate=None,temperature=None):
     '''
     check if we're using a list of qubicfp objects or qubicasic/qubicpack objects
@@ -413,7 +419,7 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8):
         
     return ret
 
-def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
+def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,mean_istart=0,mean_iend=10):
     '''
     make the list of temperatures and associated P0
     and calculate the NEP
@@ -434,6 +440,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
     ret['DET_NAME'] = detector_name
     ret['TES'] = TES
     ret['ASIC'] = asic
+    ret['T0_limit'] = T0_limit
     ret['Tmin'] = temps_list.min()
     ret['Tmax'] = temps_list.max()
     ret['mean_istart'] = []
@@ -447,7 +454,8 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
     for idx in sorted_index:
         fp = fplist[idx]
         go = fp.asic_list[asic_idx]
-        if go.turnover(TES) is None or go.turnover(TES)<0.0:continue
+        #if go.turnover(TES) is None or go.turnover(TES)<0.0:continue
+        if not go.is_good_iv(TES):continue
         
         filterinfo = go.filterinfo(TES)
         
@@ -480,7 +488,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
         
         Pbeg = np.mean(Ptes[curve_mean_istart:curve_mean_iend])
         #if ((Pbeg > 5) and (Pbeg < 40)):
-        if filterinfo['fit']['turnover'] is not None and Pbeg>0.0:
+        if Pbeg>0.0:
             P.append(Pbeg*1e-12)
             T.append(Tbath)
 
@@ -492,6 +500,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
     ret['T'] = T
     ret['all_temperatures'] = all_T
     ret['all_P'] = all_P
+    ret['comment'] = ''
     
     npts = len(P)
     
@@ -505,12 +514,17 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
     if temperature_fit is None:
         # try again with the full range but only for P>0
         idx_range = np.where(all_P>0)[0]
-        temperature_fit = fit_Pbath(all_T[idx_range],all_P[idx_range],p0=p0)
+        ret['fit npts'] = len(idx_range)
         if len(idx_range)!=len(all_P):
             ret['fit points'] = '$<P>$ determined from full range, temperatures filtered for P values>0'
         else:
             ret['fit points'] = '$<P>$ determined from full range, all available temperatures'
-        ret['fit npts'] = len(idx_range)
+
+        if len(idx_range)<3:
+            ret['comment'] = 'insufficient data'
+        else:
+            temperature_fit = fit_Pbath(all_T[idx_range],all_P[idx_range],p0=p0)
+
         
     
     if temperature_fit is None:
@@ -520,12 +534,19 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,mean_istart=0,mean_iend=10):
         ret['NEP'] = None
         ret['G'] = None
         ret['gamma'] = None
+        ret['is_good'] = False
         print('insufficient data for curve fit:  TES=%i' % TES)
         return ret
     
         
     K = temperature_fit['fit'][0][0]
     T0 = temperature_fit['fit'][0][1]
+    if T0>T0_limit:
+        ret['is_good'] = False
+        ret['comment'] = 'T$_0 > %.1f$ mK' % (1000*T0_limit)
+    else:
+        ret['is_good'] = True
+        
     n = temperature_fit['fit'][0][2]
     ret['K'] = K
     ret['T0'] = T0
@@ -654,11 +675,6 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     pngname='QUBIC_Array-%s_TES%03i_ASIC%i_NEP.png' % (detector_name,TES,asic)
     ttl='QUBIC Array %s, ASIC %i, TES #%i: NEP' % (detector_name,asic,TES)
 
-    boxprops = {}
-    boxprops['alpha'] = 0.4
-    boxprops['color'] = 'grey'
-    boxprops['boxstyle'] = 'round'
-    
     if xwin:plt.ion()
     else:
         plt.close('all')
@@ -683,12 +699,15 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     else:plt.close('all')
     return result
 
-def plot_NEP_histogram(fplist,asic,NEPresults=None,xwin=True):
+def plot_NEP_histogram(fplist,asic,NEPresults=None,T0_limit=0.7,xwin=True):
     '''
     plot the histogram of the NEP calculations
     '''
     if not verify_temperature_arguments(fplist,1,asic):return None
     asic_idx = asic - 1
+
+    retval = {}
+    retval['ASIC'] = asic
     
     # find the data at 300mK
     go300=None
@@ -703,21 +722,42 @@ def plot_NEP_histogram(fplist,asic,NEPresults=None,xwin=True):
     detector_name=go300.detector_name
 
     # generate the results if not already done
-    if NEPresults is None:NEPresults=make_TES_NEP_resultslist(qplist,asic)
+    if NEPresults is None:NEPresults=make_TES_NEP_resultslist(fplist,asic)
 
-    NEP_estimate=[]
-    TESlist=[]
-    for res in NEPresults:
-        NEP=res['NEP']
-        if not NEP is None:
+    NEP_estimate = []
+    TESlist = []
+    T0list = []
+    good_idx = []
+    bad_idx = []
+    for idx,res in enumerate(NEPresults):
+        NEP = res['NEP']
+        T0 = res['T0']
+        if not NEP is None and not T0 is None and T0<T0_limit:            
             NEP_estimate.append(NEP)
             TESlist.append(res['TES'])
-    nNEP=len(NEP_estimate)
+            good_idx.append(idx)
+        else:
+            bad_idx.append(idx)
+            
+    good_idx = np.array(good_idx)        
+    bad_idx = np.array(bad_idx)  
     NEP_estimate=np.array(NEP_estimate)
+    nNEP=len(NEP_estimate)
     NEPmean=NEP_estimate.mean()
-    txt='NEP$_\mathrm{mean}=%.4f \\times 10^{-17}W/\sqrt{\mathrm{Hz}}$' % (1e17*NEPmean)
+    txt = 'NEP$_\mathrm{mean}=%.4f \\times 10^{-17}W/\sqrt{\mathrm{Hz}}$' % (1e17*NEPmean)
+    txt += '\n%i good TES out of %i. yield=%.1f%%' % (nNEP,len(NEPresults),100*nNEP/len(NEPresults))
+    txt += '\nT$_0$ limit = %.1f mK' % (1000*T0_limit)
+
+    retval['good_idx'] = good_idx
+    retval['ngood'] = len(good_idx)
+    retval['bad_idx'] = bad_idx
+    retval['NEP mean'] = NEPmean
+    retval['NEP'] = NEP_estimate
+    retval['TES'] = np.array(TESlist)
     
     pngname='QUBIC_TES_ASIC%i_NEP_histogram.png' % asic
+    retval['pngname'] = pngname
+    
     ttl='QUBIC TES ASIC %i NEP' % asic
     ttl+='\nhistogram of %i TES\ndata taken %s' % (nNEP,datadate.strftime('%Y-%m-%d'))
     if xwin:plt.ion()
@@ -746,32 +786,45 @@ def plot_NEP_histogram(fplist,asic,NEPresults=None,xwin=True):
     n_max=max(hist)
     ax.set_ylim(0,n_max+1)
 
-    ax.text(0.01,0.99,txt,ha='left',va='top',fontsize=16,transform=ax.transAxes)
+    ax.text(0.985,0.97,txt,ha='right',va='top',fontsize=16,transform=ax.transAxes,bbox=boxprops)
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin:fig.show()
     else:plt.close('all')
-    return
+    return retval
             
-def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
+def make_TES_NEP_tex_report(fplist,asic=None,NEPresults=None,refresh=True):
     '''
     make a LaTeX source file for a test report of NEP estimates
     the input arguments are a list of qubicpack objects with the I-V data at different temperatures
     and a list of results from plot_TES_NEP()
     '''
+    if asic is None and NEPresults is None:
+        print('Please enter a valid ASIC')
+        return None
+
+    if asic is None:
+        asic = NEPresults[0]['ASIC']
+    
     if not verify_temperature_arguments(fplist,1,asic):return None
     asic_idx = asic - 1
     
     # find the data at 300mK
     go300=None
     datelist=''
-    for fp in fplist:
+    T300_diff = 1e9
+    T300_idx = None
+    for idx,fp in enumerate(fplist):
         go = fp.asic_list[asic_idx]
+        delta = np.abs(go.temperature - 0.3)
+        if delta < T300_diff:
+            T300_idx = idx
+            T300_diff = delta
         datelist+='\n\\item %.3fmK on %s'\
             % (1000*go.temperature,go.obsdate.strftime('%Y-%m-%d %H:%M:%S'))
         if go300 is None and is_300mK_measurement(go):
             go300=go
-    if go300 is None:
-        go300=fplist[-1].asic_list[asic_idx]
+    if go300 is None: # take the closest one
+        go300=fplist[T300_idx].asic_list[asic_idx]
 
     print('300mK results from %s, Tbath=%.1fmK'\
           % (go300.obsdate.strftime('%Y-%m-%d %H:%M:%S'),go300.temperature*1000))
@@ -789,7 +842,7 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
     TESlist=[]
     for res in NEPresults:
         NEP=res['NEP']
-        if NEP is not None:
+        if res['is_good']:
             NEP_estimate.append(NEP)
             TESlist.append(res['TES'])
     nNEP=len(TESlist)
@@ -834,7 +887,7 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
 
     h.write('\\vspace*{3ex}\n')
     h.write('\\noindent Summary:\n')
-    h.write('NEP are estimated according to the method described by C.~Perbost, Ph.D, Section~6.3\n\n')
+    h.write('NEP are estimated according to the method described by \\mbox{C.~Perbost}, Ph.D, Section~6.3\n\n')
     h.write('\\noindent\\begin{itemize}\n')
     h.write('\\item Array %s\n' % detector_name)
     h.write('\\item ASIC %i\n' % asic)
@@ -884,6 +937,7 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
             '\\multicolumn{1}{c|}{NEP}'
     h.write('\\noindent\\begin{longtable}{%s}\n' % colfmt)
     h.write('\\caption{Summary Table for TES\\\\\n')
+    h.write('V$_\\mathrm{turnover}$ and R$_1$ taken from measurement at T$_\mathrm{bath}$=%.1fmK\\\\' % (1000*go300.temperature))
     if show_extra_columns:
         h.write(cfibre_ack)
         h.write('\\\\\n')
@@ -895,10 +949,18 @@ def make_TES_NEP_tex_report(fplist,asic,NEPresults=None,refresh=True):
     for result in NEPresults:
         NEP=result['NEP']
         TES=result['TES']
-        if not NEP is None:
-            rowstr=go300.iv_tex_table_entry(TES)
-            rowstr+=' & %.2f \\\\\n' % (1e17*NEP)
-            h.write(rowstr)
+        rowstr = go300.iv_tex_table_entry(TES)
+        if not result['is_good']:
+            if result['comment']:
+                rowstr = rowstr.replace('good',result['comment'])
+            else:
+                rowstr = rowstr.replace('good','bad')
+        if NEP is None:
+            rowstr += ' & - \\\\\n'
+        else:
+            rowstr += ' & %.2f \\\\\n' % (1e17*NEP)
+            
+        h.write(rowstr)
     h.write('\\hline\n')
     h.write('\\end{longtable}\n')
     h.write('\n\\clearpage')
@@ -1008,7 +1070,6 @@ def plot_rt_analysis(reslist,xwin=True):
     ax.set_xlabel('T$_\mathrm{bath}$ / mK')
     ax.set_ylabel('R$_\mathrm{TES}$ / $m\Omega$')
 
-    boxprops = dict(boxstyle='round', facecolor='grey', alpha=0.5)
     ax.text(0.98,0.02,date_txt,va='bottom',ha='right',fontsize=10,transform=ax.transAxes,bbox=boxprops)
 
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')

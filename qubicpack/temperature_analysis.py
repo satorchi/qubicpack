@@ -283,7 +283,8 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     if plot.upper()[0]=='R':
         plot_type='R'
         pngname='QUBIC_Array-%s_TES%03i_ASIC%i_R-V_Temperatures.png' % (detector_name,TES,asic)
-        xlabel='P$_{TES}$ / $p$W'
+        #xlabel='P$_{TES}$ / $p$W'
+        xlabel='V$_{bias}$ / V'
         ylabel='$\\frac{R_\mathrm{TES}}{R_\mathrm{normal}}$ / %'
     elif plot.upper()[0]=='P':
         plot_type='P'
@@ -343,8 +344,9 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
                 if min(Rn_ratio)<min_Rn_ratio:min_Rn_ratio=min(Rn_ratio)
                 if max(Rn_ratio)>max_Rn_ratio:max_Rn_ratio=max(Rn_ratio)
                 Pbias=go.Pbias(TES)
-                lbl+=', P$_\mathrm{bias}=$%.2f pW' % Pbias
-                plt.plot(Ptes,Rn_ratio,label=lbl)
+                lbl+=', P$_\mathrm{bias}=$%.2f pW' % Pbias                
+                #plt.plot(Ptes,Rn_ratio,label=lbl)
+                plt.plot(bias,Rn_ratio,label=lbl)
         elif plot_type=='P':
             # plot power vs bias
             plt.plot(bias,Ptes,label=lbl)
@@ -360,6 +362,8 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     if plot_type=='R':
         xmin=min_P
         xmax=max_P
+        xmin=min_bias
+        xmax=max_bias
         # draw the line at 90% Rn
         plt.plot([xmin,xmax],[90,90],color='black',linestyle='dashed',linewidth=3)
         
@@ -900,11 +904,13 @@ def make_TES_NEP_tex_report(fplist,asic=None,NEPresults=None,refresh=True):
     
     h.write('\n\\vspace*{3ex}\n\\noindent This document includes the following:\n')
     h.write('\\begin{itemize}\n')
-    h.write('\\item Summary Table of NEP estimate for each TES, where the data permits\n')
     h.write('\\item Histogram of NEP values for the array\n')
+    h.write('\\item Summary Table of NEP estimate for each TES\n')
     h.write('\\item Plot of I-V curves at the different bath temperatures\n')
     h.write('\\item Plot of P-V curves at the different bath temperatures\n')
-    h.write('\\item Plot of P-Temperature curves with NEP estimate, where possible\n')
+    h.write('\\item Plot of R-V curves at the different bath temperatures\n')
+    h.write('\\item Plot of turnover voltage at the different bath temperatures\n')
+    h.write('\\item Plot of P-Temperature curves with NEP estimate\n')
     h.write('\\end{itemize}\n\\clearpage\n')
 
     png='QUBIC_TES_ASIC%i_NEP_histogram.png' % asic

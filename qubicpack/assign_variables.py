@@ -127,7 +127,7 @@ def assign_constants(self):
     self.Rbias =10.e3   # 10kOhm, mail from M.Piat to M.Salatino 2017-08-10
     self.figsize=(12.80,6.40)
     self.colours=['blue','green','red','cyan','magenta','yellow','black']
-    self.Vinfinity=0.0 # used to calculate the I-V offset (force the line through 0,0)
+    self.Vinfinity=9.0 # used to calculate the I-V offset (force the line through I,Vinfinity to get R=1 at infinity)
     return
 
 def assign_observer(self,observer='APC LaboMM'):

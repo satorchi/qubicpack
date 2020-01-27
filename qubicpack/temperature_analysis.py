@@ -397,6 +397,7 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8):
     '''
     find best fit to the P_bath function
     '''
+    start_ftol = ftol
     if p0 is None: p0=np.array([1E-10, 0.5,4.5]) #MP
 
     # make sure T_pts and P_pts are 1d arrays
@@ -415,12 +416,31 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8):
             ret = {}
             ret['fit'] = fit
             ret['tolerance'] = ftol
-            return ret
+            break
         except:
             ret=None
         ftol *= 100
         #print('retrying fit with relaxed tolerance: %.1e' % ftol)
-        
+
+    if ret is None: return ret
+
+    # run through one more time, this time giving a better first guess
+    if ftol<0.001: return ret
+
+    print('retrying fit with better first guess')
+    p0 = fit[0][0:3]
+    ftol = start_ftol
+    for ctr in range(5):
+        try:
+            fit = curve_fit(P_bath_function,T,P,p0=p0,ftol=ftol)
+            ret = {}
+            ret['fit'] = fit
+            ret['tolerance'] = ftol
+            return ret
+        except:
+            ret=None
+        ftol *= 100
+         
     return ret
 
 def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,mean_istart=0,mean_iend=10):

@@ -595,17 +595,19 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,mean_istart=0,mean_ie
 
     return ret
 
-def make_TES_NEP_resultslist(fplist,asic):
+def make_TES_NEP_resultslist(fplist):
     '''
     make a list of NEP calculation results, one for each TES
     '''
-    if not verify_temperature_arguments(fplist,1,asic):return None
+    if not verify_temperature_arguments(fplist,1,1):return None
     results=[]
-    for idx in range(NPIXELS):
-        TES = 1 + idx
-        print('calculating NEP for ASIC%i, TES%03i' % (asic,TES))
-        res = calculate_TES_NEP(fplist,TES,asic)
-        results.append(res)
+    for asic_idx in range(NASIC):
+        asic = asic_idx + 1
+        for idx in range(NPIXELS):
+            TES = 1 + idx
+            print('calculating NEP for ASIC%i, TES%03i' % (asic,TES))
+            res = calculate_TES_NEP(fplist,TES,asic)
+            results.append(res)
             
     return results
 

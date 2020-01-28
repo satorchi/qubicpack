@@ -450,8 +450,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,mean_istart=0,mean_ie
     '''
     if not verify_temperature_arguments(fplist,TES,asic):return None
     asic_idx = asic - 1
-    detector_name=fplist[0].asic_list[asic_idx].detector_name
-
+    detector_name = fplist[0].asic_list[asic_idx].detector_name
     temps_list=[]
     for fp in fplist:
         go = fp.asic_list[asic_idx]
@@ -475,6 +474,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,mean_istart=0,mean_ie
     T = []
     all_T = []
     all_P = []
+    obsdates = []
     for idx in sorted_index:
         fp = fplist[idx]
         go = fp.asic_list[asic_idx]
@@ -498,6 +498,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,mean_istart=0,mean_ie
         Vtes_turnover = go.Rshunt*(go.turnover(TES)/go.Rbias-Iturnover)
         all_P.append(Ptes.mean()*1e-12)
         all_T.append(Tbath)
+        obsdates.append(go.obsdate)
 
         if Ptes[-1]<Ptes[0]:
             curve_mean_istart = npts - mean_istart
@@ -525,7 +526,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,mean_istart=0,mean_ie
     ret['all_temperatures'] = all_T
     ret['all_P'] = all_P
     ret['comment'] = ''
-    
+    ret['obsdates'] = obsdates
     npts = len(P)
     
     if npts<3:
@@ -723,34 +724,46 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     else:plt.close('all')
     return result
 
-def plot_NEP_histogram(fplist,asic,NEPresults=None,T0_limit=0.7,xwin=True):
+def plot_NEP_histogram(NEPresults,xwin=True):
     '''
     plot the histogram of the NEP calculations
-    '''
-    if not verify_temperature_arguments(fplist,1,asic):return None
-    asic_idx = asic - 1
 
+    NEPresults is a list of dictionaries returned by make_TES_NEP_resultslist()
+    '''
     retval = {}
+
+    # check if these results are all for the same ASIC, and detector array
+    res = NEPresults[0]
+    asic = res['ASIC']
+    detector_name = res['DET_NAME']
+    obsdate_list = res['obsdates']
+    for res in NEPresults:
+        if res['ASIC']!=asic:
+            asic = None
+        if res['DET_NAME']!=detector_name:
+            detector_name = None
+        for obsdate in res['obsdates']:
+            if obsdate not in obsdate_list:
+                obsdate_list.append(obsdate)
     retval['ASIC'] = asic
+    retval['DET_NAME'] = detector_name
+    retval['obsdates'] = obsdate_list.sort()
+
+    ymd_start = (obsdate_list[0].year,obsdate_list[0].month,obsdate_list[0].day)
+    ymd_end = (obsdate_list[-1].year,obsdate_list[-1].month,obsdate_list[-1].day)
+    if ymd_start==ymd_end:
+        datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%H:%M'))
+        fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%H%M%S'))
+    else:
+        datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%Y-%m-%d %H:%M'))
+        fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%Y%m%dT%H%M%S'))
     
-    # find the data at 300mK
-    go300=None
-    for fp in fplist:
-        go = fp.asic_list[asic_idx]
-        if go300 is None and is_300mK_measurement(go):
-            go300=go
-    if go300 is None:
-        go300=fplist[-1].asic_list[asic_idx]
-        
-    datadate=fplist[0].asic_list[asic_idx].obsdate
-    detector_name=go300.detector_name
 
     # generate the results if not already done
     if NEPresults is None:NEPresults=make_TES_NEP_resultslist(fplist,asic)
 
     NEP_estimate = []
     TESlist = []
-    T0list = []
     good_idx = []
     bad_idx = []
     for idx,res in enumerate(NEPresults):
@@ -778,12 +791,17 @@ def plot_NEP_histogram(fplist,asic,NEPresults=None,T0_limit=0.7,xwin=True):
     retval['NEP mean'] = NEPmean
     retval['NEP'] = NEP_estimate
     retval['TES'] = np.array(TESlist)
+
     
-    pngname='QUBIC_TES_ASIC%i_NEP_histogram.png' % asic
+    if asic is not None:
+        pngname='QUBIC_TES_ASIC%i_NEP_histogram_%s.png' % (asic,fname_datestr)
+        ttl='QUBIC TES ASIC %i NEP' % asic
+    else:
+        pngname='QUBIC_TES_NEP_histogram_%s.png' % fname_datestr
+        ttl='QUBIC TES NEP'
     retval['pngname'] = pngname
     
-    ttl='QUBIC TES ASIC %i NEP' % asic
-    ttl+='\nhistogram of %i TES\ndata taken %s' % (nNEP,datadate.strftime('%Y-%m-%d'))
+    ttl+='\nhistogram of %i TES\ndata taken %s' % (nNEP,datadate_str)
     if xwin:plt.ion()
     else:
         plt.close('all')

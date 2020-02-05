@@ -165,36 +165,38 @@ def verify_temperature_arguments(fplist,TES,asic):
         print('ERROR! Please enter a valid TES and asic number.')
         return False
 
-    if asic<1 or asic>NASIC:
-        print('ERROR! Please enter a valid asic number: %i' % asic)
-    asic_idx = asic - 1
-
     if TES<1 or TES>NPIXELS:
-        print('ERROR! Please enter a valid TES number: %i' % TES)
+        print('ERROR! Please enter a valid TES number between 1 and %i.' % NPIXELS)
+        return False
         
     # make sure we have a list of qubicpack.qubicfp objects
     if not isinstance(fplist, list):
         print('ERROR!  Please provide a list of qubicpack.qubicfp objects')
         return False
 
-    if not isinstance(fplist[0], qubicfp):
-        print('ERROR!  Please provide a list of qubicpack.qubicfp objects')
+    if asic<1 or asic>NASIC:
+        print('ERROR! Please enter a valid asic number: %i' % asic)
         return False
-
-    detector_name=fplist[0].asic_list[asic_idx].detector_name
+    asic_idx = asic - 1
+               
+    detector_name = None
     for fp in fplist:
         if not isinstance(fp,qubicfp):
             print('ERROR! The list should contain qubicpack.qubicfp objects')
             return False
-        if TES<1 or TES>NPIXELS:
-            print('ERROR! Please enter a valid TES number between 1 and %i.' % NPIXELS)
-            return False
+        
         if fp.asic_list[asic_idx] is None:
-            print('ERROR! There is no data for the requested ASIC.')
-            return False
+            continue
+
+        if detector_name is None:
+            detector_name = fp.asic_list[asic_idx].detector_name
+            
         if fp.asic_list[asic_idx].detector_name != detector_name:
             print('ERROR! These data are not for the same detector array.')
             return False
+        
+
+    if detector_name is None: return False
         
 
     return True
@@ -205,15 +207,21 @@ def plot_TES_turnover_temperature(fplist,TES,asic,xwin=True):
     '''
     if not verify_temperature_arguments(fplist,TES,asic):return None
     asic_idx = asic - 1
-    detector_name=fplist[0].asic_list[asic_idx].detector_name
+    detector_name = None
     
     temps_list=[]
     turnover_list=[]
+    obsdates = []
     for fp in fplist:
         go = fp.asic_list[asic_idx]
-        if not go.turnover(TES) is None:
+        if go is None: continue
+        if detector_name is None:
+            detector_name = go.detector_name
+            
+        if go.turnover(TES) is not None:
             temps_list.append(go.temperature)
             turnover_list.append(go.turnover(TES))
+            obsdates.append(go.obsdate)
 
 
     if len(turnover_list)==0:
@@ -226,13 +234,23 @@ def plot_TES_turnover_temperature(fplist,TES,asic,xwin=True):
     sorted_index=sorted(range(len(temps_list)), key=lambda i: temps_list[i])
     sorted_temps=temps_list[sorted_index]
     sorted_turnover=turnover_list[sorted_index]
+
+    ymd_start = (obsdates[0].year,obsdates[0].month,obsdates[0].day)
+    ymd_end = (obsdates[-1].year,obsdates[-1].month,obsdates[-1].day)
+    if ymd_start==ymd_end:
+        datadate_str = '%s to %s' % (obsdates[0].strftime('%Y-%m-%d %H:%M'),obsdates[-1].strftime('%H:%M'))
+        fname_datestr = '%s-%s' % (obsdates[0].strftime('%Y%m%dT%H%M%S'),obsdates[-1].strftime('%H%M%S'))
+    else:
+        datadate_str = '%s to %s' % (obsdates[0].strftime('%Y-%m-%d %H:%M'),obsdates[-1].strftime('%Y-%m-%d %H:%M'))
+        fname_datestr = '%s-%s' % (obsdates[0].strftime('%Y%m%dT%H%M%S'),obsdates[-1].strftime('%Y%m%dT%H%M%S'))
     
-    pngname='QUBIC_Array-%s_TES%03i_ASIC%i_Turnover_Temperature.png' % (detector_name,TES,asic)
+    
+    pngname='QUBIC_Array-%s_TES%03i_ASIC%i_Turnover_Temperature_%s.png' % (detector_name,TES,asic,fname_datestr)
     xlabel='T$_{bath}$ / mK'
     ylabel='V$_{turnover}$ / V'
 
     ttl='QUBIC Array %s, ASIC %i, TES #%i: Turnover at Different Temperatures' % (detector_name,asic,TES)
-    subttl=fplist[0].asic_list[asic_idx].obsdate.strftime('Measurements of %Y-%m-%d')
+    subttl = 'Measurements of %s' % datadate_str
     
     if xwin:plt.ion()
     else:
@@ -271,11 +289,14 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     '''
     if not verify_temperature_arguments(fplist,TES,asic):return None
     asic_idx = asic - 1
-    detector_name = fplist[0].asic_list[asic_idx].detector_name
 
+    detector_name = None
     temps_list=[]
     for fp in fplist:
         go = fp.asic_list[asic_idx]
+        if go is None: continue
+        if detector_name is None:
+            detector_name = fp.asic_list[asic_idx].detector_name
         if go.temperature is None:
             temps_list.append(-1)
         else:
@@ -325,6 +346,8 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     max_P=-1000.
     for idx in sorted_index:
         go = fplist[idx].asic_list[asic_idx]
+        if go is None: continue
+        
         lbl = '%.0f mK' % (1000*temps_list[idx])
 
         startend = go.selected_iv_curve(TES)
@@ -547,11 +570,14 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
     '''
     if not verify_temperature_arguments(fplist,TES,asic):return None
     asic_idx = asic - 1
-    detector_name = fplist[0].asic_list[asic_idx].detector_name
+    detector_name = None
     temps_list=[]
     for fp in fplist:
         go = fp.asic_list[asic_idx]
-        temps_list.append(go.temperature)    
+        if go is None: continue
+        if detector_name is None:
+            detector_name = go.detector_name
+        temps_list.append(go.temperature)
     temps_list=np.array(temps_list)
     sorted_index=sorted(range(len(temps_list)), key=lambda i: temps_list[i])
     sorted_temps=temps_list[sorted_index]
@@ -575,6 +601,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
     for idx in sorted_index:
         fp = fplist[idx]
         go = fp.asic_list[asic_idx]
+        if go is None: continue
         #if go.turnover(TES) is None or go.turnover(TES)<0.0:continue
         if not go.is_good_iv(TES):continue
         
@@ -640,7 +667,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
     ret['all_P'] = all_P
     ret['comment'] = ''
     comments = []
-    ret['obsdates'] = obsdates
+    ret['obsdates'] = obsdates.sort()
     ret['is_good'] = None
     npts = len(P)
     temperature_fit = {}
@@ -732,7 +759,6 @@ def make_TES_NEP_resultslist(fplist,p0=None):
     '''
     make a list of NEP calculation results, one for each TES
     '''
-    if not verify_temperature_arguments(fplist,1,1):return None
     results=[]
     for asic_idx in range(NASIC):
         asic = asic_idx + 1
@@ -833,11 +859,24 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
         
         if plot_P_max<dat_max:
             plot_P_max = dat_max+0.5*span
-        
 
-    pngname='QUBIC_Array-%s_TES%03i_ASIC%i_NEP.png' % (detector_name,TES,asic)
+    obsdate_list = result['obsdates']
+    if obsdate_list:
+        ymd_start = (obsdate_list[0].year,obsdate_list[0].month,obsdate_list[0].day)
+        ymd_end = (obsdate_list[-1].year,obsdate_list[-1].month,obsdate_list[-1].day)
+        if ymd_start==ymd_end:
+            datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%H:%M'))
+            fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%H%M%S'))
+        else:
+            datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%Y-%m-%d %H:%M'))
+            fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%Y%m%dT%H%M%S'))
+    else:
+        datadate_str = 'insufficient data'
+        fname_datestr = '_'
+
+    pngname='QUBIC_Array-%s_TES%03i_ASIC%i_NEP_%s.png' % (detector_name,TES,asic,fname_datestr)
     result['pngname'] = pngname
-    ttl='QUBIC Array %s, ASIC %i, TES #%i: NEP' % (detector_name,asic,TES)
+    ttl='QUBIC Array %s, ASIC %i, TES #%i: NEP (%s)' % (detector_name,asic,TES,datadate_str)
 
     if xwin:plt.ion()
     else:
@@ -872,11 +911,14 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
     retval = {}
 
     # check if these results are all for the same ASIC, and detector array
-    res = NEPresults[0]
-    asic = res['ASIC']
-    detector_name = res['DET_NAME']
-    obsdate_list = res['obsdates']
+    asic = -1
     for res in NEPresults:
+        if res is None: continue
+        if asic==-1:
+            asic = res['ASIC']
+            detector_name = res['DET_NAME']
+            obsdate_list = res['obsdates']
+            
         if res['ASIC']!=asic:
             asic = None
         if res['DET_NAME']!=detector_name:
@@ -884,6 +926,11 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
         for obsdate in res['obsdates']:
             if obsdate not in obsdate_list:
                 obsdate_list.append(obsdate)
+
+    if asic==-1:
+        print('ERROR!  No valid results in the resultslist.')
+        return None
+        
     retval['ASIC'] = asic
     retval['DET_NAME'] = detector_name
     retval['obsdates'] = obsdate_list.sort()
@@ -897,9 +944,6 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
         datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%Y-%m-%d %H:%M'))
         fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%Y%m%dT%H%M%S'))
     
-
-    # generate the results if not already done
-    if NEPresults is None:NEPresults=make_TES_NEP_resultslist(fplist)
 
     T0_limit = NEPresults[0]['T0_limit']
 
@@ -1019,45 +1063,55 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
     
     
     # find the data at 300mK
-    go300=None
-    datelist=''
+    go300 = {}
+    datelist = ''
     T300_diff = 1e9
     T300_idx = None
     asic_list = []
-    for idx,fp in enumerate(fplist):
+    obsdates = []
+    for fp in fplist:
         for go in fp.asic_list:
             if go is None:continue
+            obsdates.append(go.obsdate)
             asic_list.append(go.asic)
             delta = np.abs(go.temperature - 0.3)
             if delta < T300_diff:
-                T300_idx = idx
+                go300[go.asic] = go
                 T300_diff = delta
-            datelist+='\n\\item %.3fmK on %s'\
+            datelist += '\n\\item %.3fmK on %s'\
                 % (1000*go.temperature,go.obsdate.strftime('%Y-%m-%d %H:%M:%S'))
-            if go300 is None and is_300mK_measurement(go):
-                go300=go
-        if go300 is None: # take the closest one
-            go300=fplist[T300_idx].asic_list[asic_idx]
 
-
-            
-    print('300mK results from %s, Tbath=%.1fmK'\
-          % (go300.obsdate.strftime('%Y-%m-%d %H:%M:%S'),go300.temperature*1000))
-    observer=go300.observer.replace('<','$<$').replace('>','$>$')
-    detector_name=go300.detector_name
-
-    if go300.transdic is None:
-        show_extra_columns = False
+    obsdates.sort()
+    ymd_start = (obsdates[0].year,obsdates[0].month,obsdates[0].day)
+    ymd_end = (obsdates[-1].year,obsdates[-1].month,obsdates[-1].day)
+    if ymd_start==ymd_end:
+        datadate_str = '%s to %s' % (obsdates[0].strftime('%Y-%m-%d %H:%M'),obsdates[-1].strftime('%H:%M'))
+        fname_datestr = '%s-%s' % (obsdates[0].strftime('%Y%m%dT%H%M%S'),obsdates[-1].strftime('%H%M%S'))
     else:
-        show_extra_columns = True
+        datadate_str = '%s to %s' % (obsdates[0].strftime('%Y-%m-%d %H:%M'),obsdates[-1].strftime('%Y-%m-%d %H:%M'))
+        fname_datestr = '%s-%s' % (obsdates[0].strftime('%Y%m%dT%H%M%S'),obsdates[-1].strftime('%Y%m%dT%H%M%S'))
+
+
+
+    for asic in go300.keys():
+        go = go300[asic]
+        print('300mK results for ASIC %i from %s, Tbath=%.1fmK'\
+              % (go.asic,go.obsdate.strftime('%Y-%m-%d %H:%M:%S'),go.temperature*1000))
+        observer = go.observer.replace('<','$<$').replace('>','$>$')
+        detector_name = go.detector_name
+
+        if go.transdic is None:
+            show_extra_columns = False
+        else:
+            show_extra_columns = True
 
     asic_list = sorted(set(asic_list))
     if len(asic_list)==1:
         asic = asic_list[0]
-        texfilename = 'QUBIC_Array-%s_ASIC%i_NEP_%s.tex' % (detector_name,asic,go300.obsdate.strftime('%Y%m%d'))
+        texfilename = 'QUBIC_Array-%s_ASIC%i_NEP_%s.tex' % (detector_name,asic,fname_datestr)
     else:
         asic = None
-        texfilename = 'QUBIC_Array-%s_NEP_%s.tex' % (detector_name,go300.obsdate.strftime('%Y%m%d'))
+        texfilename = 'QUBIC_Array-%s_NEP_%s.tex' % (detector_name,fname_datestr)
 
     NEP_estimate=[]
     TESlist=[]
@@ -1100,7 +1154,7 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
     h.write('\\begin{center}\n')
     h.write('QUBIC TES Report\\\\\n')
     h.write('NEP estimates\\\\\n')
-    h.write(go300.obsdate.strftime('data from %Y-%m-%d\\\\\n'))
+    h.write('data from %s\\\\\n' % datadate_str)
     h.write('compiled by %s\\\\\nusing QubicPack: \\url{https://github.com/satorchi/qubicpack}\\\\\n' % observer)
     h.write(dt.datetime.utcnow().strftime('this report compiled %Y-%m-%d %H:%M UTC\\\\\n'))
     h.write('\\end{center}\n')
@@ -1161,7 +1215,9 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
             '\\multicolumn{1}{c|}{NEP}'
     h.write('\\noindent\\begin{longtable}{%s}\n' % colfmt)
     h.write('\\caption{Summary Table for TES\\\\\n')
-    h.write('V$_\\mathrm{turnover}$ and R$_1$ taken from measurement at T$_\mathrm{bath}$=%.1fmK\\\\' % (1000*go300.temperature))
+    for asic in go300.keys():
+        h.write('V$_\\mathrm{turnover}$ and R$_1$ taken from measurement at T$_\mathrm{bath}$=%.1fmK for ASIC %i\\\\'\
+                % (1000*go300[asic].temperature,asic))
     if show_extra_columns:
         h.write(cfibre_ack)
         h.write('\\\\\n')
@@ -1173,9 +1229,9 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
     for result in NEPresults:
         NEP = result['NEP']
         TES = result['TES']
-        ASIC = result['ASIC']
-        asic_str = '%i &' % ASIC
-        rowstr = asic_str+go300.iv_tex_table_entry(TES)
+        asic = result['ASIC']
+        asic_str = '%i &' % asic
+        rowstr = asic_str+go300[asic].iv_tex_table_entry(TES)
         if not result['is_good']:
             if result['comment']:
                 rowstr = rowstr.replace('good',result['comment'])
@@ -1215,7 +1271,7 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
         pngNEP = 'QUBIC_Array-%s_TES%03i_ASIC%i_NEP.png' % (detector_name,TES,asic)
         if refresh or not os.path.exists(pngNEP):
             res = plot_TES_NEP(result=result,xwin=False)
-            pngNEP = res['pngname NEP']
+            pngNEP = res['pngname']
         
         pngFiles=[pngIV,pngPV,pngRP,pngTurnover,pngNEP]
         for png in pngFiles:

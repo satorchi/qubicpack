@@ -626,8 +626,19 @@ def filter_iv_all(self,
 
     for asic_obj in self.asic_list:
         if asic_obj is not None:
-            asic_obj.filter_iv_all(R1adjust,R1_limit,residual_limit,abs_amplitude_limit,rel_amplitude_limit,
-                                   bias_margin,ignore_turnover,jumplimit,fitfunction,Vsuper,Vnormal,istart,iend)
+            asic_obj.filter_iv_all(R1adjust=R1adjust,
+                                   R1_limit=R1_limit,
+                                   residual_limit=residual_limit,
+                                   abs_amplitude_limit=abs_amplitude_limit,
+                                   rel_amplitude_limit=rel_amplitude_limit,
+                                   ignore_turnover=ignore_turnover,
+                                   bias_margin=bias_margin,
+                                   jumplimit=jumplimit,
+                                   fitfunction=fitfunction,
+                                   Vsuper=Vsuper,
+                                   Vnormal=Vnormal,
+                                   istart=istart,
+                                   iend=iend)
 
     return
     

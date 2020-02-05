@@ -1017,6 +1017,8 @@ def read_qubicpack_fits(self,h):
                         val=hdu.header[keyword]
                     if val=='':val=None
                     tdata[keyword]=val
+            if 'DATE-OBS' not in tdata.keys():
+                tdata['DATE-OBS'] = self.obsdate
 
             self.tdata.append(tdata)
 

@@ -1065,8 +1065,7 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
     # find the data at 300mK
     go300 = {}
     datelist = ''
-    T300_diff = 1e9
-    T300_idx = None
+    T300_diff = {1:1e9,2:1e9}
     asic_list = []
     obsdates = []
     for fp in fplist:
@@ -1075,9 +1074,9 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
             obsdates.append(go.obsdate)
             asic_list.append(go.asic)
             delta = np.abs(go.temperature - 0.3)
-            if delta < T300_diff:
+            if delta < T300_diff[go.asic]:
                 go300[go.asic] = go
-                T300_diff = delta
+                T300_diff[go.asic] = delta
             datelist += '\n\\item %.3fmK on %s'\
                 % (1000*go.temperature,go.obsdate.strftime('%Y-%m-%d %H:%M:%S'))
 

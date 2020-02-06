@@ -291,10 +291,12 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     asic_idx = asic - 1
 
     detector_name = None
-    temps_list=[]
-    for fp in fplist:
+    temps_list = []
+    index_list = []
+    for idx,fp in enumerate(fplist):
         go = fp.asic_list[asic_idx]
         if go is None: continue
+        index_list.append(idx)
         if detector_name is None:
             detector_name = fp.asic_list[asic_idx].detector_name
         if go.temperature is None:
@@ -302,9 +304,11 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
         else:
             temps_list.append(go.temperature)
         
-    temps_list=np.array(temps_list)
-    sorted_index=sorted(range(len(temps_list)), key=lambda i: temps_list[i])
-    sorted_temps=temps_list[sorted_index]
+    temps_list = np.array(temps_list)
+    index_list = np.array(index_list)
+    sorted_temps_index = sorted(range(len(temps_list)), key=lambda i: temps_list[i])
+    sorted_temps = temps_list[sorted_temps_index]
+    sorted_index = index_list[sorted_temps_index]
 
     plot_type='I'
     if plot.upper()[0]=='R':
@@ -337,7 +341,6 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
-
     min_bias=1000.
     max_bias=-1000.
     min_Rn_ratio=1000.
@@ -348,7 +351,7 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
         go = fplist[idx].asic_list[asic_idx]
         if go is None: continue
         
-        lbl = '%.0f mK' % (1000*temps_list[idx])
+        lbl = '%.0f mK' % (1000*go.temperature)
 
         startend = go.selected_iv_curve(TES)
         if startend is None:
@@ -356,9 +359,9 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
             continue
         istart,iend = startend
 
-        Iadjusted=go.adjusted_iv(TES)
-        I=Iadjusted[istart:iend]
-        bias=go.vbias[istart:iend]
+        Iadjusted = go.adjusted_iv(TES)
+        I = Iadjusted[istart:iend]
+        bias = go.bias_factor*go.vbias[istart:iend]
 
 
         # power calculation
@@ -602,8 +605,15 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
         fp = fplist[idx]
         go = fp.asic_list[asic_idx]
         if go is None: continue
-        #if go.turnover(TES) is None or go.turnover(TES)<0.0:continue
-        if not go.is_good_iv(TES):continue
+        if verbosity>0:
+            print('calculating NEP for dataset %2i: ASIC%i, TES%3i, Tbath=%.1fmK, %s'\
+                  % (idx,go.asic,TES,1000*go.temperature,go.obsdate))
+        if not go.is_good_iv(TES):
+            if verbosity>0: print('  rejected.  bad I-V')
+            continue
+        if go.turnover(TES) is None:
+            if verbosity>0: print('   rejected.  no turnover')
+            continue
         
         filterinfo = go.filterinfo(TES)
         
@@ -612,7 +622,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
 
         Iadjusted = go.adjusted_iv(TES)
         I = Iadjusted[istart:iend]
-        if 'Iturnover' in filterinfo['fit'].keys():
+        if 'Iturnover' in filterinfo['fit'].keys() and filterinfo['fit']['Iturnover'] is not None:
             Iturnover = 1e-6*filterinfo['fit']['Iturnover']
         else:
             Iturnover = 1e-6*I.min()
@@ -667,7 +677,9 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
     ret['all_P'] = all_P
     ret['comment'] = ''
     comments = []
-    ret['obsdates'] = obsdates.sort()
+    obsdates.sort()
+    ret['obsdates'] = obsdates 
+        
     ret['is_good'] = None
     npts = len(P)
     temperature_fit = {}
@@ -675,7 +687,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
         temperature_fit['fit'] = None
     else:
         temperature_fit = redo_fit_Pbath(T,P,p0=p0,verbosity=verbosity)
-        ret['fit points'] = '$<P>$ determined from first points'
+        ret['fit points'] = '$<P>$ determined from superconducting region'
         ret['fit npts'] = npts
 
     if temperature_fit['fit'] is None:
@@ -703,7 +715,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
         ret['gamma'] = None
         ret['is_good'] = False
         if verbosity>0:
-            print('insufficient data for curve fit:  TES=%i' % TES)
+            print('insufficient data for curve fit:  ASIC%i, TES=%i' % (ret['ASIC'],ret['TES']))
         return ret
     
         
@@ -755,7 +767,7 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
 
     return ret
 
-def make_TES_NEP_resultslist(fplist,p0=None):
+def make_TES_NEP_resultslist(fplist,p0=None,verbosity=0):
     '''
     make a list of NEP calculation results, one for each TES
     '''
@@ -764,8 +776,8 @@ def make_TES_NEP_resultslist(fplist,p0=None):
         asic = asic_idx + 1
         for idx in range(NPIXELS):
             TES = 1 + idx
-            #print('calculating NEP for ASIC%i, TES%03i' % (asic,TES))
-            res = calculate_TES_NEP(fplist,TES,asic,p0=p0)
+            if verbosity>0: print('calculating NEP for ASIC%i, TES%03i' % (asic,TES))
+            res = calculate_TES_NEP(fplist,TES,asic,p0=p0,verbosity=verbosity)
             results.append(res)
             
     return results
@@ -828,9 +840,9 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
         fit_T = np.arange(plot_T_min,plot_T_max,T_stepsize)
         fit_P = P_bath_function(fit_T,K,T0,n)
 
-        P_span=max(fit_P)-min(fit_P)
-        plot_P_min=min(fit_P)-0.5*P_span
-        plot_P_max=max(fit_P)+0.5*P_span
+        P_span = np.nanmax(fit_P) - np.nanmin(fit_P)
+        plot_P_min = np.nanmin(fit_P)-0.5*P_span
+        plot_P_max = np.nanmax(fit_P)+0.5*P_span
         
         txt = 'K=%.4e' % K
         txt += '\nT$_0$=%.1f mK' % (1000*T0)
@@ -910,41 +922,6 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
     '''
     retval = {}
 
-    # check if these results are all for the same ASIC, and detector array
-    asic = -1
-    for res in NEPresults:
-        if res is None: continue
-        if asic==-1:
-            asic = res['ASIC']
-            detector_name = res['DET_NAME']
-            obsdate_list = res['obsdates']
-            
-        if res['ASIC']!=asic:
-            asic = None
-        if res['DET_NAME']!=detector_name:
-            detector_name = None
-        for obsdate in res['obsdates']:
-            if obsdate not in obsdate_list:
-                obsdate_list.append(obsdate)
-
-    if asic==-1:
-        print('ERROR!  No valid results in the resultslist.')
-        return None
-        
-    retval['ASIC'] = asic
-    retval['DET_NAME'] = detector_name
-    retval['obsdates'] = obsdate_list.sort()
-
-    ymd_start = (obsdate_list[0].year,obsdate_list[0].month,obsdate_list[0].day)
-    ymd_end = (obsdate_list[-1].year,obsdate_list[-1].month,obsdate_list[-1].day)
-    if ymd_start==ymd_end:
-        datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%H:%M'))
-        fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%H%M%S'))
-    else:
-        datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%Y-%m-%d %H:%M'))
-        fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%Y%m%dT%H%M%S'))
-    
-
     T0_limit = NEPresults[0]['T0_limit']
 
     NEP_estimate = []
@@ -956,7 +933,23 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
     good_idx = []
     bad_idx = []
     Chilist = []
+
+    # check if these results are all for the same ASIC, and detector array
+    # and make lists of results
+    asic = -1
     for idx,res in enumerate(NEPresults):
+        if res is None: continue
+        
+        if asic==-1:
+            asic = res['ASIC']
+            detector_name = res['DET_NAME']
+            obsdate_list = res['obsdates']
+            
+        if res['ASIC']!=asic:
+            asic = None
+        if res['DET_NAME']!=detector_name:
+            detector_name = None
+
         if res['is_good']:
             NEP_estimate.append(res['NEP'])
             TESlist.append(res['TES'])
@@ -966,9 +959,25 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
             Glist.append(res['G'])
             Chilist.append(res['Chi square'])
             good_idx.append(idx)
+            for obsdate in res['obsdates']:
+                if obsdate not in obsdate_list:
+                    obsdate_list.append(obsdate)
         else:
             bad_idx.append(idx)
-            
+                
+    if asic==-1:
+        print('ERROR!  No valid results in the dataset.')
+        return None
+
+    if len(good_idx)==0:
+        print('ERROR!  No NEP estimates possible in this dataset')
+        return None
+        
+    retval['ASIC'] = asic
+    retval['DET_NAME'] = detector_name
+    obsdate_list.sort()
+    retval['obsdates'] = obsdate_list
+
     good_idx = np.array(good_idx)        
     bad_idx = np.array(bad_idx)  
     NEP_estimate=np.array(NEP_estimate)
@@ -987,6 +996,15 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
     retval['G'] = np.array(Glist)
     retval['Chi square'] = np.array(Chilist)
 
+    ymd_start = (obsdate_list[0].year,obsdate_list[0].month,obsdate_list[0].day)
+    ymd_end = (obsdate_list[-1].year,obsdate_list[-1].month,obsdate_list[-1].day)
+    if ymd_start==ymd_end:
+        datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%H:%M'))
+        fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%H%M%S'))
+    else:
+        datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%Y-%m-%d %H:%M'))
+        fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%Y%m%dT%H%M%S'))
+    
     txt = 'NEP$_\mathrm{mean}=%.4f \\times 10^{-17}\mathrm{W}/\sqrt{\mathrm{Hz}}$' % (1e17*NEPmean)
     txt += '\nG$_\mathrm{mean}=%.4f \\times 10^{-10}\mathrm{W}/{\mathrm{K}}$' % (1e10*retval['G'].mean())
     txt += '\nn$_\mathrm{mean}=%.4f$' % (retval['n'].mean())

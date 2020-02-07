@@ -46,6 +46,7 @@ def plot_fp(args):
       'lutmax' : max value for colour look up table
       'pngname' : name of file for saving the plot
       'nolabels' : if true, do not plot TES labels in each box
+      'quadrant' : quadrant in which to plot the quarter focal plane (default=3)
 
     '''
     global FIGSIZE

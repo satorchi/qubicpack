@@ -509,13 +509,15 @@ def plot_timeline_focalplane(self):
     subttl_list = []
     obsdates = []
     for idx,asic_obj in enumerate(self.asic_list):
-        if asic_obj is not None:
-            key = 'ASIC%i' % (idx+1)
-            
-            subttl_list.append(asic_obj.infotext())
+        if asic_obj is None: continue
+        if not asic_obj.exist_timeline_data(): continue
 
-            args[key] = asic_obj.timeline_array()
-            obsdates.append(asic_obj.obsdate)
+        key = 'ASIC%i' % (idx+1)
+            
+        subttl_list.append(asic_obj.infotext())
+
+        args[key] = asic_obj.timeline_array()
+        obsdates.append(asic_obj.obsdate)
             
     args['subtitle'] = '\n'.join(subttl_list)
     args['obsdate'] = min(obsdates)
@@ -556,9 +558,9 @@ def plot_iv_focalplane(self,labels=True):
     tot_ngood = 0
     tot_npixels = 0
     for idx,asic_obj in enumerate(self.asic_list):
-        obsdates.append(asic_obj.obsdate)
         if asic_obj is None: continue
         if not asic_obj.exist_iv_data(): continue
+        obsdates.append(asic_obj.obsdate)
 
         key = 'ASIC%i' % (idx+1)
             

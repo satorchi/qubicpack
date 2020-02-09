@@ -178,7 +178,7 @@ def verify_temperature_arguments(fplist,TES,asic):
         print('ERROR! Please enter a valid asic number: %i' % asic)
         return False
     asic_idx = asic - 1
-               
+
     detector_name = None
     for fp in fplist:
         if not isinstance(fp,qubicfp):
@@ -197,53 +197,100 @@ def verify_temperature_arguments(fplist,TES,asic):
         
 
     if detector_name is None: return False
-        
 
     return True
+
+def get_temperature_info(fplist,TES,asic):
+    '''
+    return some information to label the plots
+    '''
+    if not verify_temperature_arguments(fplist,TES,asic): return None
+    
+    asic_idx = asic - 1
+    detector_name = None
+    temps_list = []
+    temps_index_list = []
+    
+    turnover_list = []
+    turnover_index_list = []
+    turnover_temps_list = []
+    
+    obsdates = []
+
+    for idx,fp in enumerate(fplist):
+        go = fp.asic_list[asic_idx]
+        if go is None: continue
+        if go.temperature is None: continue
+        if go.temperature=='': continue
+        
+        if detector_name is None:
+            detector_name = go.detector_name
+
+        temps_index_list.append(idx)
+        temps_list.append(go.temperature)                        
+        obsdates.append(go.obsdate)
+            
+        if go.turnover(TES) is not None:
+            turnover_index_list.append(idx)
+            turnover_list.append(go.turnover(TES))
+            turnover_temps_list.append(go.temperature)
+
+    temps_list = np.array(temps_list)
+    temps_index_list = np.array(temps_index_list)
+    turnover_list = np.array(turnover_list)
+    turnover_temps_list = np.array(turnover_temps_list)
+    
+    sorted_turnover_temps_index = sorted(range(len(turnover_temps_list)), key=lambda i: turnover_temps_list[i])
+    sorted_turnover = turnover_list[sorted_turnover_temps_index]
+    sorted_turnover_temps = turnover_temps_list[sorted_turnover_temps_index]
+
+    sorted_temps_index = sorted(range(len(temps_list)), key=lambda i: temps_list[i])
+    sorted_temps = temps_list[sorted_temps_index]
+    sorted_index = temps_index_list[sorted_temps_index]
+
+    startdate = min(obsdates)
+    enddate = max(obsdates)
+    ymd_start = (startdate.year,startdate.month,startdate.day)
+    ymd_end = (enddate.year,enddate.month,enddate.day)
+    if ymd_start==ymd_end:
+        datadate_str = '%s to %s' % (startdate.strftime('%Y-%m-%d %H:%M'),enddate.strftime('%H:%M'))
+        fname_datestr = '%s-%s' % (startdate.strftime('%Y%m%dT%H%M%S'),enddate.strftime('%H%M%S'))
+    else:
+        datadate_str = '%s to %s' % (startdate.strftime('%Y-%m-%d %H:%M'),enddate.strftime('%Y-%m-%d %H:%M'))
+        fname_datestr = '%s-%s' % (startdate.strftime('%Y%m%dT%H%M%S'),enddate.strftime('%Y%m%dT%H%M%S'))
+
+    ret = {}
+    ret['ASIC'] = asic
+    ret['TES'] = TES
+    ret['detector_name'] = detector_name
+    ret['temps_index_list'] = np.array(temps_index_list)
+    ret['sorted_index'] = np.array(sorted_index)
+    ret['sorted_temps'] = np.array(sorted_temps)
+    
+    ret['turnover_list'] = np.array(turnover_list)
+    ret['turnover_index_list'] = np.array(turnover_index_list)
+    ret['sorted_turnover'] = np.array(sorted_turnover)
+    ret['sorted_turnover_temps'] = np.array(sorted_turnover_temps)
+    
+    ret['obsdates'] = obsdates
+    ret['datadate_str'] = datadate_str
+    ret['fname_datestr'] = fname_datestr
+    
+    return ret
 
 def plot_TES_turnover_temperature(fplist,TES,asic,xwin=True):
     '''
     plot the turnover point as a function of temperature for a given TES
     '''
-    if not verify_temperature_arguments(fplist,TES,asic):return None
-    asic_idx = asic - 1
-    detector_name = None
+    info = get_temperature_info(fplist,TES,asic)
+    if info is None: return
     
-    temps_list=[]
-    turnover_list=[]
-    obsdates = []
-    for fp in fplist:
-        go = fp.asic_list[asic_idx]
-        if go is None: continue
-        if detector_name is None:
-            detector_name = go.detector_name
-            
-        if go.turnover(TES) is not None:
-            temps_list.append(go.temperature)
-            turnover_list.append(go.turnover(TES))
-            obsdates.append(go.obsdate)
-
-
-    if len(turnover_list)==0:
-        print('no turnover for TES %i on ASIC %i' % (TES,asic))
-        return None
+    datadate_str = info['datadate_str']
+    fname_datestr = info['fname_datestr']
+    detector_name = info['detector_name']
     
-    temps_list=np.array(temps_list)
-    turnover_list=np.array(turnover_list)
-
-    sorted_index=sorted(range(len(temps_list)), key=lambda i: temps_list[i])
-    sorted_temps=temps_list[sorted_index]
-    sorted_turnover=turnover_list[sorted_index]
-
-    ymd_start = (obsdates[0].year,obsdates[0].month,obsdates[0].day)
-    ymd_end = (obsdates[-1].year,obsdates[-1].month,obsdates[-1].day)
-    if ymd_start==ymd_end:
-        datadate_str = '%s to %s' % (obsdates[0].strftime('%Y-%m-%d %H:%M'),obsdates[-1].strftime('%H:%M'))
-        fname_datestr = '%s-%s' % (obsdates[0].strftime('%Y%m%dT%H%M%S'),obsdates[-1].strftime('%H%M%S'))
-    else:
-        datadate_str = '%s to %s' % (obsdates[0].strftime('%Y-%m-%d %H:%M'),obsdates[-1].strftime('%Y-%m-%d %H:%M'))
-        fname_datestr = '%s-%s' % (obsdates[0].strftime('%Y%m%dT%H%M%S'),obsdates[-1].strftime('%Y%m%dT%H%M%S'))
-    
+    sorted_temps = info['sorted_turnover_temps']
+    sorted_turnover = info['sorted_turnover']
     
     pngname='QUBIC_Array-%s_TES%03i_ASIC%i_Turnover_Temperature_%s.png' % (detector_name,TES,asic,fname_datestr)
     xlabel='T$_{bath}$ / mK'
@@ -264,11 +311,11 @@ def plot_TES_turnover_temperature(fplist,TES,asic,xwin=True):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
-    plt.plot(temps_list,turnover_list,linestyle='none',marker='D')
+    plt.plot(sorted_temps,sorted_turnover,linestyle='none',marker='D')
     plt.plot(sorted_temps,sorted_turnover,color='green')
 
-    xmax=temps_list.max()
-    xmin=temps_list.min()
+    xmax = sorted_temps.max()
+    xmin = sorted_temps.min()
     
     span=xmax-xmin
     plot_xlim=(xmin-0.05*span,xmax+0.1*span)
@@ -287,48 +334,33 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     '''
     plot the I-V, P-V, R-P curves for each temperature
     '''
-    if not verify_temperature_arguments(fplist,TES,asic):return None
-    asic_idx = asic - 1
+    info = get_temperature_info(fplist,TES,asic)
+    if info is None: return
 
-    detector_name = None
-    temps_list = []
-    index_list = []
-    for idx,fp in enumerate(fplist):
-        go = fp.asic_list[asic_idx]
-        if go is None: continue
-        index_list.append(idx)
-        if detector_name is None:
-            detector_name = fp.asic_list[asic_idx].detector_name
-        if go.temperature is None:
-            temps_list.append(-1)
-        else:
-            temps_list.append(go.temperature)
-        
-    temps_list = np.array(temps_list)
-    index_list = np.array(index_list)
-    sorted_temps_index = sorted(range(len(temps_list)), key=lambda i: temps_list[i])
-    sorted_temps = temps_list[sorted_temps_index]
-    sorted_index = index_list[sorted_temps_index]
+    detector_name = info['detector_name']
+    fname_datestr = info['fname_datestr']
+    datadate_str = info['datadate_str']
+    sorted_index = info['sorted_index']
 
     plot_type='I'
     if plot.upper()[0]=='R':
         plot_type='R'
-        pngname='QUBIC_Array-%s_TES%03i_ASIC%i_R-V_Temperatures.png' % (detector_name,TES,asic)
+        pngname='QUBIC_Array-%s_TES%03i_ASIC%i_R-V_Temperatures_%s.png' % (detector_name,TES,asic,fname_datestr)
         #xlabel='P$_{TES}$ / $p$W'
         xlabel='V$_{bias}$ / V'
         ylabel='$\\frac{R_\mathrm{TES}}{R_\mathrm{normal}}$ / %'
     elif plot.upper()[0]=='P':
         plot_type='P'
-        pngname='QUBIC_Array-%s_TES%03i_ASIC%i_P-V_Temperatures.png' % (detector_name,TES,asic)
+        pngname='QUBIC_Array-%s_TES%03i_ASIC%i_P-V_Temperatures_%s.png' % (detector_name,TES,asic,fname_datestr)
         xlabel='V$_{bias}$ / V'
         ylabel='P$_{TES}$ / $p$W'
     else:
         plot_type='I'
-        pngname='QUBIC_Array-%s_TES%03i_ASIC%i_I-V_Temperatures.png' % (detector_name,TES,asic)
+        pngname='QUBIC_Array-%s_TES%03i_ASIC%i_I-V_Temperatures_%s.png' % (detector_name,TES,asic,fname_datestr)
         xlabel='V$_{bias}$ / V'
         ylabel='I$_{TES}$ / $\mu$A'
         
-    ttl='QUBIC Array %s ASIC %i TES%03i at Different Temperatures' % (detector_name,asic,TES)
+    ttl='QUBIC Array %s ASIC %i TES%03i at Different Temperatures\nmeasurements from %s' % (detector_name,asic,TES,datadate_str)
     if xwin:plt.ion()
     else:
         plt.close('all')
@@ -348,7 +380,7 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     min_P=1000.
     max_P=-1000.
     for idx in sorted_index:
-        go = fplist[idx].asic_list[asic_idx]
+        go = fplist[idx].asic(asic)
         if go is None: continue
         
         lbl = '%.0f mK' % (1000*go.temperature)

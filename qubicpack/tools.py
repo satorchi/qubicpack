@@ -1114,6 +1114,11 @@ def pps2date(self,pps,gps):
     '''
     convert the gps date to a precise date given the pps
     '''
+
+    if gps is None or gps.min()<1494486000 or gps.max()<1494486000 or len(np.unique(gps))<2:
+        self.printmsg('ERROR! Bad GPS data.',verbosity=2)
+        return None
+    
     npts = len(pps)
     pps_separation=1  # exactly one second between pulses
     epsilon = 0.1
@@ -1274,7 +1279,7 @@ def gps(self,hk=None,asic=None):
     t0 = float(self.obsdate.strftime('%s.%f'))
     delta = np.abs(gps[0] - t0)
     if delta > 1799:
-        gps -= delta
+        return gps-delta
     return gps
 
 def azimuth(self):

@@ -187,12 +187,12 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
         if 'ASIC_SUMS' in self.hk.keys():
             pps = self.pps(hk='ASIC_SUMS')
             gps = self.gps(hk='ASIC_SUMS')
-            if gps is None or gps.min()<1494486000 or gps.max()<1494486000 or len(np.unique(gps))<2:
-                self.printmsg('ERROR! Bad GPS data.  Using sample rate to make a time axis.',verbosity=2)
-                return time_axis_index
             time_axis = self.pps2date(pps,gps)
+            if time_axis is None:
+                self.printmsg('ERROR!  Using sample rate to make a time axis.',verbosity=2)
+                return time_axis_index
             return time_axis
-        self.printmsg('ERROR! No PPS data.',verbosity=2)
+        self.printmsg('ERROR! No PPS data.  Using sample rate to make a time axis.',verbosity=2)
         return time_axis_index
 
     if axistype.lower()=='computertime':

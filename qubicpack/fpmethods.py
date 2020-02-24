@@ -421,7 +421,7 @@ def bias_phase(self,asic=0):
                 continue
             
             for idx,chk in enumerate(bp==bp0):
-                if not chk:
+                if not chk and bp[idx]!=-bp0[idx]:
                     warn = True
                     self.printmsg(warning_msg % (compare_idx+1,idx,bp[idx],bp0[idx]),verbosity=5)
                     

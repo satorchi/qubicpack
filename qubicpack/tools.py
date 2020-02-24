@@ -682,10 +682,10 @@ def read_qubicstudio_science_fits(self,hdu):
 
     if 'DATE-OBS' not in tdata.keys():
         tdata['DATE-OBS'] = dateobs
+        tdata['BEG-OBS'] = dateobs[0]
     else:
         tdata['DATE-OBS'] += dateobs
         
-    tdata['BEG-OBS'] = dateobs[0]
     self.obsdate = tdata['BEG-OBS']
     tdata['END-OBS'] = dateobs[-1]
     self.endobs = dateobs[-1]

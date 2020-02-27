@@ -82,7 +82,7 @@ def calsource_oldinfo(self):
     info = {}
 
     info_tstamp = conf['timestamp'][0]
-    info_date = dt.datetime.fromtimestamp(info_tstamp)
+    info_date = dt.datetime.utcfromtimestamp(info_tstamp)
     info['date'] = info_date
 
     devlist = ['calsource','modulator','amplifier']
@@ -122,7 +122,7 @@ def calsource_info(self):
     info = {}
 
     info_tstamp = float(info_rawlist[0])
-    info_date = dt.datetime.fromtimestamp(info_tstamp)
+    info_date = dt.datetime.utcfromtimestamp(info_tstamp)
     info['date'] = info_date
 
     info['amplifier'] = {}

@@ -1150,18 +1150,26 @@ def pps2date(self,pps,gps):
     for idx in pps_indexes:
         gps_at_pps = gps[idx]
 
+        ### original algorithm  replaced by the one below (MP & JCH) ##################################
+        ## we use the GPS timestamp from a bit later
+        # offset_idx = idx + offset
+        # if offset_idx>=npts:offset_idx=npts-1
+        # next_gps = gps[offset_idx]
+        # tstamp[idx] = next_gps
+        ###############################################################################################
+
+        ###  assuming the PPS arrives before the corresponding time given by the GPS ##################
         # the pps arrives just before the corresponding gps
         # so we simply add 1 second to current gps value (gps increments in steps of 1 second exactly)
         # (modification by MP & JCH)
-        tstamp[idx] = gps_at_pps + 1
+        # tstamp[idx] = gps_at_pps + 1
+        ###############################################################################################
 
-        ''' this is  replaced by the above (MP & JCH)
-        # we use the GPS timestamp from a bit later
-        offset_idx = idx + offset
-        if offset_idx>=npts:offset_idx=npts-1
-        next_gps = gps[offset_idx]
-        tstamp[idx] = next_gps
-        '''
+
+        ###  assuming the PPS arrives after the corresponding time given by the GPS ###################
+        tstamp[idx] = gps_at_pps
+        ###############################################################################################
+
         
     # now finally do the interpolation for the time axis
     first_sample_period = None    
@@ -1276,10 +1284,11 @@ def gps(self,hk=None,asic=None):
     '''
     gps = self.get_hk('GPSDate',hk,asic)
     if gps is None: return None
-    t0 = float(self.obsdate.strftime('%s.%f'))
-    delta = np.abs(gps[0] - t0)
-    if delta > 1799:
-        return gps-delta
+
+    ### do not correct for localtime.  this is done elsewhere with utcfromtimestamp
+    # t0 = float(self.obsdate.strftime('%s.%f'))
+    # delta = np.abs(gps[0] - t0)
+    # if delta > 1799: return gps-delta
     return gps
 
 def azimuth(self):

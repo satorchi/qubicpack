@@ -14,6 +14,7 @@ import os
 from matplotlib import pyplot as plt
 import datetime as dt
 import numpy as np
+from qubicpack.utilities import qc_utc_date
 
 def assign_imagename(self,plotname):
     '''
@@ -69,7 +70,7 @@ def plot_calsource(self,ax=None,fontsize=12):
     else:
         tdate = []
         for tstamp in t:
-            tdate.append(dt.datetime.fromtimestamp(tstamp))
+            tdate.append(dt.datetime.utcfromtimestamp(tstamp))
         ax.plot(tdate,v)
 
     if newplot:
@@ -112,10 +113,15 @@ def plot_temperatures(self,ax,label,ttl,fontsize=12):
         if newplot:
             fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
         return ax
-        
+
     tdate = []
-    for tstamp in t:
-        tdate.append(dt.datetime.fromtimestamp(tstamp))
+    # qubic-central was changed to UTC on 2020-02-27
+    if t[0] > float(qc_utc_date.strftime('%s.%f')):
+        for tstamp in t:
+            tdate.append(dt.datetime.utcfromtimestamp(tstamp))
+    else:
+        for tstamp in t:
+            tdate.append(dt.datetime.fromtimestamp(tstamp))
 
     for key in val.keys():
         if val[key] is not None:
@@ -191,7 +197,7 @@ def plot_switchstatus(self,ax=None,fontsize=12):
     else:
         tdate = []
         for tstamp in t:
-            tdate.append(dt.datetime.fromtimestamp(tstamp))
+            tdate.append(dt.datetime.utcfromtimestamp(tstamp))
         if v1 is not None:
             ax.plot(tdate,v1,marker='D',markersize=0.2*fontsize,ls='none',label='Switch 1 Closed')
         if v2 is not None:
@@ -246,7 +252,7 @@ def plot_azel(self,ax=None,fontsize=12):
     
     tdate = []
     for tstamp in t:
-        tdate.append(dt.datetime.fromtimestamp(tstamp))
+        tdate.append(dt.datetime.utcfromtimestamp(tstamp))
     
     if az is not None:
         ax.plot(tdate,az,marker='D',markersize=0.2*fontsize,ls='none',color='blue',label='Azimuth')
@@ -301,7 +307,7 @@ def plot_hwp(self,ax=None,fontsize=12):
     
     tdate = []
     for tstamp in t:
-        tdate.append(dt.datetime.fromtimestamp(tstamp))
+        tdate.append(dt.datetime.utcfromtimestamp(tstamp))
 
     if v is not None:
         ax.plot(tdate,v,marker='D',markersize=0.2*fontsize,ls='none',label='HWP Position')

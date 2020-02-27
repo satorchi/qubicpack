@@ -17,7 +17,10 @@ import datetime as dt
 
 # on 6 Feb 2018, we reversed the wires for the ASICs
 # so now QubicStudio and the dilution fridge use the same ASIC designation
-asic_reversal_date=dt.datetime.strptime('2018-02-06 18:00','%Y-%m-%d %H:%M')
+asic_reversal_date = dt.datetime.strptime('2018-02-06 18:00','%Y-%m-%d %H:%M')
+
+# on 27 Feb 2020, qubic-central was finally changed to UTC
+qc_utc_date = dt.datetime.strptime('2020-02-27 10:23:33','%Y-%m-%d %H:%M:%S')
 
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128

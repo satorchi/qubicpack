@@ -342,7 +342,7 @@ def plot_timestamp_diagnostic_fig1(self,analysis=None,hk=None,zoomx=None,zoomy=N
     ax.set_ylim(yminmax)
     ax.set_xlabel('sample number',fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)
-    ax.legend(fontsize=fontsize)
+    ax.legend(fontsize=fontsize,loc='upper left')
     if newplot:
         pngname = '%s_full.png' % png_rootname
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
@@ -406,7 +406,7 @@ def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=N
     ax.set_ylim(yminmax)
     for idx in analysis['weird_idx']:
         ax.plot((idx,idx),yminmax,color='red',ls='dashed')
-    ax.legend(fontsize=fontsize)
+    ax.legend(fontsize=fontsize,loc='upper right')
 
     if newplot:
         pngname = '%s_full.png' % png_rootname

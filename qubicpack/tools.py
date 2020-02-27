@@ -601,7 +601,7 @@ def read_qubicstudio_science_fits(self,hdu):
         self.printmsg('storing new timeline data for ASIC %i' % asic,verbosity=2)
     else: # multi file data set
         tstamp_start = 0.001*hdu.data.field(0)[0]
-        start_str = dt.datetime.fromtimestamp(tstamp_start).strftime('%Y-%m-%d %H:%M%S')
+        start_str = dt.datetime.utcfromtimestamp(tstamp_start).strftime('%Y-%m-%d %H:%M%S')
         tstamp_end = 0.001*hdu.data.field(0)[-1]
         self.printmsg('concatenating detector timeline data to pre-existing timeline: starting at %s' % start_str,verbosity=2)
         tdata['TIMELINE'] = np.concatenate((tdata['TIMELINE'],adu),axis=1)

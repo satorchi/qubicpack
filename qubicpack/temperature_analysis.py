@@ -314,8 +314,13 @@ def plot_TES_turnover_temperature(fplist,TES,asic,xwin=True):
     plt.plot(sorted_temps,sorted_turnover,linestyle='none',marker='D')
     plt.plot(sorted_temps,sorted_turnover,color='green')
 
-    xmax = sorted_temps.max()
-    xmin = sorted_temps.min()
+    if len(sorted_turnover)==0:
+        print('No turnover found at any temperature for TES %i on ASIC %i' % (TES,asic))
+        xmax = info['sorted_temps'].max()
+        xmin = info['sorted_temps'].min()
+    else:
+        xmax = sorted_temps.max()
+        xmin = sorted_temps.min()
     
     span=xmax-xmin
     plot_xlim=(xmin-0.05*span,xmax+0.1*span)

@@ -14,7 +14,7 @@ tools for reading/writing and organizing data
 """
 from __future__ import division, print_function
 import numpy as np
-import sys,os,time,subprocess,struct
+import sys,os,time,subprocess,struct,re
 import datetime as dt
 from glob import glob
 import pickle
@@ -455,10 +455,53 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
             chk = self.read_fits(filename)
 
 
-    # assign bath temperature to asic objects.  This is useful for infotext()
-    if self.temperature is None:
+
+    # try to assign bath temperature if the default sensor is unavailable    
+    # temperature given by MMR
+    if (self.temperature is None or self.temperature<0) and 'MMR_HK' in self.hk.keys():
+        tf = 35280.9043 # data from 2020-03-16_12.46.27__ScanFast_Speed_VE12_DeltaAz_50_DeltaEl_30_NScans_51_Cycle_0
+        if 'MMR3_CH2_R' in self.hk['MMR_HK'].keys() and self.hk['MMR_HK']['MMR3_CH2_R'].min() > 100:
+            testemp = tf/self.hk['MMR_HK']['MMR3_CH2_R']
+            min_temp = testemp.min()
+            max_temp = testemp.max()
+            temperature = testemp.mean()
+            self.printmsg('TES temperature measured by MMR varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
+            self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
+            self.tdata[-1]['TES_TEMP'] = temperature
+            self.temperature = temperature
+
+    # try to assign bath temperature if the default sensor is unavailable    
+    # temperature given by MGC
+    if (self.temperature is None or self.temperature<0) and 'MGC_HK' in self.hk.keys():
+        if 'MGC3_PID_0_Mes' in self.hk['MGC_HK'].keys():
+            testemp = self.hk['MGC_HK']['MGC3_PID_0_Mes']
+            min_temp = testemp.min()
+            max_temp = testemp.max()
+            temperature = testemp.mean()
+            self.printmsg('TES temperature measured by MGC varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
+            self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
+            self.tdata[-1]['TES_TEMP'] = temperature
+            self.temperature = temperature
+
+            
+    # try to assign bath temperature if the default sensor is unavailable               
+    # in desperation, temperature given in the dataset title
+    if (self.temperature is None or self.temperature<0) and self.dataset_name is not None:
+        match = re.search('[0-9][0-9][0-9]mK',self.dataset_name)
+        if match:
+            tempstr = match[0].replace('mK','')
+            self.temperature = 1e-3*float(tempstr)
+            self.tdata[-1]['TES_TEMP'] = self.temperature
+            self.printmsg('Assigning TES temperature from the dataset name: %.1fmK' % 1000*self.temperature,verbosity=2)
+
+    # that's it.  give up.  the temperature is unknown.
+    if self.temperature is None or self.temperature<0:
         self.printmsg('WARNING!  Bath temperature is unknown!',verbosity=2)
-    elif self.__object_type__=='qubicfp':
+        
+        
+        
+    # assign bath temperature to asic objects.  This is useful for infotext()
+    if self.temperature is not None and self.__object_type__=='qubicfp':
         for asic_obj in self.asic_list:
             if asic_obj is not None:
                 self.printmsg('assigning bath temperature of %.3fK to asic %i' % (self.temperature,asic_obj.asic),verbosity=2)
@@ -868,7 +911,7 @@ def read_qubicstudio_hkextern_fits(self,hdu):
     temperature = testemp.mean()
     self.printmsg('TES temperature varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
     self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
-    self.tdata[0]['TES_TEMP'] = temperature
+    self.tdata[-1]['TES_TEMP'] = temperature
     self.temperature = temperature
 
     self.read_qubicstudio_hkfits(hdu)

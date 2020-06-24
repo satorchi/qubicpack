@@ -1476,6 +1476,8 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper() == 'TEMPERATURE': return 'EXTERN_HK'
     if ftype.upper() == 'CALSOURCE': return 'CALSOURCE'
     if ftype.upper().find('SCI')==0: return 'ASIC_SUMS'
+    if ftype.upper().find('TES')==0: return 'ASIC_SUMS'
+    if ftype.upper().find('DET')==0: return 'ASIC_SUMS'
     if ftype.upper().find('MMR')==0: return 'MMR_HK'
     if ftype.upper().find('MGC')==0: return 'MGC_HK'
     return ftype.upper()

@@ -472,17 +472,24 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     # try to assign bath temperature if the default sensor is unavailable    
     # temperature given by MMR
     if (self.temperature is None or self.temperature<0) and 'MMR_HK' in self.hk.keys():
-        # transfer function needs to be verified
-        tf = 35280.9043 # data from 2020-03-16_12.46.27__ScanFast_Speed_VE12_DeltaAz_50_DeltaEl_30_NScans_51_Cycle_0
+        # transfer function recalibrated 2020-06-18
+        # R=Ro*exp(sqrt(Tg/T): Ro=8.44521 Ohm Tg=31.18887 K
+        # see elog: https://elog-qubic.in2p3.fr/demo/443
+        Ro=8.44521
+        Tg=31.18887
         if 'MMR3_CH2_R' in self.hk['MMR_HK'].keys() and self.hk['MMR_HK']['MMR3_CH2_R'].min() > 100:
-            testemp = tf/self.hk['MMR_HK']['MMR3_CH2_R']
-            min_temp = testemp.min()
-            max_temp = testemp.max()
-            temperature = testemp.mean()
-            self.printmsg('TES temperature measured by MMR varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
-            self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
-            self.tdata[-1]['TES_TEMP'] = temperature
-            self.temperature = temperature
+            R = self.hk['MMR_HK']['MMR3_CH2_R']
+            try:
+                testemp = Tg/(np.log(R/Ro))**2
+                min_temp = testemp.min()
+                max_temp = testemp.max()
+                temperature = testemp.mean()
+                self.printmsg('TES temperature measured by MMR varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
+                self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
+                self.tdata[-1]['TES_TEMP'] = temperature
+                self.temperature = temperature
+            except:
+                pass
 
             
     # try to assign bath temperature if the default sensor is unavailable               

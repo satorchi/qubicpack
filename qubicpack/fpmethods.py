@@ -86,9 +86,11 @@ def calsource_oldinfo(self):
     info['date'] = info_date
 
     devlist = ['calsource','modulator','amplifier']
-    for dev in devlist:
+    statuskeys = ['CalSource','Modulator','Amplifier']
+    for idx,dev in enumerate(devlist):
         info[dev] = {}
-        status = int(conf['Modulator'][0])
+        statuskey = statuskeys[idx]
+        status = int(conf[statuskey][0])
         if status==1:
             info[dev]['status'] = 'ON'
         elif status==0:
@@ -97,6 +99,8 @@ def calsource_oldinfo(self):
             info[dev]['status'] = 'UNKNOWN'
 
     info['calsource']['frequency'] = conf['Cal_freq'][0]
+    info['calsource']['synth_freq'] = conf['Syn_freq'][0]
+    
     info['modulator']['frequency'] = conf['Mod_freq'][0]
     info['modulator']['amplitude'] = conf['Mod_ampl'][0]
     info['modulator']['duty_cycle'] = conf['Mod_duty'][0]
@@ -104,6 +108,30 @@ def calsource_oldinfo(self):
     shape_idx = int(conf['Mod_shap'][0])
     shapes = ['square','sine','DC']
     info['modulator']['shape'] = shapes[shape_idx]
+
+    ampkeys =  ['Amp_mode', 'Amp_lfreq', 'Amp_hfreq', 'Amp_coup', 'Amp_rang', 'Amp_gain']
+    amp_infokeys = ['mode','filter low frequency','filter high frequency','coupling','dynamic range','gain']
+    for idx,key in enumerate(ampkeys):
+        if key in conf.keys():
+            localkey = amp_infokeys[idx]
+            info['amplifier'][localkey] = conf[key][0]
+
+    # convert mode number to human understandable
+    amp_modes = ["bypass",
+                 "6db_low_pass",
+                 "12db_low_pass",
+                 "6db_high_pass",
+                 "12db_high_pass",
+                 "bandpass"]
+    if 'mode' in info['amplifier'].keys():
+        mode_idx = int(info['amplifier']['mode'])
+        info['amplifier']['mode'] = amp_modes[mode_idx]
+
+    # convert coupling to human understandable
+    coupling_modes = ['GROUND','DC','AC']
+    if 'coupling' in info['amplifier'].keys():
+        mode_idx = int(info['amplifier']['coupling'])
+        info['amplifier']['coupling'] = coupling_modes[mode_idx]
 
     return info
 
@@ -114,6 +142,9 @@ def calsource_info(self):
     if 'CALSOURCE-CONF' not in self.hk.keys():
         return None
 
+    # go back to "oldinfo" because of a bug with MsgStr which gets cutoff at 512 characters
+    return self.calsource_oldinfo()
+    
     if 'MsgStr' not in self.hk['CALSOURCE-CONF'].keys():
         return self.calsource_oldinfo()
     

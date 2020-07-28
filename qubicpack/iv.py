@@ -89,19 +89,25 @@ def n_masked(self):
     return n_masked
         
 
-def ADU2I(self,ADU, offset=None, R1adjust=1.0):
+def ADU2I(self,ADU, offset=None, R1adjust=1.0,asic=None):
     ''' 
     This is the magic formula to convert the measured output of the TES to current
     the voltage (ADU) returned by the TES is converted to a current in uA        
     '''
+    if self.__object_type__=='qubicfp':
+        Rfb = self.Rfeedback(asic)
+        if Rfb is None: return None
+    else:
+        Rfb = self.Rfeedback
+    
     q_ADC = 20./(2**16-1)
-    G_FLL = (10.4 / 0.2) * self.Rfeedback
+    G_FLL = (10.4 / 0.2) * Rfb
 
     # since QubicStudio 3.5 (2019-01-29), and perhaps before, the masking is taken into account by QubicStudio
     # n_masked=self.n_masked()
     # I = 1e6 * (ADU / 2**7) * (q_ADC/G_FLL) * (self.nsamples - n_masked) * R1adjust
     I = 1e6 * (ADU / 2**7) * (q_ADC/G_FLL) * R1adjust
-    if not offset is None: return I+offset
+    if offset is not None: return I+offset
     return I
 
 def setup_plot_Vavg(self,axes=None):

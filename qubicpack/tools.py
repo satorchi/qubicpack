@@ -1506,6 +1506,21 @@ def azel_etc(self,TES=None):
     return Az/El and data in a dictionary for the convenience of JCH
     '''
 
+    msg =    '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    msg =+ '\nDEPRECATION WARNING! Do you really need to use this method?'
+    msg += "\nThe elements in this object (called 'a' in this example) can be retrieved with the following methods:"
+    if TES is None:
+        msg += "\n'data <n>' : a.timeline_array(asic=<n>)"
+    else:
+        msg += "\n'data <n>' : a.timeline(asic=<n>,TES=%i" % TES
+    msg += "\n't_data <n>' : a.timeaxis(datatype='science',asic=<n>)"
+    msg += "\n'az' : a.az()"
+    msg += "\n'el' : a.el()"
+    msg += "\n't_azel' : a.timeaxis(datatype='hk')"
+    msg += "\n'hwp_position' : a.hwp_position()"
+    msg += '\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    print(msg)
+    
     retval = {}
 
     az = self.azimuth()

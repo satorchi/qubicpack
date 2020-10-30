@@ -1518,6 +1518,8 @@ def azel_etc(self,TES=None):
     msg += "\n'el' : a.el()"
     msg += "\n't_azel' : a.timeaxis(datatype='hk')"
     msg += "\n'hwp_position' : a.hwp_position()"
+    msg += "\n'data_src' : a.calsource()[1]"
+    msg += "\n't_src' : a.calsource()[0]"
     msg += '\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     print(msg)
     

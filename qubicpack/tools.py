@@ -1498,6 +1498,8 @@ def qubicstudio_hk_truename(self,hktype):
     if hktype.upper() == 'AZ': return 'Platform-Azimut'
     if hktype.upper() == 'EL': return 'Platform-Elevation'
     if hktype.upper().find('AV')==0: return hktype.upper()
+    if hktype.upper() == 'CALSOURCE': return 'CALSOURCE'
+    if hktype.upper() == 'SOURCE': return 'CALSOURCE'
     
     return hktype
 

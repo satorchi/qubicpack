@@ -1378,7 +1378,11 @@ def plot_rt_analysis(reslist,xwin=True):
         if res['R amplitude'] is not None:
             Tbath.append(1000*res['Tbath'])
             R.append(res['R amplitude'])
-            dates.append(res['date'])
+            if isinstance(res['date'],list):
+                date = res['date'][0]
+            else:
+                date = res['date']
+            dates.append(date)
                      
     ntemps=len(Tbath)
     sorted_index=sorted(range(ntemps), key=lambda i: Tbath[i])

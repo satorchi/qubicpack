@@ -143,7 +143,7 @@ def calsource_info(self):
         return None
 
     # go back to "oldinfo" because of a bug with MsgStr which gets cutoff at 512 characters
-    return self.calsource_oldinfo()
+    #return self.calsource_oldinfo()
     
     if 'MsgStr' not in self.hk['CALSOURCE-CONF'].keys():
         return self.calsource_oldinfo()
@@ -180,7 +180,11 @@ def calsource_info(self):
 
         val_list = cols[1].split('=')
         if len(val_list)==1:
-            info[dev]['status'] = val_list[0]
+            status_str = val_list[0].upper()
+            if status_str=='ON' or status_str=='OFF':
+                info[dev]['status'] = val_list[0]
+            else:
+                info[dev]['incomplete'] = val_list[0]
             continue
 
         parm = val_list[0]

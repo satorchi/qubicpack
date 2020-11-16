@@ -816,6 +816,15 @@ def fit_timeline(self,TES,timeline_index=None,ipeak0=None,ipeak1=None,timeaxis='
     if biasmod is None:
         self.printmsg('ERROR! Could not determine bias modulation.',verbosity=2)
         return None
+    fit['ipeak0'] = biasmod['ipeak0']
+    fit['ipeak1'] = biasmod['ipeak1']
+    fit['peak0'] = biasmod['peak0']
+    fit['peak1'] = biasmod['peak1']
+    self.timeline_conversion['ipeak0']=ipeak0 #MP
+    self.timeline_conversion['ipeak1']=ipeak1 #MP
+    self.timeline_conversion['peak0']=peak0 #MP
+    self.timeline_conversion['peak1']=peak1 #MP
+
     peak0 = biasmod['peak0']
     peak1 = biasmod['peak1']
     period = peak1-peak0

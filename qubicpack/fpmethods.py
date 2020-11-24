@@ -243,18 +243,21 @@ def calsource_infotext(self):
     else:
         calsrc_txt += 'frequency=UNKNOWN'
 
+        
 
+    modulator_units = {'frequency':'%.3fHz', 'shape':'%s','amplitude':'%.3fVpp','offset':'%.3fVdc','duty_cycle':'%.1f%%'}
     if info['modulator']['status'] == 'OFF':
         calsrc_txt += ' modulator OFF'
     elif info['modulator']['shape'] == 'DC':
         calsrc_txt += ' No modulation, offset=%.2fVdc' % info['modulator']['offset']
     else:
-        calsrc_txt += '\nmodulator: frequency=%.3fHz, shape=%s, amplitude=%.3fVpp, offset=%.3fVdc, duty=%.1f%%'\
-            % (info['modulator']['frequency'],
-               info['modulator']['shape'],
-               info['modulator']['amplitude'],
-               info['modulator']['offset'],
-               info['modulator']['duty_cycle'])
+        txt_list = []
+        for key in modulator_units.keys():
+            if key in info['modulator'].keys():
+                txt_list.append(key+'='+modulator_units[key] % info['modulator'][key])
+            else:
+                txt_list.append(key+'=unknown')
+        calsrc_txt += '\nmodulator: '+' '.join(txt_list)
 
     if info['amplifier']['status'] == 'OFF':
         calsrc_txt += 'amplifier OFF'

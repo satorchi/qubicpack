@@ -1516,8 +1516,8 @@ def azel_etc(self,TES=None):
     else:
         msg += "\n'data <n>' : a.timeline(asic=<n>,TES=%i" % TES
     msg += "\n't_data <n>' : a.timeaxis(datatype='science',asic=<n>)"
-    msg += "\n'az' : a.az()"
-    msg += "\n'el' : a.el()"
+    msg += "\n'az' : a.azimuth()"
+    msg += "\n'el' : a.elevation()"
     msg += "\n't_azel' : a.timeaxis(datatype='hk')"
     msg += "\n'hwp_position' : a.hwp_position()"
     msg += "\n'data_src' : a.calsource()[1]"

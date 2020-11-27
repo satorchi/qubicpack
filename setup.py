@@ -70,7 +70,7 @@ if len(sys.argv)>1 and sys.argv[1]=='install' and not err:
     print('installing executable scripts...')
     for F in scripts:
         basename = os.path.basename(F)
-        cmd = 'rm -f %s/%s; cp -puv %s %s;chmod +x %s/%s' % (exec_dir,basename,F,exec_dir,exec_dir,basename)
+        cmd = 'rm -f %s/%s; cp -pv %s %s;chmod +x %s/%s' % (exec_dir,basename,F,exec_dir,exec_dir,basename)
         proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         out,err=proc.communicate()
         if out:print(out.decode().strip())

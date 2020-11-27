@@ -1509,7 +1509,7 @@ def azel_etc(self,TES=None):
     '''
 
     msg =    '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-    msg =+ '\nDEPRECATION WARNING! Do you really need to use this method?'
+    msg += '\nDEPRECATION WARNING! Do you really need to use this method?'
     msg += "\nThe elements in this object (called 'a' in this example) can be retrieved with the following methods:"
     if TES is None:
         msg += "\n'data <n>' : a.timeline_array(asic=<n>)"

@@ -22,7 +22,8 @@ import datetime as dt
 
 from qubicpack.qubicfp import qubicfp
 from qubicpack.pix2tes import tes2pix
-from qubicpack.utilities import FIGSIZE, asic_reversal_date, NPIXELS, NASIC, TES_index, ASIC_index
+from qubicpack.utilities import FIGSIZE, asic_reversal_date, NPIXELS, TES_index, ASIC_index
+NASIC = qubicfp.NASIC
 
 # some constants and values required
 kBoltzmann=1.3806485279e-23

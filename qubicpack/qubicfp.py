@@ -17,11 +17,13 @@ import datetime as dt
 import sys,os,time
 
 from qubicpack.qubicasic import qubicasic
-from qubicpack.utilities import NASIC
 
 class qubicfp:
     verbosity = 0 # class variable.  You can change this before instantiating an object
     __object_type__ = 'qubicfp'
+
+    # maximum number of ASIC possible
+    NASIC = 2 # this will change to 16 or 32
 
     from .tools import\
         debugmsg,\
@@ -124,7 +126,7 @@ class qubicfp:
     def __init__(self):
 
         self.asic_list = []
-        for idx in range(NASIC):
+        for idx in range(self.NASIC):
             self.asic_list.append(None)
 
         self.assign_defaults()

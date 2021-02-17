@@ -16,7 +16,7 @@ import numpy as np
 import os,subprocess
 import datetime as dt
 
-from qubicpack.utilities import asic_reversal_date, NPIXELS, NASIC, TES_index, ASIC_index
+from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index
 from qubicpack.pix2tes import assign_pix_grid, assign_pix2tes, tes2pix, pix2tes, TES2PIX
 
 ### the rest of the defs are methods of the qubicasic object

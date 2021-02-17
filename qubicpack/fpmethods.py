@@ -17,7 +17,6 @@ import datetime as dt
 import sys,os,time
 
 from qubicpack.qubicasic import qubicasic
-from qubicpack.utilities import NASIC
 from qubicpack.plot_fp import plot_fp
 
 def assign_defaults(self):

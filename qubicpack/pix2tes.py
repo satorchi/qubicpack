@@ -15,7 +15,7 @@ import numpy as np
 import os
 import pickle
 
-from qubicpack.utilities import asic_reversal_date, NPIXELS, NASIC, TES_index, ASIC_index
+from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index
 
 TES2PIX = None
 

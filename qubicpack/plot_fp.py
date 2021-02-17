@@ -15,7 +15,7 @@ from __future__ import division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 
-from qubicpack.utilities import NPIXELS, NASIC, ASIC_index, FIGSIZE
+from qubicpack.utilities import NPIXELS, ASIC_index, FIGSIZE
 from qubicpack.pix2tes import assign_pix_grid, assign_tes_grid
 
 def mylut(v,vmin=3.0,vmax=9.0):

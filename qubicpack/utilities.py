@@ -25,9 +25,6 @@ qc_utc_date = dt.datetime.strptime('2020-02-27 10:23:33','%Y-%m-%d %H:%M:%S')
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128
 
-# maximum number of ASIC possible
-NASIC = 2 # this will change to 16 or 32
-
 # default figure size for plots
 FIGSIZE = (12.80,6.40)
 
@@ -51,8 +48,8 @@ def ASIC_index(asic):
     return the asic index (counting from zero) given the asic number
     the asic index is either 0 or 1 which is used for plotting the focal plane
     '''
-    if asic<1 or asic>NASIC:
-        print('asic should have a value between 1 and %i' % NASIC)
+    if asic<1 or asic>self.NASIC:
+        print('asic should have a value between 1 and %i' % self.NASIC)
         return None
     asic_idx = asic-1
     remainder = asic_idx % 2

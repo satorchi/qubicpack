@@ -11,9 +11,11 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 common utilities used in the qubicpack classes
 (see also pix2tes.py)
 '''
-from __future__ import division, print_function
 import sys,os
 import datetime as dt
+
+from qubicpack.qubicfp import qubicfp
+NASIC = qubicfp.NASIC
 
 # on 6 Feb 2018, we reversed the wires for the ASICs
 # so now QubicStudio and the dilution fridge use the same ASIC designation
@@ -48,8 +50,8 @@ def ASIC_index(asic):
     return the asic index (counting from zero) given the asic number
     the asic index is either 0 or 1 which is used for plotting the focal plane
     '''
-    if asic<1 or asic>self.NASIC:
-        print('asic should have a value between 1 and %i' % self.NASIC)
+    if asic<1 or asic>NASIC:
+        print('asic should have a value between 1 and %i' % NASIC)
         return None
     asic_idx = asic-1
     remainder = asic_idx % 2

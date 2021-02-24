@@ -10,7 +10,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 class for the data/methods associated with the QUBIC asic (1/8th of the focal plane)
 '''
-from __future__ import division, print_function
 import numpy as np
 import datetime as dt
 import sys,os,time

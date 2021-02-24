@@ -129,7 +129,7 @@ def plot_ASD(self,TES=None,
     txt_x=0.05
     txt_y=0.02
 
-    time_txt=obsdate.strftime('%Y-%m-%m %H:%M:%S UTC')
+    time_txt=obsdate.strftime('%Y-%m-%d %H:%M:%S UTC')
     time_label='%s Tbath=%.1fmK' % (time_txt,Tbath*1000)
     full_label='%s\nTbath=%.1fmK\nsample period=%.3fmsec\nintegration time=%.1fsec\nnbins=%i\nmin bias=%.2fV\nmax bias=%.2fV\nNpix sampled=%i'\
                 % (time_txt,1000*Tbath,1000*sample_period,tinteg,nbins,min_bias,max_bias,npixsampled)

@@ -10,8 +10,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 methods for the QUBIC focal plane class qubicfp
 '''
-from __future__ import division, print_function
-
 import numpy as np
 import datetime as dt
 import sys,os,time
@@ -388,6 +386,10 @@ def args_ok(self,TES=None,asic=None):
 
     if TES is None:
         self.printmsg('Please give a TES number')
+        return False
+
+    if TES < 1:
+        self.printmsg('Please give a valid TES number')
         return False
 
     return True

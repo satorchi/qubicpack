@@ -10,7 +10,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 translate the TES number to the physical location on focal plane grid
 '''
-from __future__ import division, print_function
 import numpy as np
 import os
 import pickle

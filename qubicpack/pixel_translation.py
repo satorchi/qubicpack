@@ -10,15 +10,12 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 translate various pixel identification numbers in the QUBIC focal plane
 '''
-from __future__ import division, print_function
-
 import os
 import datetime as dt
 import numpy as np
 from matplotlib import pyplot as plt
 from astropy.io import fits
 
-import qubic
 from qubicpack.pix2tes import assign_tes_grid, tes2pix
 
 quadrant_colour = ['blue','red','green','purple']

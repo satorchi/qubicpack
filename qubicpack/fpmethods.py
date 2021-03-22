@@ -388,6 +388,9 @@ def args_ok(self,TES=None,asic=None):
         self.printmsg('Please give a TES number')
         return False
 
+    if TES=='no TES number required':
+        return True
+    
     if TES < 1:
         self.printmsg('Please give a valid TES number')
         return False
@@ -398,7 +401,7 @@ def asic(self,asic=None):
     '''
     return the requested asic object
     '''
-    if not self.args_ok(0,asic):return
+    if not self.args_ok('no TES number required',asic):return
     asic_idx = asic - 1
     return self.asic_list[asic_idx]
     
@@ -436,7 +439,7 @@ def bias_phase(self,asic=0):
     '''
     return the bias on the detectors
     '''
-    if not self.args_ok(TES=0,asic=asic):return None
+    if not self.args_ok(TES='no TES number required',asic=asic):return None
     asic_idx = asic-1
     if asic_idx >= 0:
         self.printmsg('Returning bias phase for ASIC %i' % (asic_idx+1),verbosity=2)
@@ -473,7 +476,7 @@ def timeline_vbias(self,asic=0):
     '''
     wrapper to get the bias voltage for the TES timeline
     '''
-    if not self.args_ok(TES=0,asic=asic):return None
+    if not self.args_ok(TES='no TES number required',asic=asic):return None
     asic_idx = asic-1
     if asic_idx >= 0:
         self.printmsg('Returning bias voltage for ASIC %i' % (asic_idx+1),verbosity=2)

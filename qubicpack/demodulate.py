@@ -187,6 +187,7 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     t0_data = t_data[0]
     retval['t0 data'] = t0_data
     t0_str = dt.datetime.utcfromtimestamp(t0_data).strftime('%Y-%m-%d %H:%M:%S.%f')
+    t0_filenamestr = dt.datetime.utcfromtimestamp(t0_data).strftime('%Y%m%d-%H%M%S')
 
     # truncate the source timeline to overlapping time or to the given interval
     idxsrc_start = 0
@@ -434,7 +435,7 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     axes[-1].set_xlabel('period / seconds')
     axes[-1].set_ylabel('number of points per bin')
 
-    pngname = 'demodulation_diagnostic_ASIC%i_TES%03i_%s.png' % (asic,TES,t0_str)
+    pngname = 'demodulation_diagnostic_ASIC%i_TES%03i_%s.png' % (asic,TES,t0_filenamestr)
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     retval['pngname'] = pngname
         

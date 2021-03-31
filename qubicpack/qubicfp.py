@@ -122,6 +122,9 @@ class qubicfp:
         plot_azel,\
         plot_hwp,\
         quicklook
+
+    from .demodulate import\
+        demodulate
     
     def __init__(self):
 

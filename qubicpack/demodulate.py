@@ -230,25 +230,30 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     
 
     # fit source to sine curve
-    amplitude = 0.5*(data_src.max() - data_src.min())
-    if self.calsource_info() is not None:
-        period = self.calsource_info()['modulator']['frequency']
+    if use_calsource:
+        amplitude = 0.5*(data_src.max() - data_src.min())
+        if self.calsource_info() is not None:
+            period = self.calsource_info()['modulator']['frequency']
+        else:
+            period = 1.0
+        timeshift = 0.0
+        amplitude_offset = 0.0
+        first_guess = (amplitude,period,timeshift,amplitude_offset)
+        source_fit = fit_sine_curve(t_src-t0_data,data_src,first_guess=first_guess)
+        # find the first time of max (when sin(2pi((x+timeshift)/period) = 1)
+        t_src_max = source_fit['period']/4 - source_fit['timeshift']
+        # sometimes, curve_fit returns a negative amplitude, which is equivalent to a half-period phase shift
+        if source_fit['amplitude']<0:
+            t_src_max += 0.5*source_fit['period']
     else:
-        period = 1.0
-    timeshift = 0.0
-    amplitude_offset = 0.0
-    first_guess = (amplitude,period,timeshift,amplitude_offset)
-    source_fit = fit_sine_curve(t_src-t0_data,data_src,first_guess=first_guess)
+        source_fit = data_fit
+        t_src_max = t_data_max
+        data_src = data
+
     retval['source fit'] = source_fit
+    retval['t_src max'] = t_src_max
     period = source_fit['period']
     retval['period'] = period # this is the period we use for demodulation
-    # find the first time of max (when sin(2pi((x+timeshift)/period) = 1)
-    t_src_max = source_fit['period']/4 - source_fit['timeshift']
-    # sometimes, curve_fit returns a negative amplitude, which is equivalent to a half-period phase shift
-    if source_fit['amplitude']<0:
-        t_src_max += 0.5*source_fit['period']
-    retval['t_src max'] = t_src_max
-
 
     # find the constant timestamp offset between source and data
     # for more info: http://qubic.in2p3.fr/wiki/pmwiki.php/TD/Demodulation
@@ -295,12 +300,8 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     ### Interpolating source data to the timestamps of the data
     ### and making the product of the detector and the source
     ### the source is renormalized, but the data is only shifted to oscillate around 0
-    if use_calsource:
-        data_src_interp = np.interp(t_data-t0_data, t_src-t0_data, data_src)
-        product = renorm(data_src_interp) * (data - data.mean())
-    else:
-        data_src_interp = np.ones(data.shape,dtype=np.float)
-        product = data - data.mean()
+    data_src_interp = np.interp(t_data-t0_data, t_src-t0_data, data_src)
+    product = renorm(data_src_interp) * (data - data.mean())
     retval['calsource interpolated to data time axis'] = data_src_interp
 
     # demodulate, smoothed over a period

@@ -19,6 +19,23 @@ from scipy.signal import fftconvolve
 def renorm(ar):
     return (ar - np.mean(ar)) / np.std(ar)
 
+def get_index_interval(timeaxis,interval):
+    '''
+    translate time interval into array indexes
+    '''
+    idx_start = 0
+    idx_end = -1
+    tstart = interval[0]
+    tend = interval[1]
+    if timeaxis[0]<tstart:
+        idxrange = np.where(timeaxis>=tstart)[0]
+        idx_start = idxrange[0]
+    if timeaxis[-1]>tend:
+        idxrange = np.where(timeaxis>=tend)[0]
+        idx_end = idxrange[0]
+    
+    return (idx_start,idx_end)
+
 def sine_curve_model(x,a,period,timeshift,offset):
     '''
     model for fitting a sine curve
@@ -66,23 +83,42 @@ def fold_data(xpts,ypts,period,nbins=100):
         print('correcting for increased nbins! nbins=%i' % new_nbins)
     x_bin = np.zeros(new_nbins,dtype=np.float)
     y_bin = np.zeros(new_nbins,dtype=np.float)
+    err_bin = np.zeros(new_nbins,dtype=np.float)
     for idx in unique_idxbins:
         idxrange = np.where(idx_bins==idx)
         x_bin[idx] = x_fold[idxrange].mean()
         y_bin[idx] = ypts[idxrange].mean()
+        err_bin[idx] = ypts[idxrange].std()
 
-    return x_bin,y_bin
+    return x_bin,y_bin,err_bin
 
-def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,align_clocks=False,doplot=True,xwin=True):
+def demodulate(self,
+               asic=None,
+               TES=None,
+               offset=None,
+               interval=None,
+               calsource=True,
+               period=None,
+               align_clocks=False,
+               doplot=True,
+               xwin=True):
     '''
     Interpolating source data to the timestamps of the data
 
-    offset is the constant offset between calsource timestamps and data timestamps
+    asic: the asic number (1 to 16)
+
+    TES: the TES number (1 to 128)
+         keyword 'all' means average all TES
+         an array of size 128 of bool with the TES to average together
+
+    offset: the constant offset between calsource timestamps and data timestamps
     this is of the order of 0.1sec
     
     interval is the time interval in which to calculate the demodulation
 
     calsource: you can force to not use the calsource
+
+    period: fold at the given period.  Default is to get it from the calsource information
 
     align_clocks:  you can force the timestamps of the calsource and the data to start at the same time
 
@@ -94,13 +130,15 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
         print("\nPlease give an asic number\n")
         return None
     if TES is None:
-        print("\nPlease give a TES number\n")
+        print("\nPlease give a TES number or an array of TES to average together, or 'all'\n")
         return None
     if interval is None: # set interval to have no effect
         t0_interval = 0
         tend_interval = float((dt.datetime.utcnow() + dt.timedelta(days=7)).strftime('%s'))
         interval = (t0_interval,tend_interval)
-    interval = np.array(interval)
+    interval = np.array(interval,dtype=np.float)
+
+    given_period = period
 
     errlist = []
     retval = {}
@@ -109,8 +147,24 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     retval['dataset'] = self.dataset_name
     retval['calsource info'] = self.calsource_info()
 
-    
-    data = self.timeline(asic=asic,TES=TES)
+    if isinstance(TES,int):
+        data = self.timeline(asic=asic,TES=TES)
+        if data is None: return retval
+        TESstr = 'TES%03i' % TES
+    elif isinstance(TES,np.ndarray) and TES.shape==(128,) and TES.dtype==np.bool:
+        self.printmsg('taking average of %i TES from ASIC %i' % (TES.sum(),asic))
+        TESstr = 'average of %i selected TES' % TES.sum()
+        adu = self.timeline_array(asic=asic)
+        data = adu[TES].mean(axis=0)
+    elif TES=='all':
+        self.printmsg('taking average of all TES from ASIC %i' % asic)
+        TESstr = 'all TES'
+        adu = self.timeline_array(asic=asic)
+        data = adu.mean(axis=0)
+    else:
+        self.printmsg('ERROR! Inappropriate argument for TES.')
+        return retval
+        
     t_data_orig = self.timeaxis(datatype='sci',asic=asic)
     t_data = t_data_orig.copy()
     t0_data = t_data[0]
@@ -122,7 +176,7 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
         self.printmsg(msg,verbosity=3)
         errlist.append(msg)
         t_src = t_data
-        data_src = np.ones(t_data.shape,dtype=np.float)
+        data_src = data
     else:
         # shift source to oscillate around zero
         use_calsource = True
@@ -171,17 +225,10 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
         self.printmsg('Error!  The given interval does not have overlapping times with calsource and data.')
         self.printmsg('        Maybe try with option:  align_clocks=True')
         return retval
-    idx_start = 0
-    idx_end = -1
-    if t0_data<tstart:
-        idxrange = np.where(t_data>=tstart)[0]
-        idx_start = idxrange[0]
-    if t_data[-1]>tend:
-        idxrange = np.where(t_data>=tend)[0]
-        idx_end = idxrange[0]
+    idx_start,idx_end = get_index_interval(t_data,(tstart,tend))
     retval['data time start index'] = idx_start
     retval['data time end index'] = idx_end
-    self.printmsg('idx_start, idx_end = %i, %i' % (idx_start,idx_end),verbosity=3)
+    self.printmsg('data: idx_start, idx_end = %i, %i' % (idx_start,idx_end),verbosity=3)
     t_data = t_data[idx_start:idx_end]
     data = data[idx_start:idx_end]
     t0_data = t_data[0]
@@ -190,27 +237,21 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     t0_filenamestr = dt.datetime.utcfromtimestamp(t0_data).strftime('%Y%m%d-%H%M%S')
 
     # truncate the source timeline to overlapping time or to the given interval
-    idxsrc_start = 0
-    idxsrc_end = -1
-    if t0_src<tstart:
-        idxrange = np.where(t_src>=tstart)[0]
-        idxsrc_start = idxrange[0]
-    if t_src[-1]>tend:
-        idxrange = np.where(t_src>=tend)[0]
-        idxsrc_end = idxrange[0]        
-    retval['source time start index'] = idxsrc_start
-    retval['source time end index'] = idxsrc_end
+    idxsrc_start,idxsrc_end = get_index_interval(t_src,(tstart,tend))
+    self.printmsg('src: idx_start, idx_end = %i, %i' % (idxsrc_start,idxsrc_end),verbosity=3)
     t_src = t_src[idxsrc_start:idxsrc_end]
     data_src = data_src[idxsrc_start:idxsrc_end]
     
     
     # fit data to sine curve
     amplitude = 0.5*(data.max() - data.min())
-    if self.calsource_info() is not None:
-        period = self.calsource_info()['modulator']['frequency']
-    else:
-        period = 1.0
-    # timeshift = 0.5*period # there's a half period shift:  see http://qubic.in2p3.fr/wiki/pmwiki.php/TD/Demodulation
+    calinfo = self.calsource_info()
+    if given_period is None:
+        if calinfo is not None and 'frequency' in calinfo['modulator'].keys():
+            period = self.calsource_info()['modulator']['frequency']
+        else:
+            period = 1.0
+    
     timeshift = 0.0
     amplitude_offset = data.mean()
     first_guess = (amplitude,period,timeshift,amplitude_offset)
@@ -234,8 +275,10 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
         amplitude = 0.5*(data_src.max() - data_src.min())
         if self.calsource_info() is not None:
             period = self.calsource_info()['modulator']['frequency']
-        else:
+        elif given_period is None:
             period = 1.0
+        else:
+            period = given_period
         timeshift = 0.0
         amplitude_offset = 0.0
         first_guess = (amplitude,period,timeshift,amplitude_offset)
@@ -249,10 +292,14 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
         source_fit = data_fit
         t_src_max = t_data_max
         data_src = data
+        t_src = t_data
 
     retval['source fit'] = source_fit
     retval['t_src max'] = t_src_max
-    period = source_fit['period']
+    if given_period is None:
+        period = source_fit['period']
+    else:
+        period = given_period
     retval['period'] = period # this is the period we use for demodulation
 
     # find the constant timestamp offset between source and data
@@ -269,26 +316,22 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
         t_src_orig,v_src = self.calsource()
         t_src = t_src_orig.copy()
         data_src = -v_src + v_src.mean()
-    t_src += offset
 
-    #t_src_max += offset
-    t0_src = t_src[0]
-    # truncate the source timeline to overlapping time or to the given interval
-    if t0_src<tstart:
-        idxrange = np.where(t_src>=tstart)[0]
-        idxsrc_start = idxrange[0]
-    if t_src[-1]>tend:
-        idxrange = np.where(t_src>=tend)[0]
-        idxsrc_end = idxrange[0]        
-    retval['source time start index'] = idxsrc_start
-    retval['source time end index'] = idxsrc_end
-    t_src = t_src[idxsrc_start:idxsrc_end]
-    data_src = data_src[idxsrc_start:idxsrc_end]
-    model_src = sine_curve_model(t_src-t0_data,
-                                 source_fit['amplitude'],
-                                 source_fit['period'],
-                                 source_fit['timeshift']-offset,
-                                 source_fit['offset'])
+        t_src += offset
+
+        t0_src = t_src[0]
+        # truncate the source timeline to overlapping time or to the given interval
+        idxsrc_start,idxsrc_end = get_index_interval(t_src,(tstart,tend))
+        retval['source time start index'] = idxsrc_start
+        retval['source time end index'] = idxsrc_end
+        self.printmsg('src: idx_start, idx_end = %i, %i' % (idxsrc_start,idxsrc_end),verbosity=3)
+        t_src = t_src[idxsrc_start:idxsrc_end]
+        data_src = data_src[idxsrc_start:idxsrc_end]
+        model_src = sine_curve_model(t_src-t0_data,
+                                     source_fit['amplitude'],
+                                     source_fit['period'],
+                                     source_fit['timeshift']-offset,
+                                     source_fit['offset'])
 
     # some values to return
     npts = len(data)
@@ -300,7 +343,10 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     ### Interpolating source data to the timestamps of the data
     ### and making the product of the detector and the source
     ### the source is renormalized, but the data is only shifted to oscillate around 0
-    data_src_interp = np.interp(t_data-t0_data, t_src-t0_data, data_src)
+    if use_calsource:
+        data_src_interp = np.interp(t_data-t0_data, t_src-t0_data, data_src)
+    else:
+        data_src_interp = data
     product = renorm(data_src_interp) * (data - data.mean())
     retval['calsource interpolated to data time axis'] = data_src_interp
 
@@ -343,12 +389,15 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     retval['npts per bin'] = binned_npts
 
     # fold the data and the calsource
-    folded_t_data,folded_data = fold_data(t_data-t0_data,data,period)
-    folded_t_src, folded_src = fold_data(t_src-t0_data,data_src,period)
+    folded_t_data,folded_data,folded_dataerr = fold_data(t_data-t0_data,data,period)
     retval['folded t_data'] = folded_t_data
     retval['folded data'] = folded_data
-    retval['folded t_src'] = folded_t_src
-    retval['folded src'] = folded_src
+    retval['folded data error'] = folded_dataerr
+    if use_calsource:
+        folded_t_src, folded_src, folded_srcerr  = fold_data(t_src-t0_data,data_src,period)
+        retval['folded t_src'] = folded_t_src
+        retval['folded src'] = folded_src
+        retval['folded src error'] = folded_srcerr
 
     # if not plotting, exit now
     if not doplot:
@@ -364,9 +413,9 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     axes = []
 
     # first column of plots
-    
+    data_label = 'ASIC %i, %s' % (asic,TESstr)
     axes.append(fig.add_axes((0.03,0.68,0.62,0.3)))
-    axes[-1].plot((t_data-t0_data), renorm(data),label='TES {} ASIC {}'.format(TES,asic),ls='none',marker='x')
+    axes[-1].plot((t_data-t0_data), renorm(data),label=data_label,ls='none',marker='x')
     axes[-1].plot((t_data-t0_data), renorm(model_data),label='data sine model',color='orange')
     axes[-1].plot([t_data_max,t_data_max],[-2,2],color='orange',linewidth=3,label='first data peak')
     if use_calsource:
@@ -379,7 +428,7 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     axes[-1].tick_params(labelbottom=False)
     
     axes.append(fig.add_axes((0.03,0.35,0.62,0.3)))
-    axes[-1].plot((t_data-t0_data), renorm(data), label='TES {} ASIC {}'.format(TES,asic),marker='v',ls='none')
+    axes[-1].plot((t_data-t0_data), renorm(data), label=data_label,marker='v',ls='none')
     if use_calsource:
         axes[-1].plot((t_data-t0_data), renorm(data_src_interp), label='SRC (interp on data)',marker='^',ls='none')
     axes[-1].set_xlim(0,t_data[-1]-t0_data)
@@ -396,11 +445,13 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
 
     # folded
     axes.append(fig.add_axes((0.70,0.68,0.28,0.3)))
-    axes[-1].plot((t_data-t0_data)%period, renorm(data),label='folded TES {} ASIC {}'.format(TES,asic),ls='none',marker='x')
-    axes[-1].plot(folded_t_data,renorm(folded_data),label='folded and averaged TES {} ASIC {}'.format(TES,asic),ls='solid',linewidth=3,color='yellow')
+    axes[-1].plot((t_data-t0_data)%period, data,label='folded %s' % data_label,ls='none',marker='x')
+    axes[-1].plot(folded_t_data,folded_data,label='folded and averaged %s' % data_label,ls='solid',linewidth=3,color='yellow')
+    axes[-1].errorbar(folded_t_data,folded_data,yerr=folded_dataerr,ls='none',color='yellow',capthick=2,capsize=2)
     if use_calsource:
-        axes[-1].plot((t_src-t0_data)%period, renorm(data_src), label='folded source',ls='none',marker='+')
-        axes[-1].plot(folded_t_src,renorm(folded_src),label='folded and averaged source',ls='solid',linewidth=3,color='red')
+        axcal = axes[-1].twinx()
+        axcal.plot((t_src-t0_data)%period, data_src, label='folded source',ls='none',marker='+')
+        axcal.plot(folded_t_src,folded_src,label='folded and averaged source',ls='solid',linewidth=3,color='red')
     axes[-1].text(0.5,1.0,'folding period = %.6f seconds' % period,ha='center',va='bottom',transform=axes[-1].transAxes)
     axes[-1].legend()
 
@@ -436,7 +487,7 @@ def demodulate(self,asic=None,TES=None,offset=None,interval=None,calsource=True,
     axes[-1].set_xlabel('period / seconds')
     axes[-1].set_ylabel('number of points per bin')
 
-    pngname = 'demodulation_diagnostic_ASIC%i_TES%03i_%s.png' % (asic,TES,t0_filenamestr)
+    pngname = 'demodulation_diagnostic_ASIC%i_%s_%s.png' % (asic,TESstr.replace(' ',''),t0_filenamestr)    
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     retval['pngname'] = pngname
         

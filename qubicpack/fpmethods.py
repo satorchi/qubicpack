@@ -408,13 +408,23 @@ def asic(self,asic=None):
 def Rfeedback(self,asic=None):
     '''
     return the feedback resistance for a given asic
+    if they are all the same, it doesn't matter which asic
     '''
+    Rfb_list = []
+    for asicobj in self.asic_list:
+        if asicobj is not None:
+            Rfb_list.append(asicobj.Rfeedback)
+    Rfb_values = np.unique(Rfb_list)
+    if len(Rfb_values)==1:
+        return Rfb_values[0]
+    
     if asic is None:
         self.printmsg('Please enter an asic number')
         return None
 
-    asic_idx = asic-1
-    return self.asic_list[asic_idx].Rfeedback
+    asicobj = self.asic(asic)
+    if asicobj is None: return None
+    return asicobj.Rfeedback
 
 def relay_heater(self,asic=None,timeline_index=0):
     '''

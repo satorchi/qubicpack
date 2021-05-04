@@ -882,10 +882,10 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
         plot_P_min = np.nanmin(fit_P)-0.5*P_span
         plot_P_max = np.nanmax(fit_P)+0.5*P_span
         
-        txt = 'K=%.4e' % K
+        txt = 'K=%.4e W/K$^n$' % K
         txt += '\nT$_0$=%.1f mK' % (1000*T0)
         txt += '\nn=%.3f' % n
-        txt += '\nG=%.4e' % G
+        txt += '\nG=%.4e W/K' % G
         txt += '\nNEP=%.4e at T$_{bath}$=350mK' % NEP
         txt += '\nN$_\mathrm{fit\,\,points}$ = %i' % npts
         txt += '\n%s' % result['fit points']

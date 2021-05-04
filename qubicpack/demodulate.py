@@ -147,11 +147,7 @@ def demodulate(self,
     retval['dataset'] = self.dataset_name
     retval['calsource info'] = self.calsource_info()
 
-    if isinstance(TES,int):
-        data = self.timeline(asic=asic,TES=TES)
-        if data is None: return retval
-        TESstr = 'TES%03i' % TES
-    elif isinstance(TES,np.ndarray) and TES.shape==(128,) and TES.dtype==np.bool:
+    if isinstance(TES,np.ndarray) and TES.shape==(128,) and TES.dtype==np.bool:
         self.printmsg('taking average of %i TES from ASIC %i' % (TES.sum(),asic))
         TESstr = 'average of %i selected TES' % TES.sum()
         adu = self.timeline_array(asic=asic)
@@ -162,8 +158,13 @@ def demodulate(self,
         adu = self.timeline_array(asic=asic)
         data = adu.mean(axis=0)
     else:
-        self.printmsg('ERROR! Inappropriate argument for TES.')
-        return retval
+        try:
+            data = self.timeline(asic=asic,TES=TES)
+            if data is None: return retval
+            TESstr = 'TES%03i' % TES
+        except:
+            self.printmsg('ERROR! Inappropriate argument for TES.')
+            return retval
         
     t_data_orig = self.timeaxis(datatype='sci',asic=asic)
     t_data = t_data_orig.copy()

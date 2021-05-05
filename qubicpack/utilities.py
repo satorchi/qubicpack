@@ -25,9 +25,6 @@ qc_utc_date = dt.datetime.strptime('2020-02-27 10:23:33','%Y-%m-%d %H:%M:%S')
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128
 
-# default figure size for plots
-FIGSIZE = (12.80,6.40)
-
 
 def TES_index(TES):
     '''

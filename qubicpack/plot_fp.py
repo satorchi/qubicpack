@@ -15,7 +15,7 @@ from __future__ import division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 
-from qubicpack.utilities import NPIXELS, ASIC_index, FIGSIZE
+from qubicpack.utilities import NPIXELS, ASIC_index
 from qubicpack.pix2tes import assign_pix_grid, assign_tes_grid
 
 def mylut(v,vmin=3.0,vmax=9.0):
@@ -49,7 +49,6 @@ def plot_fp(args):
       'quadrant' : quadrant in which to plot the quarter focal plane (default=3)
 
     '''
-    global FIGSIZE
     
     # initialize stuff
     pix_grid = assign_pix_grid()
@@ -59,7 +58,8 @@ def plot_fp(args):
     if 'figsize' in args.keys():
         figsize = args['figsize']
     else:
-        figsize = (FIGSIZE[0],FIGSIZE[0])
+        figwidth = plt.rcParams['figure.figsize'][0]
+        figsize = (figwidth,figwidth)
     fontsize=figsize[0]
     ttlfontsize=figsize[0]*1.2
 

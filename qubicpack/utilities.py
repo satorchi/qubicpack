@@ -109,7 +109,7 @@ def Qubic_DataDir(datadir=None,datafile=None):
             
         # if a filename is given, check if it's in this directory
         filename = '%s/%s' % (datadir,datafile)
-        if os.path.isfile(filename): return datadir
+        if os.path.exists(filename): return datadir
 
     # if we've gone through the whole loop, then we have a problem
     if datafile is None:

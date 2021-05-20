@@ -19,7 +19,7 @@ import sys,os,time
 from qubicpack.qubicasic import qubicasic
 
 class qubicfp:
-    verbosity = 0 # class variable.  You can change this before instantiating an object
+    verbosity = 1 # class variable.  You can change this before instantiating an object
     __object_type__ = 'qubicfp'
 
     # maximum number of ASIC possible

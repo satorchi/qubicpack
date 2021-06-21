@@ -74,7 +74,7 @@ def Qubic_DataDir(datadir=None,datafile=None):
         toplevel_dirs.append(os.environ['QUBIC_DATADIR'])
 
     # data on cc-in2p3
-    toplevel_dirs.append('/sps/hep/qubic/Data/Calib-TD')
+    toplevel_dirs.append('/sps/qubic/Data/Calib-TD')
 
     # Louise
     toplevel_dirs.append('/home/louisemousset/QUBIC')

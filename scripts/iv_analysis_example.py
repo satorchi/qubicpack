@@ -33,12 +33,16 @@ $ cd mypy
 $ sudo python ./setup.py install
 
 ### Data files ###
-You should copy the following data files into your working directory
+Download appropriate data files.  These should be I-V measurements.
 
-QUBIC_timeline_20180301T184953UTC.fits
-QUBIC_timeline_20180301T212734UTC.fits
-QUBIC_timeline_20180227T223359UTC.fits
+Please see the QUBIC wiki for instructions:
+http://qubic.in2p3.fr/wiki/pmwiki.php/TD/HowCanIParticipate
+
 '''
+
+# Change this to the dataset you wish to analyze
+dataset_dir = '2020/2020-01-06/2020-01-06_14.56.50__V-I 350mK'
+
 
 # import necessary  stuff
 import os,sys
@@ -50,43 +54,35 @@ if jupyter:
     %matplotlib notebook
 
 import matplotlib.pyplot as plt
-from qubicpack import qubicpack as qp
+from qubicpack.qubicfp import qubicfp
 from qubicpack.temperature_analysis import *
-from qubicpack.plot_physical_layout import *
 
 
-# create the qubicpack object and read the data
-d0=qp()
+# create the qubicpack focal plane object and read the data
+d0=qubicfp()
 if jupyter: d0.figsize=9,5
 # the first data file contains measurements at high temperature
 # these are used to correct the Normal Resistance
-d0.read_fits('QUBIC_timeline_20180301T184953UTC.fits')
+d0.read_qubicstudio_dataset(dataset_dir)
 
 # The data contains multiple timelines at different temperatures
 # you can print out a summary table
 print_datlist(d0)
 
-# we will work with the first timeline which is at 601mK
-# (we set timeline_index=0)
-
 # first of all, have a look at all timelines for all the TES
-d0.plot_timeline_physical_layout(timeline_index=0)
+d0.plot_timeline_focalplane()
 
 # now look at one in particular.
-TES=85
-TES_index=TES-1
-# the plot will determine the period and phase of the sinusoidal bias voltage
-d0.plot_timeline(TES,timeline_index=0)
+ASIC = 1
+TES = 85
+d0.plot_timeline(TES=TES,ASIC=ASIC)
 
-# the bias is now set for all the TES, and we can plot the I-V curves
-# but first, we should run the filter which fits a model to each TES I-V curve
+# We should run the filter which fits a model to each TES I-V curve
 f=d0.filter_iv_all()
 
 # now plot all the I-V curves
-d0.plot_iv_physical_layout()
+d0.plot_iv_focalplane()
 
-# Now we will save the list of Normal Resistances which will be used to correct the I-V curves at lower temperature
-R1adjust=d0.R1()
 
 # Next we will read the data at cooler temperatures
 

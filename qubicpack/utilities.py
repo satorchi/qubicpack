@@ -13,7 +13,7 @@ common utilities used in the qubicpack classes
 '''
 import sys,os
 import datetime as dt
-
+import matplotlib.pyplot as plt
 
 # on 6 Feb 2018, we reversed the wires for the ASICs
 # so now QubicStudio and the dilution fridge use the same ASIC designation
@@ -118,3 +118,18 @@ def Qubic_DataDir(datadir=None,datafile=None):
 
     print('ERROR! Could not find the directory with that file: %s' % datafile)
     return cwd
+
+def figure_window_title(fig=None,title=None):
+    '''
+    set a window title for a plot if it's not a Jupyter plot
+    '''
+    if sys.argv[0].find('ipykernel')>=0: return
+
+    if title is None: ttl = 'plt:'
+    else: ttl = 'plt: '+title
+
+    if fig is None: fig = plt.gcf()
+
+    fig.canvas.set_window_title(ttl)
+    return
+    

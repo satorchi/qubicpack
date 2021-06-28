@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.signal import fftconvolve
 
+from qubicpack.utilities import figure_window_title
+
 def renorm(ar):
     return (ar - np.mean(ar)) / np.std(ar)
 
@@ -410,7 +412,7 @@ def demodulate(self,
     else: plt.ioff()
     fig = plt.figure()
     retval['fig'] = fig
-    fig.canvas.set_window_title('plt: data/calsource interpolation')
+    figure_window_title(fig,'data/calsource interpolation')
     axes = []
 
     # first column of plots

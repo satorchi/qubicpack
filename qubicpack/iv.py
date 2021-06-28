@@ -13,7 +13,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 methods to plot and analyse I-V curves
 
 """
-from __future__ import division, print_function
 import numpy as np
 import sys,os,time
 import datetime as dt
@@ -24,7 +23,7 @@ import pickle
 from scipy.optimize import curve_fit
 #from PIL import Image
 
-from qubicpack.utilities import TES_index
+from qubicpack.utilities import TES_index, figure_window_title
 from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
 from qubicpack.plot_fp import plot_fp
 
@@ -114,7 +113,7 @@ def setup_plot_Vavg(self,axes=None):
     ttl=str('Average Current per TES with different Vbias')
     plt.ion()
     fig=plt.figure(figsize=self.figsize)
-    fig.canvas.set_window_title('plt: '+ttl) 
+    figure_window_title(fig,ttl)
     fig.suptitle(ttl,fontsize=16)
     if isinstance(axes,list) or isinstance(axes,np.ndarray): plt.axis(axes)
     plt.xlabel('TES number')
@@ -153,7 +152,7 @@ def plot_iv_all(self,selection=None,xwin=True):
     if xwin: plt.ion()
     else: plt.ioff()
     fig=plt.figure(figsize=self.figsize)
-    if xwin: fig.canvas.set_window_title('plt: '+ttl) 
+    if xwin: figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
     plt.xlabel('Bias Voltage  /  V')
     plt.ylabel('Current  /  $\mu$A')
@@ -193,7 +192,7 @@ def setup_plot_iv_multi(self,nrows=16,ncols=8,xwin=True):
     if xwin: plt.ion()
     else: plt.ioff()
     fig,axes=plt.subplots(nrows,ncols,sharex=True,sharey=False,figsize=self.figsize)
-    if xwin: fig.canvas.set_window_title('plt: '+ttl)
+    if xwin: figure_window_title(fig,ttl)
     fig.suptitle(ttl,fontsize=16)
     plt.xlabel('Bias Voltage  /  V')
     plt.ylabel('Current  /  $\mu$A')
@@ -961,7 +960,7 @@ def setup_plot_iv(self,TES,xwin=True):
     if xwin: plt.ion()
     else: plt.ioff()
     fig=plt.figure(figsize=self.figsize)
-    fig.canvas.set_window_title('plt: '+ttl) 
+    figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
     ax=plt.gca()
     ax.set_xlabel('Bias Voltage  /  V')
@@ -1132,7 +1131,7 @@ def plot_pv(self,TES,xwin=True):
     if xwin: plt.ion()
     else: plt.ioff()
     fig,ax=plt.subplots(1,1,figsize=self.figsize)
-    fig.canvas.set_window_title('plt: '+ttl) 
+    figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
     ax.set_xlabel('Bias Voltage  /  V')
     ax.set_ylabel('P$_\mathrm{TES}$  /  $p$A')
@@ -1183,7 +1182,7 @@ def plot_rp(self,TES,xwin=True):
     if xwin: plt.ion()
     else: plt.ioff()
     fig,ax=plt.subplots(1,1,figsize=self.figsize)
-    fig.canvas.set_window_title('plt: '+ttl) 
+    figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
     ax.set_xlabel('P$_\mathrm{TES}$  /  pW')
     ax.set_ylabel('$\\frac{R_\mathrm{TES}}{R_\mathrm{normal}}$ / %')
@@ -1561,7 +1560,7 @@ def plot_fom(self,response=None,fom='responsivity',
     if xwin: plt.ion()
     else: plt.ioff()
     fig,ax=plt.subplots(1,1,figsize=self.figsize)
-    fig.canvas.set_window_title('plt: '+ttl) 
+    figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
     ax.set_xlabel('TES Voltage  /  $\mu$V')
     if fom=='responsivity':
@@ -1701,7 +1700,7 @@ def plot_ip(self,TES,xwin=True):
     if xwin: plt.ion()
     else: plt.ioff()
     fig,ax=plt.subplots(1,1,figsize=self.figsize)
-    fig.canvas.set_window_title('plt: '+ttl) 
+    figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
     ax.set_xlabel('P$_\mathrm{TES}$  /  pW')
     ax.set_ylabel('I$_\mathrm{TES}$  /  $\mu$A')

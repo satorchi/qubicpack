@@ -1,0 +1,83 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.10.3
+  kernelspec:
+    display_name: QUBIC with Python 3.8
+    language: python
+    name: qubic_python38
+---
+
+I-V analysis example
+===========
+
+```{python}
+# directories
+
+# this is the location of data on CC-IN2P3
+top_dir = '/sps/qubic/Data/Calib-TD'
+```
+
+```{python}
+# Change this to the dataset you wish to analyze
+dataset0 = top_dir+'/2020-01-06/2020-01-06_14.56.50__V-I 350mK'
+```
+
+```{python}
+# imports
+import os,sys
+import matplotlib.pyplot as plt
+from qubicpack.qubicfp import qubicfp
+```
+
+```{python}
+# create the qubicpack focal plane object and read the data
+d0=qubicfp()
+
+# the first data file contains measurements at high temperature
+# these are used to correct the Normal Resistance
+d0.read_qubicstudio_dataset(dataset0)
+
+```
+
+```{python}
+# first of all, have a look at all timelines for all the TES
+res = d0.plot_timeline_focalplane()
+```
+
+```{python}
+# now look at one in particular.
+res = d0.plot_timeline(TES=85,asic=1)
+```
+
+```{python}
+# and let's plot the I-V curve for that TES
+fig = d0.plot_iv(TES=85,asic=1)
+```
+
+```{python}
+# We run the filter which fits a model to each TES I-V curve
+# This will take a few minutes
+f = d0.filter_iv_all()
+```
+
+```{python}
+# now plot all the I-V curves
+res = d0.plot_iv_focalplane()
+```
+
+```{python}
+# We can make a report giving all the I-V curves at 350mK
+# this will take a few minutes to run as it will produce all the necessary plots
+# it will ultimately produce a PDF file for each ASIC (two PDF files)
+# you can find them in the directory: ./2020/20200106
+texfile = d0.make_iv_report()
+```
+
+```{python}
+
+```

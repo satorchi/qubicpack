@@ -1,0 +1,107 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.10.3
+  kernelspec:
+    display_name: QUBIC with Python 3.8
+    language: python
+    name: qubic_python38
+---
+
+NEP example analysis
+=====
+
+```{python}
+# directories
+
+# this is the location of data on CC-IN2P3
+top_dir = '/sps/qubic/Data/Calib-TD'
+
+# Change this to the date you wish to analyse.  This is the directory name.
+data_dir = '2020-01-06'
+```
+
+```{python}
+# imports
+import os,sys
+from glob import glob
+import matplotlib.pyplot as plt
+from qubicpack.qubicfp import qubicfp
+from qubicpack.temperature_analysis import *
+```
+
+```{python}
+# find all the I-V measurements
+dataset_list = glob(top_dir+os.sep+data_dir+'/*mK*')
+dataset_list.sort()
+print('\n'.join(dataset_list))
+```
+
+```{python}
+# read all the data
+datlist = []
+for dset in dataset_list:
+    datlist.append(qubicfp())
+    datlist[-1].read_qubicstudio_dataset(dset)
+```
+
+```{python}
+# print a summary of the data
+print_datlist(datlist)
+```
+
+```{python}
+# run the I-V model fitting on all the data.  This will take some time.
+for a in datlist:
+    f = a.filter_iv_all()
+    
+```
+
+```{python}
+# now we can plot various curves, and calculate the NEP.  Here is an example for one TES:
+res = plot_TES_temperature_curves(datlist,asic=1,TES=85,plot='I') # plot type is Current vs. Voltage
+```
+
+```{python}
+res = plot_TES_temperature_curves(datlist,asic=1,TES=85,plot='P') # plot type is Power vs. Voltage
+```
+
+```{python}
+res = plot_TES_temperature_curves(datlist,asic=1,TES=85,plot='R') # plot type is Resistance vs. Voltage
+```
+
+```{python}
+res = plot_TES_turnover_temperature(datlist,asic=1,TES=85) # plot the turnover points at each temperature
+```
+
+```{python}
+res = plot_TES_NEP(datlist,asic=1,TES=85) # plot the Noise Equivalent Power
+```
+
+```{python}
+# Now we make a list which contains the NEP results for all the TES
+# we will use this later to make a report with all the results
+NEPresults = make_TES_NEP_resultslist(datlist)
+```
+
+```{python}
+# The following will produce plots for all the TES, and histograms for the results
+# it will generate at TeX file which we can compile for our final report
+# this will take some time, and it generates a lot of plots in the current working directory
+texfilename = make_TES_NEP_tex_report(datlist,NEPresults=NEPresults)
+```
+
+```{python}
+# we can generate the PDF file from the TeX file
+cmd = 'pdflatex '+texfilename
+res = os.system(cmd)
+res = os.system(cmd) # we have to run pdflatex twice to get the tables aligned correctly
+```
+
+```{python}
+
+```

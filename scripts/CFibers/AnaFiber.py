@@ -266,7 +266,7 @@ def plot_Fiber_on_focalPlane(dataToPlot,tagd, xwin=True,figsize=(16,16),color="b
     plt.rc('ytick', labelsize=9)    # fontsize of the tick labels
     
     fig,ax=plt.subplots(nrows,ncols,figsize=go.figsize)
-    if xwin: fig.canvas.set_window_title('plt:  '+ttl)
+    if xwin: fig.manager.canvas.set_window_title('plt:  '+ttl)
     fig.suptitle(ttl,fontsize=ttlfontsize)
 
 

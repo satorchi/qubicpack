@@ -19,12 +19,12 @@ Before beginning, you should have pystudio installed, and copy the example data 
 
 You will also need my datefunctions module
 
-### INSTALLATION OF pystudio ###
+### INSTALLATION OF qubicpack ###
 
 get the package from github
 
-$ git clone https://github.com/satorchi/pystudio.git
-$ cd pystudio
+$ git clone https://github.com/satorchi/qubicpack
+$ cd qubicpack
 $ sudo python ./setup.py install
 
 $ cd ../
@@ -39,9 +39,10 @@ Please see the QUBIC wiki for instructions:
 http://qubic.in2p3.fr/wiki/pmwiki.php/TD/HowCanIParticipate
 
 '''
+top_dir = '/sps/qubic/Data/Calib-TD'
 
 # Change this to the dataset you wish to analyze
-dataset_dir = '2020/2020-01-06/2020-01-06_14.56.50__V-I 350mK'
+dataset_dir = top_dir+'/2020-01-06/2020-01-06_14.56.50__V-I 350mK'
 
 
 # import necessary  stuff

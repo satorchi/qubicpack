@@ -11,11 +11,10 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 plot curves and background colour on the QUBIC focal plane
 this replaces plot_physical_layout.py
 '''
-from __future__ import division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 
-from qubicpack.utilities import NPIXELS, ASIC_index
+from qubicpack.utilities import NPIXELS, ASIC_index, figure_window_title
 from qubicpack.pix2tes import assign_pix_grid, assign_tes_grid
 
 def mylut(v,vmin=3.0,vmax=9.0):
@@ -119,7 +118,7 @@ def plot_fp(args):
     plt.ion()
     fig,ax=plt.subplots(nrows,ncols,figsize=figsize)
     fig.text(0.5,0.985,ttl,ha='center',fontsize=ttlfontsize)
-    fig.canvas.set_window_title('plt:  %s' % ttl)
+    figure_window_title(fig,ttl)
     fig.suptitle(subttl,fontsize=ttlfontsize)
     
 

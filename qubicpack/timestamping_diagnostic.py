@@ -12,10 +12,9 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 make a diagnostic plot of the derived timestamps
 
 '''
-from __future__ import division, print_function
 from matplotlib import pyplot as plt
 import numpy as np
-
+from qubicpack.utilities import figure_window_title
 
 '''
 # this script was originally tested on the following data:
@@ -216,7 +215,7 @@ def plot_pps(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,
     newplot = False
     if ax is None:
         fig = plt.figure(figsize=(16,8))
-        fig.canvas.set_window_title('plt: %s' % ttl)
+        figure_window_title(fig,ttl)
         fig.suptitle(self.infotext(),fontsize=fontsize)
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
         newplot = True
@@ -268,7 +267,7 @@ def plot_pps_nsamples(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None
     if ax is None:
         newplot = True
         fig = plt.figure(figsize=(16,8))
-        fig.canvas.set_window_title('plt: %s' % ttl)
+        figure_window_title(fig,ttl)
         fig.suptitle(self.infotext(),fontsize=fontsize)
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
 
@@ -315,7 +314,7 @@ def plot_timestamp_diagnostic_fig1(self,analysis=None,hk=None,zoomx=None,zoomy=N
     if ax is None:
         newplot = True
         fig = plt.figure(figsize=(16,8))
-        fig.canvas.set_window_title('plt: %s' % ttl)
+        figure_window_title(fig,ttl)
         fig.suptitle(self.infotext(),fontsize=fontsize)
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
         
@@ -371,7 +370,7 @@ def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=N
     newplot = False
     if ax is None:
         fig = plt.figure(figsize=(16,8))
-        fig.canvas.set_window_title('plt: %s' % ttl)
+        figure_window_title(fig,ttl)
         fig.suptitle(ttl,fontsize=fontsize)
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
 

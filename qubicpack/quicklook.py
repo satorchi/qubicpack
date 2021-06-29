@@ -14,7 +14,7 @@ import os
 from matplotlib import pyplot as plt
 import datetime as dt
 import numpy as np
-from qubicpack.utilities import qc_utc_date
+from qubicpack.utilities import qc_utc_date, figure_window_title
 
 def assign_imagename(self,plotname):
     '''
@@ -50,7 +50,7 @@ def plot_calsource(self,ax=None,fontsize=12):
         ttl = '%s %s' % (self.infotext(),ttl)
         plt.ion()
         fig = plt.figure()
-        fig.canvas.set_window_title('plt: Calibration Source for dataset %s' % self.dataset_name)
+        figure_window_title(fig,'Calibration Source for dataset %s' % self.dataset_name)
         fig.suptitle(ttl,fontsize=fontsize)
         ax = fig.add_axes((0.05,0.1,0.9,0.78))
     else:
@@ -99,7 +99,7 @@ def plot_temperatures(self,ax,label,ttl,fontsize=12):
         ttl += '\n'+self.infotext()
         plt.ion()
         fig = plt.figure()
-        fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
+        figure_window_title(fig,'%s for dataset %s' % (ttl,self.dataset_name))
         fig.suptitle(ttl,fontsize=fontsize)
         ax = fig.add_axes((0.05,0.1,0.9,0.8))
     else:
@@ -182,7 +182,7 @@ def plot_switchstatus(self,ax=None,fontsize=12):
         ttl += '\n'+self.infotext()
         plt.ion()
         fig = plt.figure()
-        fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
+        figure_window_title(fig,'%s for dataset %s' % (ttl,self.dataset_name))
         fig.suptitle(ttl,fontsize=fontsize)
         ax = fig.add_axes((0.05,0.1,0.9,0.8))
     else:
@@ -233,7 +233,7 @@ def plot_azel(self,ax=None,fontsize=12):
         ttl += '\n'+self.infotext()
         plt.ion()
         fig = plt.figure()
-        fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
+        figure_window_title(fig,'%s for dataset %s' % (ttl,self.dataset_name))
         fig.suptitle(ttl,fontsize=fontsize)
         ax = fig.add_axes((0.05,0.1,0.9,0.75))
     else:
@@ -289,7 +289,7 @@ def plot_hwp(self,ax=None,fontsize=12):
         ttl += '\n'+self.infotext()
         plt.ion()
         fig = plt.figure()
-        fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
+        figure_window_title(fig,'%s for dataset %s' % (ttl,self.dataset_name))
         fig.suptitle(ttl,fontsize=fontsize)
         ax = fig.add_axes((0.05,0.1,0.9,0.75))
     else:
@@ -358,7 +358,7 @@ def quicklook(self,TES=(54,54),
     fig = plt.figure(figsize=figsize)
     scalesize = np.sqrt(np.sum(np.array(figsize)**2))
     
-    if xwin: fig.canvas.set_window_title('plt: %s for dataset %s' % (ttl,self.dataset_name))
+    if xwin: figure_window_title(fig,'%s for dataset %s' % (ttl,self.dataset_name))
     fig.suptitle(ttl,fontsize=10)
 
     fontsize = 0.3*scalesize

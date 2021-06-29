@@ -13,7 +13,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 plot Amplitude Spectrum Density of time varying TES current
 """
-from __future__ import division, print_function
 import numpy as np
 import sys,os,time
 import datetime as dt
@@ -22,7 +21,7 @@ from glob import glob
 import matplotlib.mlab as mlab
 import pickle
 
-from qubicpack.utilities import TES_index
+from qubicpack.utilities import TES_index, figure_window_title
 from qubicpack.plot_fp import plot_fp
 
 def plot_ASD(self,TES=None,
@@ -121,7 +120,7 @@ def plot_ASD(self,TES=None,
         fig,axes=plt.subplots(nrows,ncols,sharex=False,sharey=False,figsize=self.figsize)
         ax_timeline=axes[0]
         ax_asd=axes[1]
-        if xwin: fig.canvas.set_window_title('plt: '+ttl)
+        if xwin: figure_window_title(fig,ttl)
         fig.suptitle(ttl+subttl,fontsize=16)
     result['ax_timeline']=ax_timeline
     result['ax_asd']=ax_asd

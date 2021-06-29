@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 from astropy.io import fits
 
 from qubicpack.pix2tes import assign_tes_grid, tes2pix
-
+from qubicpack.utilities import figure_window_title
 quadrant_colour = ['blue','red','green','purple']
 asic_colour = ['blue','darkblue','red','#cc0000','green','#00cc00','purple','#7210a7']
 FPidentity = None
@@ -52,7 +52,7 @@ def plot_id_focalplane(figsize=(30,30)):
     label_fontsize = 0.2*scale_factor
 
     fig = plt.figure(figsize=figsize)
-    fig.canvas.set_window_title('plt: QUBIC Focal Plane ID Matrix')
+    figure_window_title(fig,'QUBIC Focal Plane ID Matrix')
     ax = fig.add_axes([0,0,1,1])
     ax.text(0.5,0.96,'QUBIC Focal Plane ID Matrix',
             ha='center',va='bottom',transform=ax.transAxes,fontsize=title_fontsize)
@@ -196,7 +196,7 @@ def plot_fits_layout(filename):
     plt_ymax = ymax + 0.1*yspan
 
     fig = plt.figure(figsize=(20,20))
-    fig.canvas.set_window_title('plt: %s' % basename)
+    figure_window_title(fig,basename)
     ax = fig.add_axes([0,0,1,1])
     ax.set_aspect('equal')
     ax.set_xlim([plt_xmin,plt_xmax])
@@ -243,7 +243,7 @@ def plot_instrument_layout(q):
     ttl = 'Layout for %s Instrument' % config
     
     fig = plt.figure(figsize=(20,20))
-    fig.canvas.set_window_title('plt: %s' % ttl)
+    figure_window_title(fig,ttl)
     ax = fig.add_axes([0,0,1,1])
     ax.set_aspect('equal')
     q.plot()

@@ -22,7 +22,7 @@ import datetime as dt
 
 from qubicpack.qubicfp import qubicfp
 from qubicpack.pix2tes import tes2pix
-from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index
+from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index, figure_window_title
 NASIC = qubicfp.NASIC
 
 # some constants and values required
@@ -306,7 +306,7 @@ def plot_TES_turnover_temperature(fplist,TES,asic,xwin=True):
         plt.ioff()
         
     fig = plt.figure()
-    fig.canvas.set_window_title('plt: '+ttl)
+    figure_window_title(fig,ttl)
 
     plt.suptitle(ttl+'\n'+subttl)
     plt.xlabel(xlabel)
@@ -373,7 +373,7 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
         plt.ioff()
         
     fig = plt.figure()
-    fig.canvas.set_window_title('plt: '+ttl)
+    figure_window_title(fig,ttl)
 
     plt.title(ttl)
     plt.xlabel(xlabel)
@@ -933,7 +933,7 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
         plt.close('all')
         plt.ioff()
     fig = plt.figure()
-    fig.canvas.set_window_title('plt: '+ttl)
+    figure_window_title(fig,ttl)
 
     ax=plt.gca()
     ax.set_xlim(plot_T_min,plot_T_max)
@@ -1077,7 +1077,7 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
         figttl = ttl.replace('KEYVAL',keyval)
         
         fig = plt.figure()
-        fig.canvas.set_window_title('plt: '+figttl)
+        figure_window_title(fig,figttl)
 
         ax=plt.gca()
         plt.title(figttl)
@@ -1406,7 +1406,7 @@ def plot_rt_analysis(reslist,xwin=True):
     if xwin: plt.ion()
     else: plt.ioff()
     fig = plt.figure()
-    fig.canvas.set_window_title('plt: '+ttl)
+    figure_window_title(fig,ttl)
     ax=plt.gca()
     plt.title(ttl)
     ax.plot(Tsorted,1e6*Rsorted,ls='none',marker='D',color='blue')

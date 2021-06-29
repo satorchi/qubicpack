@@ -13,6 +13,7 @@ draw the optical path of the QUBIC calibration source at APC
 
 from math import *
 import matplotlib.pyplot as plt
+from qubicpack.utilities import figure_window_title
 plt.close('all')
 def cal_sketch(pointing_ang=50,     # QUBIC nominal pointing elevation angle
                D=9.0,               # horizontal distance to QUBIC from the calibration source
@@ -35,7 +36,7 @@ def cal_sketch(pointing_ang=50,     # QUBIC nominal pointing elevation angle
     pointing_ang_rad=radians(pointing_ang)
     
     fig=plt.figure(figsize=figsize)
-    fig.canvas.set_window_title('plt: Calibration Source Sketch')
+    figure_window_title(fig,'Calibration Source Sketch')
     ax = fig.add_axes((0.05,0.05,0.90,0.90))
     
 

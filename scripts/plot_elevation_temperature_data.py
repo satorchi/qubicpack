@@ -16,6 +16,7 @@ import sys,os,pickle
 import numpy as np
 from matplotlib import pyplot as plt
 import datetime as dt
+from qubicpack.utilities import figure_window_title
 
 if len(sys.argv)==1:
     whichdata = ''
@@ -85,7 +86,7 @@ for key in rec_names.keys():
     t_label = '%s Temperature' % key.upper()
     
     fig = plt.figure(figsize=(16,8))
-    fig.canvas.set_window_title('plt: Temperature vs Inclination')
+    figure_window_title(fig,'Temperature vs Inclination')
     plt.title(ttl)  
 
     date_pts = (t_date[idx_good] - t0)/60

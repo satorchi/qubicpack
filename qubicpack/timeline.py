@@ -11,14 +11,13 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 utilities for QUBIC TES timeline data
 '''
-from __future__ import division, print_function
 import numpy as np
 import sys,os,time
 import datetime as dt
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-from qubicpack.utilities import TES_index
+from qubicpack.utilities import TES_index, figure_window_title
 from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
 from qubicpack.plot_fp import plot_fp
 
@@ -458,7 +457,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     if ax is None:
         newplot = True
         fig=plt.figure(figsize=self.figsize)
-        fig.canvas.set_window_title('plt: '+ttl) 
+        figure_window_title(fig,ttl) 
         ax=plt.gca()
     else:
         newplot = False

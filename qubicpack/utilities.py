@@ -130,6 +130,6 @@ def figure_window_title(fig=None,title=None):
 
     if fig is None: fig = plt.gcf()
 
-    fig.canvas.set_window_title(ttl)
+    fig.manager.canvas.set_window_title(ttl)
     return
     

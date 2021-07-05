@@ -574,7 +574,8 @@ def plot_timeline_focalplane(self):
     args['subtitle'] = '\n'.join(subttl_list)
     args['obsdate'] = min(obsdates)
 
-    return plot_fp(args)
+    plot_fp(args)
+    return args
 
 
 #### I-V methods 
@@ -648,7 +649,8 @@ def plot_iv_focalplane(self,labels=True):
     if len(obsdates)>0:
         args['obsdate'] = min(obsdates)
 
-    return plot_fp(args)
+    plot_fp(args)
+    return args
 
 def ngood(self):
     '''

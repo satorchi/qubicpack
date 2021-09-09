@@ -19,10 +19,7 @@ datadir = '/qs2'
 datasets = glob('%s/20??-??-??/*' % datadir)
 datasets.sort()
 
-if len(datasets)==1:
-    latest_dset = datasets[0]
-else:
-    latest_dset = datasets[-1]
+latest_dset = datasets[-1]
 
 a = qubicfp()
 a.read_qubicstudio_dataset(latest_dset)

@@ -51,7 +51,16 @@ def fit_sine_curve(xpts,ypts,first_guess=None):
     fit given points to a sine curve
     '''
     retval = {}
-    popt,pcov = curve_fit(sine_curve_model,xpts,ypts,p0=first_guess)
+    try:
+        popt,pcov = curve_fit(sine_curve_model,xpts,ypts,p0=first_guess)
+    except:
+        retval['amplitude'] = None
+        retval['period'] = None
+        retval['timeshift'] = None
+        retval['offset'] = None
+        retval['popt'] = None
+        retval['pcov'] = None
+        return retval
     retval['amplitude'] = popt[0]
     retval['period'] = popt[1]
     retval['timeshift'] = popt[2]

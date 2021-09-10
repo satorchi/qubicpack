@@ -163,7 +163,7 @@ def calsource_info(self):
         return info
 
     munits = ['mHz','mVpp','mVdc']
-    units = ['GHz','Hz','Vpp','Vdc','%']
+    units = ['GHz','HZ','Hz','hz','V','v','Vpp','Vdc','%']
     for item in info_rawlist[2:]:
         cols = item.split(':')
 
@@ -204,7 +204,7 @@ def calsource_info(self):
             continue
 
         for unit in units:
-            if val.find(unit)>1:
+            if val.find(unit)>0:
                 info[dev][parm.lower()] = float(val.replace(unit,''))
                 goto_next_item = True
                 break
@@ -251,7 +251,11 @@ def calsource_infotext(self):
         txt_list = []
         for key in modulator_units.keys():
             if key in info['modulator'].keys():
-                txt_list.append(key+'='+modulator_units[key] % info['modulator'][key])
+                if info['modulator'][key]=='none':
+                    txt = key+'=N/A'
+                else:
+                    txt = key+'='+modulator_units[key] % info['modulator'][key]
+                txt_list.append(txt)
             else:
                 txt_list.append(key+'=unknown')
         calsrc_txt += '\nmodulator: '+' '.join(txt_list)

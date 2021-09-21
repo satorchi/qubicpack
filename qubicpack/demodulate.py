@@ -111,6 +111,7 @@ def demodulate(self,
                calsource=True,
                period=None,
                align_clocks=False,
+               timeaxistype='pps',
                doplot=True,
                xwin=True):
     '''
@@ -177,7 +178,7 @@ def demodulate(self,
             self.printmsg('ERROR! Inappropriate argument for TES.')
             return retval
         
-    t_data_orig = self.timeaxis(datatype='sci',asic=asic)
+    t_data_orig = self.timeaxis(datatype='sci',asic=asic,axistype=timeaxistype)
     t_data = t_data_orig.copy()
     t0_data = t_data[0]
     

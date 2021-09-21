@@ -163,7 +163,7 @@ def calsource_info(self):
         return info
 
     munits = ['mHz','mVpp','mVdc']
-    units = ['GHz','HZ','Hz','hz','V','v','Vpp','Vdc','%']
+    units = ['GHz','HZ','Hz','hz','pp','V','v','Vpp','Vdc','%']
     for item in info_rawlist[2:]:
         cols = item.split(':')
 

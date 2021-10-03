@@ -935,7 +935,7 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     fig = plt.figure()
     figure_window_title(fig,ttl)
 
-    ax=plt.gca()
+    ax = fig.get_axes()[0]
     ax.set_xlim(plot_T_min,plot_T_max)
     ax.set_ylim(plot_P_min,plot_P_max)
     plt.title(ttl)
@@ -946,7 +946,7 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     else:
         ax.plot(T,P,ls='none',marker='D')
     if not NEP is None: plt.plot(fit_T,fit_P,color='red')
-    ax.text(0.99,0.96,txt,va='top',ha='right',fontsize=14,transform=ax.transAxes,bbox=boxprops)
+    ax.text(0.99,0.96,txt,va='top',ha='right',fontsize=plt.rcParams['legend.fontsize'],transform=ax.transAxes,bbox=boxprops)
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin:plt.show()
     else:plt.close('all')
@@ -1079,7 +1079,7 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
         fig = plt.figure()
         figure_window_title(fig,figttl)
 
-        ax=plt.gca()
+        ax = fig.get_axes()[0]
         plt.title(figttl)
         ax.set_xlabel(xlabel[keyval])
         ax.set_ylabel('Number per bin')
@@ -1098,7 +1098,7 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
         n_max=max(hist)
         ax.set_ylim(0,n_max+1)
 
-        ax.text(0.985,0.97,txt,ha='right',va='top',fontsize=16,transform=ax.transAxes,bbox=boxprops)
+        ax.text(0.985,0.97,txt,ha='right',va='top',fontsize=plt.rcParams['legend.fontsize'],transform=ax.transAxes,bbox=boxprops)
         fig.savefig(retval['pngname %s' % keyval],format='png',dpi=100,bbox_inches='tight')
     
         if xwin:fig.show()
@@ -1407,13 +1407,13 @@ def plot_rt_analysis(reslist,xwin=True):
     else: plt.ioff()
     fig = plt.figure()
     figure_window_title(fig,ttl)
-    ax=plt.gca()
+    ax = fig.get_axes()[0]
     plt.title(ttl)
     ax.plot(Tsorted,1e6*Rsorted,ls='none',marker='D',color='blue')
     ax.set_xlabel('T$_\mathrm{bath}$ / mK')
     ax.set_ylabel('R$_\mathrm{TES}$ / $m\Omega$')
 
-    ax.text(0.98,0.02,date_txt,va='bottom',ha='right',fontsize=10,transform=ax.transAxes,bbox=boxprops)
+    ax.text(0.98,0.02,date_txt,va='bottom',ha='right',fontsize=plt.rcParams['legend.fontsize'],transform=ax.transAxes,bbox=boxprops)
 
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin:plt.show()

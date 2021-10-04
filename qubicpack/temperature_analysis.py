@@ -22,7 +22,7 @@ import datetime as dt
 
 from qubicpack.qubicfp import qubicfp
 from qubicpack.pix2tes import tes2pix
-from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index, figure_window_title
+from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index, figure_window_title, fmt4latex
 NASIC = qubicfp.NASIC
 
 # some constants and values required
@@ -447,7 +447,7 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
     ax=plt.gca()
     ax.set_xlim(plot_xlim)
         
-    plt.legend(fontsize=10)
+    plt.legend()
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin: plt.show()
     else: plt.close('all')
@@ -882,14 +882,14 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
         plot_P_min = np.nanmin(fit_P)-0.5*P_span
         plot_P_max = np.nanmax(fit_P)+0.5*P_span
         
-        txt = 'K=%.4e W/K$^n$' % K
-        txt += '\nT$_0$=%.1f mK' % (1000*T0)
+        txt = '$\kappa=$%s W/K$^n$' % fmt4latex(K)
+        txt += '\nT$_c$=%.1f mK' % (1000*T0)
         txt += '\nn=%.3f' % n
-        txt += '\nG=%.4e W/K' % G
-        txt += '\nNEP=%.4e at T$_{bath}$=350mK' % NEP
+        txt += '\nG=%s W/K' % fmt4latex(G)
+        txt += '\nNEP=%s at T$_{bath}$=350mK' % fmt4latex(NEP)
         txt += '\nN$_\mathrm{fit\,\,points}$ = %i' % npts
-        txt += '\n%s' % result['fit points']
-        txt += '\n$\chi^2 = %.3e$' % result['Chi square']
+        # txt += '\n%s' % result['fit points']
+        txt += '\n$\chi^2 = $%s' % fmt4latex(result['Chi square'])
         if result['is_good']:
             txt += '\ndetector is GOOD'
         else:
@@ -935,7 +935,7 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     fig = plt.figure()
     figure_window_title(fig,ttl)
 
-    ax = fig.get_axes()[0]
+    ax = plt.gca()
     ax.set_xlim(plot_T_min,plot_T_max)
     ax.set_ylim(plot_P_min,plot_P_max)
     plt.title(ttl)
@@ -1048,7 +1048,7 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
     txt += '\nn$_\mathrm{mean}=%.4f$' % (retval['n'].mean())
     txt += '\nT$_\mathrm{0\,mean}=%.4f$ mK' % (1e3*retval['T0'].mean())
     txt += '\n%i good TES out of %i. yield=%.1f%%' % (nNEP,len(NEPresults),100*nNEP/len(NEPresults))
-    txt += '\nT$_0$ limit = %.1f mK' % (1000*T0_limit)
+    #txt += '\nT$_0$ limit = %.1f mK' % (1000*T0_limit)
 
     
     if asic is not None:
@@ -1079,7 +1079,7 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
         fig = plt.figure()
         figure_window_title(fig,figttl)
 
-        ax = fig.get_axes()[0]
+        ax = plt.gca()
         plt.title(figttl)
         ax.set_xlabel(xlabel[keyval])
         ax.set_ylabel('Number per bin')
@@ -1407,7 +1407,7 @@ def plot_rt_analysis(reslist,xwin=True):
     else: plt.ioff()
     fig = plt.figure()
     figure_window_title(fig,ttl)
-    ax = fig.get_axes()[0]
+    ax = plt.gca()
     plt.title(ttl)
     ax.plot(Tsorted,1e6*Rsorted,ls='none',marker='D',color='blue')
     ax.set_xlabel('T$_\mathrm{bath}$ / mK')
@@ -1423,3 +1423,4 @@ def plot_rt_analysis(reslist,xwin=True):
     retval['Tbath'] = Tsorted
     retval['R'] = Rsorted
     return retval
+

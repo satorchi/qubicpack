@@ -133,3 +133,18 @@ def figure_window_title(fig=None,title=None):
     fig.canvas.manager.set_window_title(ttl)
     return
     
+def fmt4latex(num):
+    '''
+    return a string which formats the number for latex/matplotlib
+    '''
+    try:
+        expo = int(np.log10(num))
+        val = num/10**expo
+        if val<1:
+            expo -= 1
+            val *= 10
+        num_str = '$%.4f\\times10^{%i}$' % (val,expo)
+    except:
+        num_str = '%.6e' % num
+
+    return num_str

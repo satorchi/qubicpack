@@ -11,10 +11,10 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 default values for various parameters in qubicpack
 
 """
-from __future__ import division, print_function
 import numpy as np
 import os,subprocess
 import datetime as dt
+import matplotlib
 
 from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index
 from qubicpack.pix2tes import assign_pix_grid, assign_pix2tes, tes2pix, pix2tes, TES2PIX
@@ -125,7 +125,7 @@ def assign_constants(self):
     self.kBoltzmann=1.3806485279e-23
     self.Rshunt=10.e-3  # 10mOhm, mail from M.Piat to M.Salatino 2017-08-10
     self.Rbias =10.e3   # 10kOhm, mail from M.Piat to M.Salatino 2017-08-10
-    self.figsize=(12.80,6.40)
+    self.figsize=matplotlib.rcParams['figure.figsize'] # eventually get rid of this.  
     self.colours=['blue','green','red','cyan','magenta','yellow','black']
     self.Vinfinity=9.0 # used to calculate the I-V offset (force the line through I,Vinfinity to get R=1 at infinity)
     return

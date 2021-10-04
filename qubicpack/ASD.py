@@ -117,7 +117,7 @@ def plot_ASD(self,TES=None,
     if ax_timeline is None or ax_asd is None:
         nrows=1
         ncols=2
-        fig,axes=plt.subplots(nrows,ncols,sharex=False,sharey=False,figsize=self.figsize)
+        fig,axes=plt.subplots(nrows,ncols,sharex=False,sharey=False)
         ax_timeline=axes[0]
         ax_asd=axes[1]
         if xwin: figure_window_title(fig,ttl)

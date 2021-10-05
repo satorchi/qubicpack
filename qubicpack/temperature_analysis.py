@@ -882,14 +882,14 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
         plot_P_min = np.nanmin(fit_P)-0.5*P_span
         plot_P_max = np.nanmax(fit_P)+0.5*P_span
         
-        txt = '$\kappa=$%s W/K$^n$' % fmt4latex(K)
+        txt = '$\kappa=$%s W/K$^n$' % fmt4latex(K,2)
         txt += '\nT$_c$=%.1f mK' % (1000*T0)
         txt += '\nn=%.3f' % n
-        txt += '\nG=%s W/K' % fmt4latex(G)
-        txt += '\nNEP=%s at T$_{bath}$=350mK' % fmt4latex(NEP)
+        txt += '\nG=%s W/K' % fmt4latex(G,2)
+        txt += '\nNEP=%s at T$_{bath}$=350mK' % fmt4latex(NEP,2)
         txt += '\nN$_\mathrm{fit\,\,points}$ = %i' % npts
-        # txt += '\n%s' % result['fit points']
-        txt += '\n$\chi^2 = $%s' % fmt4latex(result['Chi square'])
+        txt += '\n%s' % result['fit points']
+        txt += '\n$\chi^2 = $%s' % fmt4latex(result['Chi square'],2)
         if result['is_good']:
             txt += '\ndetector is GOOD'
         else:
@@ -937,15 +937,15 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
 
     ax = plt.gca()
     ax.set_xlim(plot_T_min,plot_T_max)
-    ax.set_ylim(plot_P_min,plot_P_max)
+    ax.set_ylim(1e12*plot_P_min,1e12*plot_P_max)
     plt.title(ttl)
     ax.set_xlabel('T$_\mathrm{bath}$ / K')
-    ax.set_ylabel('Power / Watt')
+    ax.set_ylabel('Power / pWatt')
     if result['fit points'].find('full range')>0:
-        ax.plot(all_T,all_P,ls='none',marker='D')
+        ax.plot(all_T,1e12*all_P,ls='none',marker='D')
     else:
-        ax.plot(T,P,ls='none',marker='D')
-    if not NEP is None: plt.plot(fit_T,fit_P,color='red')
+        ax.plot(T,1e12*P,ls='none',marker='D')
+    if not NEP is None: plt.plot(fit_T,1e12*fit_P,color='red')
     ax.text(0.99,0.96,txt,va='top',ha='right',fontsize=plt.rcParams['legend.fontsize'],transform=ax.transAxes,bbox=boxprops)
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin:plt.show()

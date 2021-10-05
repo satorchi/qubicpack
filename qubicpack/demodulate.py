@@ -181,6 +181,10 @@ def demodulate(self,
     t_data_orig = self.timeaxis(datatype='sci',asic=asic,axistype=timeaxistype)
     t_data = t_data_orig.copy()
     t0_data = t_data[0]
+    if t0_data > 1494453600: # if the timeaxis is made from the sampling time and starts at zero
+        do_tzone_correction = True
+    else:
+        do_tzone_correction = False
     
     t_src_orig,v_src = self.calsource()
     if v_src is None or not calsource:
@@ -200,17 +204,19 @@ def demodulate(self,
     retval['t0 source'] =  t0_src
 
     # for some data, the source is in UT while the detector data is in localtime
-    delta_tz = np.abs(t0_data - t0_src)
     tz_offset = 0.0
     tz_count = 0
-    while delta_tz>3599:
-        tz_offset += 3600
-        delta_tz -= 3600
-        tz_count += 1
-    if (t0_data - t0_src) < 0:
-        tz_offset = -tz_offset
+    if do_tzone_correction:
+        delta_tz = np.abs(t0_data - t0_src)
+        while delta_tz>3599:
+            tz_offset += 3600
+            delta_tz -= 3600
+            tz_count += 1
+        if (t0_data - t0_src) < 0:
+            tz_offset = -tz_offset
     retval['time zone offset'] = tz_offset
     retval['time zone offset hours'] = tz_count
+    self.printmsg('time zone offset %f' % tz_offset,verbosity=3)
     
     # put data in UT (assume calsource was in UT)
     t_data -= tz_offset
@@ -219,9 +225,11 @@ def demodulate(self,
 
     # if forcing the alignment of the clocks, make t_src start at the same time as t_data
     if align_clocks:
+        self.printmsg('forcing alignment of the clocks',verbosity=3)
         align_offset = t_src[0] - t_data[0]
         t_src -= align_offset
         t0_src = t_src[0]
+        self.printmsg('t0_src=%f' % t0_src,verbosity=3)
     else:
         align_offset = 0
     retval['clock forced realignment offset'] = align_offset
@@ -320,7 +328,7 @@ def demodulate(self,
     if offset is None:
         offset = t_data_max - t_src_max
     retval['source-data time offset'] = offset
-    
+    self.printmsg('source-data time offset %f' % offset,verbosity=3)
     
     # adjust the source timeline by the constant offset
     # go back to the original source data before applying the offset
@@ -330,7 +338,7 @@ def demodulate(self,
         t_src = t_src_orig.copy()
         data_src = -v_src + v_src.mean()
 
-        t_src += offset
+        t_src += (offset-align_offset)
 
         t0_src = t_src[0]
         # truncate the source timeline to overlapping time or to the given interval
@@ -357,6 +365,7 @@ def demodulate(self,
     ### and making the product of the detector and the source
     ### the source is renormalized, but the data is only shifted to oscillate around 0
     if use_calsource:
+        self.printmsg('demodulate: number of points for t_data, t_src, data_src: %i, %i, %i' % (len(t_data),len(t_src),len(data_src)),verbosity=3)
         data_src_interp = np.interp(t_data-t0_data, t_src-t0_data, data_src)
     else:
         data_src_interp = data

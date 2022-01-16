@@ -12,7 +12,7 @@ default values for various parameters in qubicpack
 
 """
 import numpy as np
-import os,subprocess
+import os,subprocess,pickle
 import datetime as dt
 import matplotlib
 

@@ -408,7 +408,7 @@ def assign_lookup_table(self):
         self.transdic=None
         return None
 
-    h=open(filename_fullpath,'r')
+    h=open(filename_fullpath,'rb')
     self.transdic=pickle.load(h)
     h.close()
     return self.transdic

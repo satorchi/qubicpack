@@ -191,6 +191,6 @@ def cal_sketch(pointing_ang=50,     # QUBIC nominal pointing elevation angle
     ax.text(0.5,1.01,'QUBIC Calibration Source layout',ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
     ax.tick_params(labelsize=fontsize)
     
-    pngname='/home/work/qubic/pix/calsource_setup/QUBIC_calibration_source_layout_sketch.png'
-    fig.savefig(pngname,format='png',dpi=300,bbox_inches='tight',transparent=transparency)
+    pdfname='/home/work/qubic/pix/calsource_setup/QUBIC_calibration_source_layout_sketch.pdf'
+    fig.savefig(pdfname,format='pdf',dpi=300,bbox_inches='tight',transparent=transparency)
     return

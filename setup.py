@@ -59,25 +59,39 @@ setup(install_requires=['numpy'],
 
 
 # install the executable scripts, if we have permission
-exec_dir = '/usr/local/bin'
-tmp_file = 'qubicpack_installation_temporary_file_%s.txt' % dt.datetime.now().strftime('%Y%m%dT%H%M%S')
-cmd = 'touch %s/%s' % (exec_dir,tmp_file)
-proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-out,err=proc.communicate()
+exec_dir_list = ['/usr/local/bin']
+if 'HOME' in os.environ.keys():
+    localbin = os.environ['HOME']+'/.local/bin'
+    exec_dir_list.append(localbin)
+
+exec_dir_ok = False
+for exec_dir in exec_dir_list:
+    if not os.path.isdir(exec_dir):
+        cmd = 'mkdir --parents %s' % exec_dir
+        proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        out,err=proc.communicate()
+    tmp_file = 'qubicpack_installation_temporary_file_%s.txt' % dt.datetime.now().strftime('%Y%m%dT%H%M%S')
+    cmd = 'touch %s/%s' % (exec_dir,tmp_file)
+    proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    out,err=proc.communicate()
+    if err:
+        continue
+    else:
+        exec_dir_ok = True
+        os.remove('%s/%s' % (exec_dir,tmp_file))
+        break
+
 
 scripts = ['scripts/quicklook.py',
            'scripts/Vphi_analysis.py']
-if len(sys.argv)>1 and sys.argv[1]=='install' and not err:
+
+if len(sys.argv)>1 and sys.argv[1]=='install' and exec_dir_ok:
     print('installing executable scripts...')
     for F in scripts:
         basename = os.path.basename(F)
-        cmd = 'rm -f %s/%s; cp -pv %s %s;chmod +x %s/%s' % (exec_dir,basename,F,exec_dir,exec_dir,basename)
+        cmd = 'rm -f %s/%s; cp -puv %s %s;chmod +x %s/%s' % (exec_dir,basename,F,exec_dir,exec_dir,basename)
         proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         out,err=proc.communicate()
         if out:print(out.decode().strip())
         if err:print(err.decode().strip())
-    
-    cmd = 'rm -f %s/%s' % (exec_dir,tmp_file)
-    proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    out,err=proc.communicate()
 

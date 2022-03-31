@@ -65,7 +65,8 @@ cmd = 'touch %s/%s' % (exec_dir,tmp_file)
 proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 out,err=proc.communicate()
 
-scripts = ['scripts/quicklook.py']
+scripts = ['scripts/quicklook.py',
+           'scripts/Vphi_analysis.py']
 if len(sys.argv)>1 and sys.argv[1]=='install' and not err:
     print('installing executable scripts...')
     for F in scripts:

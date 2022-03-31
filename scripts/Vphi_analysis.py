@@ -105,7 +105,7 @@ if data_dir is None:
         quit()
 
 # search for the datasets
-pattern = '%s/%s/*_%s*_opt_bias*' % (data_dir,day_str,hour_pattern)
+pattern = '%s/*_%s*_opt_bias*' % (data_dir,day_str,hour_pattern)
 dsets = glob(pattern)
 if len(dsets)<1:
     print('No datasets found for pattern: %s' % pattern)

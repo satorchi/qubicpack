@@ -14,7 +14,7 @@ find the latest data and make a quicklook plot
 from glob import glob
 from qubicpack.qubicfp import qubicfp
 qubicfp.verbosity=1
-datadir = '/qs2'
+datadir = '/archive'
 
 datasets = glob('%s/20??-??-??/*' % datadir)
 datasets.sort()

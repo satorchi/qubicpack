@@ -29,6 +29,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 plt.ioff()
+plt.rcParams['figure.figsize'] = [24,12]
 
 # a help message
 def help():
@@ -77,8 +78,18 @@ for arg in sys.argv:
         continue
 
     if arg.find('--squid_selection=')==0:
-        squid_selection = arg.split('=')[-1].split(',')
-        if squid_selection.lower()=='all': squid_selection = np.arange(n_squids)
+        squid_selection_strlist = arg.split('=')[-1].split(',')
+        if len(squid_selection)>1:
+            squid_selection = []
+            for val in squid_selection_strlist:
+                squid_selection.append(int(val))
+        else:
+            keyword = squid_selection_strlist[0]
+            if keyword.lower()=='all':
+                squid_selection = np.arange(n_squids)
+            else:
+                squid_selection = [int(keyword)]
+        
         do_plot = True
         continue
 
@@ -101,10 +112,18 @@ if data_dir is None:
     if not os.path.isdir(data_dir):
         data_dir = os.sep.join([Qubic_DataDir(),day_str])
     if not os.path.isdir(data_dir):
-        print('Could not find the data directory!')
+        print('Could not find the data directory! %s' % data_dir)
         quit()
 else:
-    data_dir = os.path.join(data_dir,year_str)    
+    try_data_dir = os.path.join(data_dir,day_str)
+    if not os.path.isdir(try_data_dir):
+        print('Could not find data directory: %s' % try_data_dir)
+        try_data_dir = os.path.join(year_str,data_dir,day_str)
+        if not os.path.isdir(try_data_dir):
+            print('Could not find data directory: %s' % try_data_dir)
+            quit()
+    data_dir = try_data_dir
+
 
 # search for the datasets
 pattern = '%s/*_%s*_opt_bias*' % (data_dir,hour_pattern)
@@ -219,7 +238,7 @@ for dset in dsets:
         # offset of the sinus signal
         offset = 0.5*(asic.max_bias + asic.min_bias)
         Vbias = (offset+amp*asic.bias_phase()/2.)
-        
+
         # this allow to avoid the noncoherent points in raw data for the flux
         sorted_index = np.argsort(Vbias)
 
@@ -253,9 +272,11 @@ for dset in dsets:
             ### plot parameters ###
             if do_plot and TESidx in squid_selection:
                 fig = plt.figure()
-                V0 = Vbias[sorted_index][0]
-                xpts = (0.5*Min/Rbias)*( Vbias[sorted_index] - V0 )
-                ypts = filt[sorted_index]
+                V0 = Vbias.min()
+                # xpts = (0.5*Min/Rbias)*( Vbias[sorted_index] - V0 )
+                # ypts = filt[sorted_index]
+                xpts = (0.5*Min/Rbias)*( Vbias - V0 )
+                ypts = filt
                 plt.plot(xpts,ypts)
                 plt.grid()
                 plt.xlabel('Flux (in quantum of flux)')

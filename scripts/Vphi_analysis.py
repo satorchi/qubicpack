@@ -103,6 +103,8 @@ if data_dir is None:
     if not os.path.isdir(data_dir):
         print('Could not find the data directory!')
         quit()
+else:
+    data_dir = os.path.join(data_dir,year_str)    
 
 # search for the datasets
 pattern = '%s/*_%s*_opt_bias*' % (data_dir,hour_pattern)

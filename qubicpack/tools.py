@@ -1416,7 +1416,8 @@ def bias_phase(self):
 
     # convert uint to +/- float, and normalize to amplitude +/- 1
     sineraw = self.hk[hktype][sinekey]
-    sinephase = np.array(sineraw,dtype=np.float)
+    if max(sineraw)==0: return None
+    sinephase = np.array(sineraw,dtype=np.float64)
     idx_neg = np.where(sineraw > 32767)
     sinephase[idx_neg] -= 65536.0
     norm = max(abs(sinephase.max()),abs(sinephase.min()))

@@ -560,12 +560,12 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             else:
                 ax_bias.set_ylim([self.min_bias,self.max_bias])
             ax_bias.tick_params(axis='both',labelsize=fontsize)
-            curve2_ax=ax_bias
+            curve2_ax = ax_bias
         else:
-            curve2_ax=ax
+            curve2_ax = ax
         self.printmsg('DEBUG: plotting sine curve for bias: len(time_axis)=%i, len(ysine)=%i'
                       % (len(time_axis),len(ysine)),verbosity=4)
-        curve2=curve2_ax.plot(time_axis,ysine,label=sinelabel,color='green')
+        curve2 = curve2_ax.plot(time_axis,ysine,label=sinelabel,color='green')
         curves = curve1+curve2
     else:
         curves = curve1
@@ -745,8 +745,8 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
         self.vbias = self.timeline_vbias[ipeak0:ipeak1]
         
         
-    self.min_bias = self.vbias.nanmin()
-    self.max_bias = self.vbias.nanmax()
+    self.min_bias = np.nanmin(self.vbias)
+    self.max_bias = np.nanmax(self.vbias)
 
     tdata = self.tdata[timeline_index]
     keys = tdata.keys()

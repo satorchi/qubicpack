@@ -745,8 +745,8 @@ def timeline2adu(self,TES=None,ipeak0=None,ipeak1=None,timeline_index=0,shift=0.
         self.vbias = self.timeline_vbias[ipeak0:ipeak1]
         
         
-    self.min_bias=min(self.vbias)
-    self.max_bias=max(self.vbias)
+    self.min_bias = self.vbias.nanmin()
+    self.max_bias = self.vbias.nanmax()
 
     tdata = self.tdata[timeline_index]
     keys = tdata.keys()

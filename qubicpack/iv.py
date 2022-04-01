@@ -2299,14 +2299,12 @@ def make_iv_report(self):
     if not self.exist_iv_data():return None
 
     # plot all the I-V in the focal-plane map
-    self.figsize=(14,14)
     self.plot_iv_physical_layout(xwin=False)
 
     # plot all the good I-V curves on a single plot
     self.plot_iv_all(selection=self.is_good_iv(),xwin=False)
 
     # plot each I-V curve
-    self.figsize=(16,12)
     for TES_idx in range(self.NPIXELS):
         self.plot_iv(TES_idx+1,xwin=False)
 

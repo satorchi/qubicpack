@@ -20,6 +20,7 @@ import scipy as sp
 
 from glob import glob
 import datetime as dt
+from satorchipy.datefunctions import str2dt
 
 from qubicpack.utilities import Qubic_DataDir
 from qubicpack.qubicfp import qubicfp
@@ -38,6 +39,8 @@ def help():
     msg += '\nOPTIONS:'
     msg += '\n --day=YYYY-MM-DD'
     msg += "\n       for example 2019-04-24 the SQUID data used in Guillaume's thesis"
+    msg += '\n --start-time=YYYY-MMM-DDTHH:MM:SS'
+    msg += '\n       if you have multiple datasets on the same day, use this to give the first one'
     msg += '\n --hour=HH'
     msg += '\n        this can also be a pattern, for example 1[23] will find the data starting at 12:00 and 13:00'
     msg += '\n --datadir=/path/to/toplevel/data/directory'
@@ -64,6 +67,7 @@ hour_pattern = ''
 
 # parse command line arguments
 data_dir = None
+start_time = None
 for arg in sys.argv:
     if arg.find('--day=')==0:
         day_str = arg.split('=')[-1]
@@ -77,7 +81,7 @@ for arg in sys.argv:
         data_dir = arg.split('=')[-1]
         continue
 
-    if arg.find('--squid_selection=')==0:
+    if arg.find('--squid_selection=')==0 or arg.find('--squid-selection=')==0:
         squid_selection_strlist = arg.split('=')[-1].split(',')
         if len(squid_selection)>1:
             squid_selection = []
@@ -97,8 +101,16 @@ for arg in sys.argv:
         help()
         quit()
 
+    if arg.find('--start-time=')==0:
+        date_str = arg.split('=')[-1]
+        start_time = str2dt(date_str)
+        continue
+
+if start_time is not None:
+    day_str = start_time.strftime('%Y-%m-%d')
+
 if day_str is None:
-    print('Enter a valid date to find the data.  Use the option --day=YYYY-MM-DD\n')
+    print('Enter a valid date to find the data.\n  Use the option --day=YYYY-MM-DD or option --start-time=YYYY-MM-DDTHH:MM:SS\n')
     help()
     quit()
 
@@ -133,7 +145,15 @@ if len(dsets)<1:
     quit()
     
 dsets.sort()
-
+if start_time is not None:
+    new_dsets = []
+    for dset in dsets:
+        date_str = os.path.basename(dset).split('__')[0]
+        dset_date = str2dt(date_str)
+        if dset_date>=start_time:
+            new_dsets.append(dset)
+    dsets = new_dsets
+        
 # Find the dataset with bias index=7.  This one is used to calculate the offset value.
 gotit = False
 for idx,dset in enumerate(dsets):

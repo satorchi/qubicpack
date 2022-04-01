@@ -825,7 +825,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
         msg = 'WARNING! Minimum Bias changed during the measurement!'
         self.printmsg(msg)
         tdata['WARNING'].append(msg)
-    tdata['BIAS_MIN'] = min(bias_min)
+    tdata['BIAS_MIN'] = np.nanmin(bias_min)
     self.min_bias = tdata['BIAS_MIN']
     
     bias_max = offset+amplitude
@@ -834,7 +834,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
         msg = 'WARNING! Maximum Bias changed during the measurement!'
         self.printmsg(msg)
         tdata['WARNING'].append(msg)
-    tdata['BIAS_MAX'] = max(bias_max)
+    tdata['BIAS_MAX'] = np.nanmax(bias_max)
     self.max_bias = tdata['BIAS_MAX']
 
     # get the number of samples

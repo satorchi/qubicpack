@@ -456,7 +456,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     if ax is None:
         newplot = True
-        fig=plt.figure(figsize=self.figsize)
+        fig=plt.figure()
         figure_window_title(fig,ttl) 
         ax=plt.gca()
     else:

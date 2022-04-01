@@ -156,7 +156,7 @@ print('Vsqoffset will be calculated from dataset: %s' % dsets[0])
 
 
 ### some parameters ###
-Min=1./10.4E-6 # Mutual inductance
+mutual_inductance = 1./10.4E-6 # Mutual inductance
 gain = 70.*100
 good_threshold = 5
 n_indexes = 16 # number of possible bias values
@@ -166,7 +166,7 @@ n_asics = 2
 plotname_prefix = 'SQUID_%s' % day_str
 
 
-# The value of the SQUID bias for each index
+# The value of the SQUID bias for each index in uA
 I = np.zeros(n_indexes)
 I[0] = 0
 I[1] = 5.1
@@ -191,10 +191,14 @@ I[15] = 40.81
 lmt = 5000 
 
 # Creation of empty array, fill with NaN
-Vsquid = np.zeros((n_indexes,n_squids,lmt,n_asics))
-Vsquid[:,:,:,:] = np.nan
-VsquidSG = np.zeros((n_indexes,n_squids,lmt,n_asics))
-VsquidSG[:,:,:,:] = np.nan
+Vsquid = np.empty((n_indexes,n_squids,lmt,n_asics))
+Vsquid[:] = np.nan
+
+VsquidSG = np.empty((n_indexes,n_squids,lmt,n_asics))
+VsquidSG[:] = np.nan
+
+squid_flux = np.empty((n_indexes,lmt,n_asics))
+squid_flux[:] = np.nan
 
 percent_good = np.zeros((n_indexes,n_asics))
 
@@ -231,22 +235,22 @@ for dset in dsets:
         ASICnum = asic.asic
         ASICidx = ASICnum - 1
         Rbias = asic.Rbias
+
+        # timeline length limit
+        lmt2 = asic.timeline(TES=1).shape[0]
         
         # Amplitude peak to peak of the sinus
         amp = asic.max_bias - asic.min_bias
         
         # offset of the sinus signal
         offset = 0.5*(asic.max_bias + asic.min_bias)
-        Vbias = (offset+amp*asic.bias_phase()/2.)
-
-        # this allow to avoid the noncoherent points in raw data for the flux
-        sorted_index = np.argsort(Vbias)
+        TES_bias = (offset+amp*asic.bias_phase()/2.)
+        flux = (0.5*mutual_inductance/Rbias)*( TES_bias - TES_bias.min() )
+        squid_flux[squid_index,:lmt2,ASICidx] = flux
 
         # convert to voltage (?)
         Vadjustment = 62.5/(70.*100)/(asic.nsamples-asic.n_masked())
 
-        # timeline length limit
-        lmt2 = asic.timeline(TES=1).shape[0]
         
         # go through the TES detectors
         for TESidx in range(n_squids):
@@ -268,24 +272,6 @@ for dset in dsets:
             data[TESidx,squid_index,ASICidx] = histo[squid_index,ASICidx]
             invdata[squid_index,TESidx,ASICidx] = histo[squid_index,ASICidx]
 
-
-            ### plot parameters ###
-            if do_plot and TESidx in squid_selection:
-                fig = plt.figure()
-                V0 = Vbias.min()
-                # xpts = (0.5*Min/Rbias)*( Vbias[sorted_index] - V0 )
-                # ypts = filt[sorted_index]
-                xpts = (0.5*Min/Rbias)*( Vbias - V0 )
-                ypts = filt
-                plt.plot(xpts,ypts)
-                plt.grid()
-                plt.xlabel('Flux (in quantum of flux)')
-                plt.ylabel('Voltage ($\mu$V)')
-                plt.title('%s ASIC%i, SQUID number %i, bias index %i' % (day_str,ASICnum,TESnum,squid_index))
-
-                figname = '%s_ASIC%02i_TES%03i_bias-index%02i_flux.png' % (plotname_prefix,ASICnum,TESnum,squid_index)
-                plt.savefig(figname,format='png',dpi=100,bbox_inches='tight')
-                plt.close(fig)
                 
 
         # min, max, average
@@ -304,7 +290,7 @@ for dset in dsets:
         percent_good[squid_index,ASICidx] = 100*ngood/128
 
         
-        ### plot all SQUIDS if requested ###
+        ### plot the SQUIDS if requested ###
         if do_plot:
             for TESidx in squid_selection:
                 TESnum = TESidx + 1
@@ -331,6 +317,38 @@ for dset in dsets:
 for ASICidx in range(n_asics):
     ASICnum = ASICidx + 1
 
+
+    ### plot for each requested SQUID ###        
+    if do_plot:
+        for TESidx in squid_selection:
+            fig = plt.figure()
+            for squid_index in range(n_indexes):
+                lbl = 'I$_\mathrm{squid}=%.2f\mu$A' % I[squid_index]
+
+                # should be a better way to do this
+                plot_range = np.zeros(lmt,dtype=bool)
+                for idx in range(lmt):
+                    val = VsquidSG[squid_index,TESidx,idx,ASICidx] 
+                    plot_range[idx] = val is not np.nan
+
+                    
+                # this allow to avoid the noncoherent points in raw data for the flux (?)
+                # not used (Steve)
+                sorted_index = np.argsort(flux)
+                flux = squid_flux[squid_index,plot_range,ASICidx]
+                V = VsquidSG[squid_index,TESidx,plot_range,ASICidx] 
+                plt.plot(flux,V,ls='none',marker='.',markersize=2,label=lbl)
+                # plt.plot(flux[sorted_index],filt[sorted_index])
+            
+            plt.grid()
+            plt.xlabel('Flux (in quantum of flux)')
+            plt.ylabel('Voltage ($\mu$V)')
+            plt.title('%s ASIC%i, SQUID number %i' % (day_str,ASICnum,TESnum))
+            plt.legend(loc='upper right')
+            figname = '%s_ASIC%02i_TES%03i_flux.png' % (plotname_prefix,ASICnum,TESnum)
+            plt.savefig(figname,format='png',dpi=100,bbox_inches='tight')
+            plt.close(fig)
+    
 
     fig = plt.figure()
     plt.plot(np.arange(n_indexes),percent_good[:,ASICidx])

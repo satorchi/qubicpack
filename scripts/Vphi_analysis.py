@@ -64,7 +64,7 @@ squid_selection = None
 
 day_str = None
 hour_pattern = ''
-
+good_threshold = 5
 
 # parse command line arguments
 data_dir = None
@@ -106,6 +106,11 @@ for arg in sys.argv:
     if arg.find('--start-time=')==0:
         date_str = arg.split('=')[-1]
         start_time = str2dt(date_str)
+        continue
+
+    if arg.find('--threshold=')==0:
+        val_str = arg.split('=')[-1]
+        good_threshold = float(val_str)
         continue
 
 if start_time is not None:
@@ -187,7 +192,6 @@ if squid_selection is not None:
 ### some parameters ###
 mutual_inductance = 1./10.4E-6 # Mutual inductance
 gain = 70.*100
-good_threshold = 5
 n_indexes = 16 # number of possible bias values
 n_squids = 128 # number of squid per ASIC
 n_asics = 2
@@ -302,48 +306,29 @@ for dset in dsets:
             data[TESidx,squid_index,ASICidx] = histo[squid_index,ASICidx]
             invdata[squid_index,TESidx,ASICidx] = histo[squid_index,ASICidx]
 
-                
-
-        # min, max, average
-        Vmoy = np.nanmean(VsquidSG, axis=2)
-        Vmin = np.nanmin(VsquidSG, axis=2)
-        Vmax = np.nanmax(VsquidSG, axis=2)
-
-
-        # Create variable , readable for the plot
-        Vmoy2 = np.asarray([(-Vmoy[:,_,ASICidx]+Vmoy[0,_,ASICidx])*62.5/gain for _ in np.arange(n_squids)]) 
-        Vmin2 = np.asarray([(-Vmin[:,_,ASICidx]+Vmoy[0,_,ASICidx])*62.5/gain for _ in np.arange(n_squids)]) 
-        Vmax2 = np.asarray([(-Vmax[:,_,ASICidx]+Vmoy[0,_,ASICidx])*62.5/gain for _ in np.arange(n_squids)]) 
-
-
         ngood = (data[:,squid_index,ASICidx]>= good_threshold).sum()
         percent_good[squid_index,ASICidx] = 100*ngood/128
-
-        
-        ### plot the SQUIDS if requested ###
-        if do_plot:
-            for TESidx in squid_selection:
-                TESnum = TESidx + 1
-
-                fig = plt.figure()
-                plt.plot(I,Vmin2[TESidx,:], label= "maximal Value" )
-                plt.plot(I,Vmax2[TESidx,:], label= "minimal Value")
-                plt.plot(I,Vmoy2[TESidx,:], label= "mean Value")
-
-                plt.grid()
-                plt.xlabel('Intensity ($\mu$A)')
-                plt.ylabel('Voltage ($\mu$V)')
-                plt.title('%s ASIC%i SQUID number %i, bias index %i' % (day_str,ASICnum,TESnum,squid_index)) 
-                plt.legend(loc='upper right', bbox_to_anchor=(0.25,1 ))
-                figname = '%s_ASIC%02i_TES%03i_bias-index%02i_IV.png' % (plotname_prefix,ASICnum,TESnum,squid_index)
-                plt.savefig(figname,format='png',dpi=100,bbox_inches='tight')
-                plt.close(fig)
     
 ## finished going through the datasets
 
+# min, max, average over timeline
+# Vsquid shape: n_indexes,n_squids,lmt,n_asics
+Vmoy = np.nanmean(VsquidSG, axis=2)
+Vmin = np.nanmin(VsquidSG, axis=2)
+Vmax = np.nanmax(VsquidSG, axis=2)
+print('Vmoy shape: ',Vmoy.shape)
 
+# Vmoy shape: n_indexes, n_squids, n_asics
+V0 = Vmoy[0,:,:]
+Vmoy2 = (V0 - Vmoy)*62.5/gain
+Vmin2 = (V0 - Vmin)*62.5/gain
+Vmax2 = (V0 - Vmax)*62.5/gain
+
+print('Vmoy2 shape: ',Vmoy2.shape)
 
 # final plots
+
+
 for ASICidx in range(n_asics):
     ASICnum = ASICidx + 1
 
@@ -352,7 +337,9 @@ for ASICidx in range(n_asics):
     if do_plot:
         for TESidx in squid_selection:
             TESnum = TESidx + 1
-            
+
+
+            # squid flux for each squid bias index, on one plot for each TES
             fig = plt.figure()
             for squid_index in range(n_indexes):
                 lbl = 'I$_\mathrm{squid}=%.2f\mu$A' % I[squid_index]
@@ -382,6 +369,23 @@ for ASICidx in range(n_asics):
             figname = '%s_ASIC%02i_TES%03i_flux.png' % (plotname_prefix,ASICnum,TESnum)
             plt.savefig(figname,format='png',dpi=100,bbox_inches='tight')
             plt.close(fig)
+
+
+            # plot min/max/average vs. squid bias current
+            fig = plt.figure()
+            plt.plot(I,Vmin2[:,TESidx,ASICidx], label= "maximal Value" )
+            plt.plot(I,Vmax2[:,TESidx,ASICidx], label= "minimal Value")
+            plt.plot(I,Vmoy2[:,TESidx,ASICidx], label= "mean Value")
+
+            plt.grid()
+            plt.xlabel('Intensity ($\mu$A)')
+            plt.ylabel('Voltage ($\mu$V)')
+            plt.title('%s ASIC%i SQUID number %i' % (day_str,ASICnum,TESnum)) 
+            plt.legend(loc='upper right', bbox_to_anchor=(0.25,1 ))
+            figname = '%s_ASIC%02i_TES%03i_IV.png' % (plotname_prefix,ASICnum,TESnum)
+            plt.savefig(figname,format='png',dpi=100,bbox_inches='tight')
+            plt.close(fig)
+            
     
 
     fig = plt.figure()

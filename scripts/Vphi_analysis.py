@@ -45,8 +45,11 @@ def help():
     msg += '\n        this can also be a pattern, for example 1[23] will find the data starting at 12:00 and 13:00'
     msg += '\n --datadir=/path/to/toplevel/data/directory'
     msg += '\n --squid_selection=<comma separated list of squid indexes for plotting, or "ALL">'
-    msg += '\n                  WARNING:  If you select "ALL" you will have ~8000 plots'
+    msg += '\n                  WARNING:  If you select "ALL" you will have 522 plots'
+    msg += '\n --threshold=<n>'
+    msg += '\n        this is the threshold voltage for the "good percentage" plot.  The default is 5uV'
     msg += '\n --help'
+    msg += '\n        show this help message'
     msg += '\n'
     print(msg)
     return

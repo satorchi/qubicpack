@@ -53,7 +53,8 @@ def help():
 
 do_plot = False
 # squid_selection = np.arange(128)
-squid_selection = [95,94,63,62] # for plotting
+# squid_selection = [95,94,63,62] # for plotting
+squid_selection = None
 
 # choose the data
 # day_str = '2019-04-24' # for comparison with previous data
@@ -82,8 +83,10 @@ for arg in sys.argv:
         continue
 
     if arg.find('--squid_selection=')==0 or arg.find('--squid-selection=')==0:
+        do_plot = True
         squid_selection_strlist = arg.split('=')[-1].split(',')
-        if len(squid_selection)>1:
+        print(squid_selection_strlist)
+        if len(squid_selection_strlist)>1:
             squid_selection = []
             for val in squid_selection_strlist:
                 squid_selection.append(int(val))
@@ -94,7 +97,6 @@ for arg in sys.argv:
             else:
                 squid_selection = [int(keyword)]
         
-        do_plot = True
         continue
 
     if arg.find('help')>=0:
@@ -120,22 +122,24 @@ year_str = day_str.split('-')[0]
 # use the command line to specifiy the data directory that is appropriate on your system
 # Try to find the data
 if data_dir is None:
-    data_dir = os.sep.join([Qubic_DataDir(),year_str,day_str])
+    data_dir = os.path.join(Qubic_DataDir(),day_str)
     if not os.path.isdir(data_dir):
-        data_dir = os.sep.join([Qubic_DataDir(),day_str])
+        data_dir = os.path.join(Qubic_DataDir(),year_str,day_str)
     if not os.path.isdir(data_dir):
         print('Could not find the data directory! %s' % data_dir)
-        quit()
+        data_dir = None
 else:
     try_data_dir = os.path.join(data_dir,day_str)
     if not os.path.isdir(try_data_dir):
         print('Could not find data directory: %s' % try_data_dir)
-        try_data_dir = os.path.join(year_str,data_dir,day_str)
+        try_data_dir = os.path.join(data_dir,year_str,day_str)
         if not os.path.isdir(try_data_dir):
             print('Could not find data directory: %s' % try_data_dir)
-            quit()
+            try_data_dir = None
     data_dir = try_data_dir
 
+if data_dir is None:  quit()
+print('searching for data in: %s' % data_dir)
 
 # search for the datasets
 pattern = '%s/*_%s*_opt_bias*' % (data_dir,hour_pattern)
@@ -173,6 +177,11 @@ if gotit:
     dsets = new_dsets
 
 print('Vsqoffset will be calculated from dataset: %s' % dsets[0])
+print('\n'.join(dsets))
+if squid_selection is not None:
+    squid_selection = np.array(squid_selection)
+    print('plots will be made for TES: %s' % (squid_selection+1))
+
 
 
 ### some parameters ###
@@ -208,7 +217,7 @@ I[15] = 40.81
 
 # maximum length of a timeline
 # this create the limit of the array, if not issues with some file of 4849 variable instead of 4950
-lmt = 5000 
+lmt = 8000 
 
 # Creation of empty array, fill with NaN
 Vsquid = np.empty((n_indexes,n_squids,lmt,n_asics))
@@ -258,6 +267,7 @@ for dset in dsets:
 
         # timeline length limit
         lmt2 = asic.timeline(TES=1).shape[0]
+        if lmt2>lmt:lmt2=lmt
         
         # Amplitude peak to peak of the sinus
         amp = asic.max_bias - asic.min_bias
@@ -341,6 +351,8 @@ for ASICidx in range(n_asics):
     ### plot for each requested SQUID ###        
     if do_plot:
         for TESidx in squid_selection:
+            TESnum = TESidx + 1
+            
             fig = plt.figure()
             for squid_index in range(n_indexes):
                 lbl = 'I$_\mathrm{squid}=%.2f\mu$A' % I[squid_index]
@@ -352,10 +364,12 @@ for ASICidx in range(n_asics):
                     plot_range[idx] = val is not np.nan
 
                     
+                flux = squid_flux[squid_index,plot_range,ASICidx]
+
                 # this allow to avoid the noncoherent points in raw data for the flux (?)
                 # not used (Steve)
                 sorted_index = np.argsort(flux)
-                flux = squid_flux[squid_index,plot_range,ASICidx]
+                
                 V = VsquidSG[squid_index,TESidx,plot_range,ASICidx] 
                 plt.plot(flux,V,ls='none',marker='.',markersize=2,label=lbl)
                 # plt.plot(flux[sorted_index],filt[sorted_index])

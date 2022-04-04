@@ -32,8 +32,10 @@ from matplotlib import pyplot as plt
 plt.ioff()
 plt.rcParams['figure.figsize'] = [24,12]
 
-# a help message
 def help():
+    '''
+    a help message
+    '''
     msg = 'Analysis of QUBIC-SQUID data for optimisation' 
     msg += '\nusage: %s [options]' % sys.argv[0]
     msg += '\nOPTIONS:'
@@ -54,80 +56,106 @@ def help():
     print(msg)
     return
 
-do_plot = False
-# squid_selection = np.arange(128)
-# squid_selection = [95,94,63,62] # for plotting
-squid_selection = None
+def parseargs(argv):
+    '''
+    parse the arguments, and return a dictionary of parameters
+    '''
+    parms = {}
+    parms['parameters_ok'] = False
+    
+    parms['do_plot'] = False
+    parms['squid_selection'] = None
 
-# choose the data
-# day_str = '2019-04-24' # for comparison with previous data
-# day_str = '2022-03-23'
-# day_str = '2022-03-25'
-# hour_pattern = '1[56]'
+    # choose the data.  For comparison with the data in Guillaume's thesis, choose 2019-04-24
+    parms['day_str'] = None
+    parms['hour_pattern'] = ''
+    parms['good_threshold'] = 5
+    parms['n_thresholds'] = 4
 
-day_str = None
-hour_pattern = ''
-good_threshold = 5
-
-# parse command line arguments
-data_dir = None
-start_time = None
-for arg in sys.argv:
-    if arg.find('--day=')==0:
-        day_str = arg.split('=')[-1]
-        continue
-
-    if arg.find('--hour=')==0:
-        hour_pattern = arg.split('=')[-1]
-        continue
-
-    if arg.find('--datadir=')==0:
-        data_dir = arg.split('=')[-1]
-        continue
-
-    if arg.find('--squid_selection=')==0 or arg.find('--squid-selection=')==0:
-        do_plot = True
-        squid_selection_strlist = arg.split('=')[-1].split(',')
-        print(squid_selection_strlist)
-        if len(squid_selection_strlist)>1:
-            squid_selection = []
-            for val in squid_selection_strlist:
-                squid_selection.append(int(val))
-        else:
-            keyword = squid_selection_strlist[0]
-            if keyword.lower()=='all':
-                squid_selection = np.arange(n_squids)
-            else:
-                squid_selection = [int(keyword)]
+    parms['data_dir'] = None
+    parms['start_time'] = None
+    for arg in argv:
+        print('parsing argument: %s' % arg)
         
-        continue
+        if arg.find('help')>=0:
+            help()
+            return parms
 
-    if arg.find('help')>=0:
+        if arg.find('--start-time=')==0:
+            date_str = arg.split('=')[-1]
+            parms['start_time'] = str2dt(date_str)
+            continue
+
+        if arg.find('--threshold=')==0:
+            val_str = arg.split('=')[-1]
+            parms['good_threshold'] = float(val_str)
+            continue
+
+        if arg.find('--n_thresholds=')==0:
+            val_str = arg.split('=')[-1]
+            parms['n_thresholds'] = int(val_str)
+            continue
+
+        if arg.find('--day=')==0:
+            parms['day_str'] = arg.split('=')[-1]
+            continue
+
+        if arg.find('--hour=')==0:
+            parms['hour_pattern'] = arg.split('=')[-1]
+            continue
+
+        if arg.find('--datadir=')==0:
+            parms['data_dir'] = arg.split('=')[-1]
+            continue
+
+        if arg.find('--squid_selection=')==0 or arg.find('--squid-selection=')==0:
+            parms['do_plot'] = True
+            squid_selection_strlist = arg.split('=')[-1].split(',')
+            print(squid_selection_strlist)
+            if len(squid_selection_strlist)>1:
+                squid_selection = []
+                for val in squid_selection_strlist:
+                    squid_selection.append(int(val))
+            else:
+                keyword = squid_selection_strlist[0]
+                if keyword.lower()=='all':
+                    squid_selection = np.arange(n_squids)
+                else:
+                    squid_selection = [int(keyword)]
+
+            parms['squid_selection'] = squid_selection
+            continue
+
+
+
+    if parms['start_time'] is not None:
+        parms['day_str'] = parms['start_time'].strftime('%Y-%m-%d')
+
+    if parms['day_str'] is None:
+        print('Enter a valid date to find the data.')
+        print('   Use the option --day=YYYY-MM-DD or option --start-time=YYYY-MM-DDTHH:MM:SS\n')
         help()
-        quit()
+        return parms
 
-    if arg.find('--start-time=')==0:
-        date_str = arg.split('=')[-1]
-        start_time = str2dt(date_str)
-        continue
-
-    if arg.find('--threshold=')==0:
-        val_str = arg.split('=')[-1]
-        good_threshold = float(val_str)
-        continue
-
-if start_time is not None:
-    day_str = start_time.strftime('%Y-%m-%d')
-
-if day_str is None:
-    print('Enter a valid date to find the data.\n  Use the option --day=YYYY-MM-DD or option --start-time=YYYY-MM-DDTHH:MM:SS\n')
-    help()
-    quit()
+    parms['parameters_ok'] = True
+    return parms
+    
+parms = parseargs(sys.argv)
+for parm in parms.keys():
+    if type(parms[parm])==str:
+        cmd = "%s = '%s'" % (parm,parms[parm])
+    elif type(parms[parm])==dt.datetime:
+        cmd = "%s = str2dt('%s')" % (parm,parms[parm].strftime('%Y-%m-%dT%H:%M:%S'))
+    else:
+        cmd = '%s = %s' % (parm,parms[parm])
+    print(cmd)
+    exec(cmd)
+if not parameters_ok: quit()
 
 # start processing
 year_str = day_str.split('-')[0]
 
-# use the command line to specifiy the data directory that is appropriate on your system
+# use the command line to specify the data directory that is appropriate on your system
 # Try to find the data
 if data_dir is None:
     data_dir = os.path.join(Qubic_DataDir(),day_str)
@@ -236,7 +264,7 @@ VsquidSG[:] = np.nan
 squid_flux = np.empty((n_indexes,lmt,n_asics))
 squid_flux[:] = np.nan
 
-percent_good = np.zeros((n_indexes,n_asics))
+percent_good = np.zeros((n_indexes,n_asics,n_thresholds))
 
 histo = np.zeros((n_indexes,n_asics)) # create tab for peak to peak val
 data = np.zeros((n_squids,n_indexes,n_asics)) # create a tab for each squid to keep all ptp value for each 
@@ -309,8 +337,10 @@ for dset in dsets:
             data[TESidx,squid_index,ASICidx] = histo[squid_index,ASICidx]
             invdata[squid_index,TESidx,ASICidx] = histo[squid_index,ASICidx]
 
-        ngood = (data[:,squid_index,ASICidx]>= good_threshold).sum()
-        percent_good[squid_index,ASICidx] = 100*ngood/128
+        for threshold_idx in range(n_thresholds):
+            threshold = good_threshold*(threshold_idx+1)
+            ngood = (data[:,squid_index,ASICidx]>= threshold).sum()
+            percent_good[squid_index,ASICidx,threshold_idx] = 100*ngood/128
     
 ## finished going through the datasets
 
@@ -319,19 +349,17 @@ for dset in dsets:
 Vmoy = np.nanmean(VsquidSG, axis=2)
 Vmin = np.nanmin(VsquidSG, axis=2)
 Vmax = np.nanmax(VsquidSG, axis=2)
-print('Vmoy shape: ',Vmoy.shape)
+# print('Vmoy shape: ',Vmoy.shape)
 
 # Vmoy shape: n_indexes, n_squids, n_asics
 V0 = Vmoy[0,:,:]
 Vmoy2 = (V0 - Vmoy)*62.5/gain
 Vmin2 = (V0 - Vmin)*62.5/gain
 Vmax2 = (V0 - Vmax)*62.5/gain
+# print('Vmoy2 shape: ',Vmoy2.shape)
 
-print('Vmoy2 shape: ',Vmoy2.shape)
 
 # final plots
-
-
 for ASICidx in range(n_asics):
     ASICnum = ASICidx + 1
 
@@ -392,11 +420,14 @@ for ASICidx in range(n_asics):
     
 
     fig = plt.figure()
-    plt.plot(np.arange(n_indexes),percent_good[:,ASICidx])
+    for threshold_idx in range(n_thresholds):
+        lbl = '%% SQUIDS with V>%.1f$\mu$V' % (good_threshold*(threshold_idx+1))
+        plt.plot(np.arange(n_indexes),percent_good[:,ASICidx,threshold_idx],label=lbl)
     plt.grid()
-    plt.ylabel("Percentage working SQUID >%.1f$\mu$V ($\mu$V)" % good_threshold)
+    plt.ylabel("Percentage working SQUID")
     plt.xlabel('Index')
     plt.title("%s ASIC%i Working SQUID by index" % (day_str,ASICnum))
+    plt.legend()
     figname = '%s_ASIC%02i_good-percentage.png' % (plotname_prefix,ASICnum)
     plt.savefig(figname,format='png',dpi=100,bbox_inches='tight')
     

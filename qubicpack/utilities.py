@@ -73,12 +73,6 @@ def Qubic_DataDir(datadir=None,datafile=None):
     if 'QUBIC_DATADIR' in os.environ.keys():
         toplevel_dirs.append(os.environ['QUBIC_DATADIR'])
 
-    # data on qubic-central
-    toplevel_dirs.append('/archive')
-    
-    # data on cc-in2p3
-    toplevel_dirs.append('/sps/qubic/Data/Calib-TD')
-
     # Louise
     toplevel_dirs.append('/home/louisemousset/QUBIC')
 
@@ -90,6 +84,12 @@ def Qubic_DataDir(datadir=None,datafile=None):
 
     # Martin
     toplevel_dirs.append('/home/martin/QUBIC')
+
+    # data on qubic-central
+    toplevel_dirs.append('/archive')
+    
+    # data on cc-in2p3
+    toplevel_dirs.append('/sps/qubic/Data/Calib-TD')
 
     # add the current working directory
     toplevel_dirs.append(cwd)

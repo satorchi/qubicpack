@@ -539,6 +539,8 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8,verbosity=0):
     global T_data, P_data
     start_ftol = ftol
     ret = {}
+    ret['success'] = False
+    ret['fit'] = None
 
     # first guess based on results on array P87 measured 2020-Jan-06
     K = 3.2e-07
@@ -549,6 +551,10 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8,verbosity=0):
         p0 = np.array([K,T0,n])
     else:
         (K,T0,n) = p0
+
+    ret['K'] = K
+    ret['T0'] = T0
+    ret['n'] = n
         
 
     # make sure T_pts and P_pts are 1d arrays
@@ -559,35 +565,37 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8,verbosity=0):
     T_data = np.array(T_pts).reshape(npts)
     P_data = np.array(P_pts).reshape(npts)
 
-    m = Minuit(least_squares,
-               K=K,
-               T0=T0,
-               n=n,
-               errordef=1,
-               error_K=0.1*K,
-               error_T0=0.1*T0,
-               error_n=0.1*n,
-               limit_T0=(0,2),
-               limit_n=(0,10))
-    #m.get_param_states()
-    m.migrad()
-    m.get_fmin()
-    ans = m.get_param_states()
-    for idx,parm in enumerate(ans):
-        ret[parm['name']] = parm['value']
-        if verbosity>0:
-            print('%i: %s=%.6e fixed=%s, constant=%s' % (idx,parm['name'],parm['value'],parm['is_fixed'],parm['is_const']))
-    Chisq = least_squares(ret['K'],ret['T0'],ret['n'])
-    ret['Chi square'] = Chisq
-    ret['fit'] = ((K,T0,n),None) # retaining compatibility with curve_fit output
+    try:
+        m = Minuit(least_squares,
+                   K=K,
+                   T0=T0,
+                   n=n,
+                   errordef=1,
+                   error_K=0.1*K,
+                   error_T0=0.1*T0,
+                   error_n=0.1*n,
+                   limit_T0=(0,2),
+                   limit_n=(0,10))
+        
+        m.migrad()
+        m.get_fmin()
+        ans = m.get_param_states()
+        for idx,parm in enumerate(ans):
+            ret[parm['name']] = parm['value']
+            if verbosity>0:
+                print('%i: %s=%.6e fixed=%s, constant=%s' % (idx,parm['name'],parm['value'],parm['is_fixed'],parm['is_const']))
+        Chisq = least_squares(ret['K'],ret['T0'],ret['n'])
+        ret['Chi square'] = Chisq
+        ret['fit'] = ((K,T0,n),None) # retaining compatibility with curve_fit output
+        ret['success'] = True
+        return ret
+    
+    except:        
+        m = None
     
     
-
-
-    
-    '''
     # try to fit the curve with the default tolerance (1e-8)
-    # if unsuccessful, relax the tolerance by a factor 100 and try again
+    # if unsuccessful, relax the tolerance by a factor 10 and try again
 
     # bounds are only applicable to dogbox and trf, but those don't work properly
     for ctr in range(9):
@@ -596,12 +604,15 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8,verbosity=0):
             ret['fit'] = fit
             ret['K'],ret['T0'],ret['n'] = fit[0][0:3]
             ret['tolerance'] = ftol
+            ret['curve fit attempts'] = ctr+1
+            ret['success'] = True
             return ret
         except:
+            ret['tolerance'] = ftol
+            ret['curve fit attempts'] = ctr+1
             ftol *= 10
-            #print('retrying fit with relaxed tolerance: %.1e' % ftol)
-    '''
-         
+            if verbosity>0: print('retrying fit with relaxed tolerance: %.1e' % ftol)
+       
     return ret
 
 def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart=0,mean_iend=10,verbosity=0):

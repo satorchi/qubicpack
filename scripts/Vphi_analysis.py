@@ -231,7 +231,7 @@ plotname_prefix = 'SQUID_%s' % day_str
 
 
 # The value of the SQUID bias for each index in uA
-I = np.zeros(n_indexes)
+I = np.zeros(n_indexes,dtype=float)
 I[0] = 0
 I[1] = 5.1
 I[2] = 7.65
@@ -359,7 +359,7 @@ Vmax2 = (V0 - Vmax)*62.5/gain
 # print('Vmoy2 shape: ',Vmoy2.shape)
 
 
-# final plots
+# plots
 for ASICidx in range(n_asics):
     ASICnum = ASICidx + 1
 
@@ -452,20 +452,24 @@ for ASICidx in range(n_asics):
     plt.savefig(figname,format='png',dpi=100,bbox_inches='tight')
 
     # argmax take the position of the maxvalue for each squid
-
+    max_per_squid = np.argmax(data[:,:,ASICidx], axis=1)
+    best_index = int(max_per_squid.mean())
     fig = plt.figure()
-    plt.hist(np.argmax(data[:,:,ASICidx], axis=1), range=[0,n_indexes], bins=16)
+    lbl = 'best index: [%02i] I$_\mathrm{squid}=%.1f\mu$A' % (best_index,I[best_index])
+    plt.hist(max_per_squid, range=[0,n_indexes], bins=n_indexes,label=lbl)
     plt.grid()
     plt.ylabel("Number of SQUIDs")
     plt.xlabel("Index of current")
     plt.title("%s Histogram of the optimum current for the SQUID response for ASIC %i" % (day_str,ASICnum))
+    plt.legend()
     figname = "%s_ASIC%02i_Histogram.png" % (plotname_prefix,ASICnum)
     plt.savefig(figname,format='png',dpi=100,bbox_inches='tight')
     
     fig = plt.figure()
-    plt.hist(data[:,9,ASICidx],range=[0,30], bins=30, alpha = 0.5, color='red' ,label="Isq = 25.5 $\mu$A")
-    plt.hist(data[:,10,ASICidx],range=[0,30], bins=30, alpha = 0.5, color='blue',label="Isq = 28 $\mu$A ")
-    plt.hist(data[:,11,ASICidx],range=[0,30], bins=30, alpha = 0.5, color='green', label="Isq = 30.6 $\mu$A")
+    colour = ['red','blue','green']
+    for idx,squid_index in enumerate(range(best_index-1,best_index+2)):
+        lbl = "[%02i] I$_\mathrm{squid} = %.1f \mu$A" % (squid_index,I[squid_index])
+        plt.hist(data[:,squid_index,ASICidx],range=[0,30], bins=30, color=colour[idx], alpha = 0.5,label=lbl)
     plt.legend()
     plt.grid()
     plt.xlabel("Voltage ($\mu$V)")

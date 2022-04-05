@@ -184,7 +184,7 @@ def calsource_info(self):
                 info[dev]['incomplete'] = val_list[0]
             continue
 
-        parm = val_list[0]
+        parm = val_list[0].lower()
         val = val_list[1]
         
         if val=='--' or val.upper()=='UNKNOWN':
@@ -202,6 +202,11 @@ def calsource_info(self):
         if parm=='gain':
             info[dev][parm] = int(val)
             continue
+
+        if parm=='duty_cycle':
+            info[dev][parm] = float(val)
+            continue
+            
 
         for unit in units:
             if val.find(unit)>0:

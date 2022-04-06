@@ -127,8 +127,8 @@ def plot_folded(info,ax=None):
     t0_src = info['t0 source']
     use_calsource = info['use calsource']
     ax.plot((t_data-t0_data)%period, data,label='folded %s' % data_label,ls='none',marker='x')
-    ax.plot(folded_t_data,folded_data,label='folded and averaged %s' % data_label,ls='solid',linewidth=3,color=(0.0,0.8,0.15))
-    ax.errorbar(folded_t_data,folded_data,yerr=folded_dataerr,ls='none',color=(0.0,0.8,0.15),capthick=2,capsize=2)
+    ax.plot(folded_t_data,folded_data,label='folded and averaged %s' % data_label,ls='solid',linewidth=3,color='red')
+    ax.errorbar(folded_t_data,folded_data,yerr=folded_dataerr,ls='none',color='red',capthick=2,capsize=2)
     ax.text(0.5,1.0,'folding period = %.6f seconds' % period,ha='center',va='bottom',transform=ax.transAxes)
     ax.legend(loc='upper right',facecolor='wheat',framealpha=0.5)
     if use_calsource:
@@ -136,8 +136,8 @@ def plot_folded(info,ax=None):
         folded_src = info['folded src']        
     
         axcal = ax.twinx()
-        axcal.plot((t_src-t0_data)%period, data_src, label='folded source',color='red',ls='none',marker='+')
-        axcal.plot(folded_t_src,folded_src,label='folded and averaged source',ls='solid',linewidth=3,color=(0.95,0.05,0.05))
+        axcal.plot((t_src-t0_data)%period, data_src, label='folded source',color='grey',ls='none',marker='+')
+        axcal.plot(folded_t_src,folded_src,label='folded and averaged source',ls='solid',linewidth=3,color='black')
         axcal.legend(loc='lower left',facecolor='wheat',framealpha=0.5)
 
     if savefig:

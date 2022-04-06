@@ -92,9 +92,9 @@ def fold_data(xpts,ypts,period,nbins=100):
     new_nbins = len(unique_idxbins) # this should be the same!
     if new_nbins!=nbins:
         print('correcting for increased nbins! nbins=%i' % new_nbins)
-    x_bin = np.zeros(new_nbins,dtype=np.float)
-    y_bin = np.zeros(new_nbins,dtype=np.float)
-    err_bin = np.zeros(new_nbins,dtype=np.float)
+    x_bin = np.zeros(new_nbins,dtype=float)
+    y_bin = np.zeros(new_nbins,dtype=float)
+    err_bin = np.zeros(new_nbins,dtype=float)
     for idx in unique_idxbins:
         idxrange = np.where(idx_bins==idx)
         x_bin[idx] = x_fold[idxrange].mean()
@@ -102,6 +102,50 @@ def fold_data(xpts,ypts,period,nbins=100):
         err_bin[idx] = ypts[idxrange].std()
 
     return x_bin,y_bin,err_bin
+
+def plot_folded(info,ax=None):
+    '''
+    make the plot of folded data
+    '''
+    savefig = False
+    if ax is None:
+        fig = plt.figure()
+        figure_window_title(fig,'folded data')
+        ax = fig.add_axes((0.07,0.05,0.88,0.88))
+        savefig = True
+
+    data = info['data']
+    t_data = info['t_data']
+    t0_data = info['t0 data']
+    period = info['period']
+    data_label = info['data label']
+    folded_t_data = info['folded t_data']
+    folded_data = info['folded data']
+    folded_dataerr = info['folded data error']
+    t_src = info['t_src']
+    data_src = info['data src']
+    t0_src = info['t0 source']
+    use_calsource = info['use calsource']
+    ax.plot((t_data-t0_data)%period, data,label='folded %s' % data_label,ls='none',marker='x')
+    ax.plot(folded_t_data,folded_data,label='folded and averaged %s' % data_label,ls='solid',linewidth=3,color=(0.0,0.8,0.15))
+    ax.errorbar(folded_t_data,folded_data,yerr=folded_dataerr,ls='none',color=(0.0,0.8,0.15),capthick=2,capsize=2)
+    ax.text(0.5,1.0,'folding period = %.6f seconds' % period,ha='center',va='bottom',transform=ax.transAxes)
+    ax.legend(loc='upper right',facecolor='wheat',framealpha=0.5)
+    if use_calsource:
+        folded_t_src = info['folded t_src']
+        folded_src = info['folded src']        
+    
+        axcal = ax.twinx()
+        axcal.plot((t_src-t0_data)%period, data_src, label='folded source',color='red',ls='none',marker='+')
+        axcal.plot(folded_t_src,folded_src,label='folded and averaged source',ls='solid',linewidth=3,color=(0.95,0.05,0.05))
+        axcal.legend(loc='lower left',facecolor='wheat',framealpha=0.5)
+
+    if savefig:
+        date_str = dt.datetime.utcfromtimestamp(t0_data).strftime('%Y%m%d-%H%M%S')
+        fname = 'folded_%s_%s.png' % (info['data label'].replace(', ','_').replace(' ','-'),date_str)
+        fig.savefig(fname,format='png',dpi=100,bbox_inches='tight')
+        
+    return    
 
 def demodulate(self,
                asic=None,
@@ -148,7 +192,7 @@ def demodulate(self,
         t0_interval = 0
         tend_interval = float((dt.datetime.utcnow() + dt.timedelta(days=7)).strftime('%s'))
         interval = (t0_interval,tend_interval)
-    interval = np.array(interval,dtype=np.float)
+    interval = np.array(interval,dtype=float)
 
     given_period = period
 
@@ -159,7 +203,7 @@ def demodulate(self,
     retval['dataset'] = self.dataset_name
     retval['calsource info'] = self.calsource_info()
 
-    if isinstance(TES,np.ndarray) and TES.shape==(128,) and TES.dtype==np.bool:
+    if isinstance(TES,np.ndarray) and TES.shape==(128,) and TES.dtype==bool:
         self.printmsg('taking average of %i TES from ASIC %i' % (TES.sum(),asic))
         TESstr = 'average of %i selected TES' % TES.sum()
         adu = self.timeline_array(asic=asic)
@@ -177,6 +221,8 @@ def demodulate(self,
         except:
             self.printmsg('ERROR! Inappropriate argument for TES.')
             return retval
+    data_label = 'ASIC %i, %s' % (asic,TESstr)
+    retval['data label'] = data_label
         
     t_data_orig = self.timeaxis(datatype='sci',asic=asic,axistype=timeaxistype)
     t_data = t_data_orig.copy()
@@ -201,8 +247,8 @@ def demodulate(self,
         data_src = -v_src + v_src.mean()# source sampling inverted compared to data
         
     t0_src = t_src[0] # this will be modified after the offset is calculated below
-    retval['t0 source'] =  t0_src
-
+    retval['use calsource'] = use_calsource
+    
     # for some data, the source is in UT while the detector data is in localtime
     tz_offset = 0.0
     tz_count = 0
@@ -361,6 +407,10 @@ def demodulate(self,
     retval['n data points'] = npts
     retval['interval'] = (t_data[0],t_data[-1])
 
+    retval['t0 source'] =  t0_src
+    retval['t_src'] = t_src
+    retval['data src'] = data_src
+
     ### Interpolating source data to the timestamps of the data
     ### and making the product of the detector and the source
     ### the source is renormalized, but the data is only shifted to oscillate around 0
@@ -435,7 +485,6 @@ def demodulate(self,
     axes = []
 
     # first column of plots
-    data_label = 'ASIC %i, %s' % (asic,TESstr)
     axes.append(fig.add_axes((0.03,0.68,0.62,0.3)))
     axes[-1].plot((t_data-t0_data), renorm(data),label=data_label,ls='none',marker='x')
     axes[-1].plot((t_data-t0_data), renorm(model_data),label='data sine model',color='orange')
@@ -467,15 +516,7 @@ def demodulate(self,
 
     # folded
     axes.append(fig.add_axes((0.70,0.68,0.28,0.3)))
-    axes[-1].plot((t_data-t0_data)%period, data,label='folded %s' % data_label,ls='none',marker='x')
-    axes[-1].plot(folded_t_data,folded_data,label='folded and averaged %s' % data_label,ls='solid',linewidth=3,color='yellow')
-    axes[-1].errorbar(folded_t_data,folded_data,yerr=folded_dataerr,ls='none',color='yellow',capthick=2,capsize=2)
-    if use_calsource:
-        axcal = axes[-1].twinx()
-        axcal.plot((t_src-t0_data)%period, data_src, label='folded source',ls='none',marker='+')
-        axcal.plot(folded_t_src,folded_src,label='folded and averaged source',ls='solid',linewidth=3,color='red')
-    axes[-1].text(0.5,1.0,'folding period = %.6f seconds' % period,ha='center',va='bottom',transform=axes[-1].transAxes)
-    axes[-1].legend()
+    plot_folded(retval,ax=axes[-1])
 
     # demodulated
     axes.append(fig.add_axes((0.70,0.35,0.28,0.3)))

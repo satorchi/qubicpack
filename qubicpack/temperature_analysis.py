@@ -571,9 +571,9 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8,verbosity=0):
                    T0=T0,
                    n=n,
                    errordef=1,
-                   error_K=0.1*K,
-                   error_T0=0.1*T0,
-                   error_n=0.1*n,
+                   error_K=0.2*K,
+                   error_T0=0.2*T0,
+                   error_n=0.2*n,
                    limit_T0=(0,2),
                    limit_n=(0,10))
         
@@ -588,10 +588,15 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8,verbosity=0):
         ret['Chi square'] = Chisq
         ret['fit'] = ((K,T0,n),None) # retaining compatibility with curve_fit output
         ret['success'] = True
+        ret['minuit'] = True
         return ret
     
-    except:        
+    except:
+        ret['minuit'] = False
         m = None
+        if verbosity>0:
+            print('Minuit unsuccessful')
+            
     
     
     # try to fit the curve with the default tolerance (1e-8)

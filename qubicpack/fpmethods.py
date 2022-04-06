@@ -560,13 +560,14 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps',ax=None,
     asic_idx = asic-1
     return self.asic_list[asic_idx].plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
     
-def plot_timeline_focalplane(self):
+def plot_timeline_focalplane(self,xwin=True):
     '''
     plot all the timelines in the focal plane
     '''
 
     args= {}
     args['title'] = 'QUBIC Focal Plane: %s' % self.dataset_name
+    args['xwin'] = xwin
     subttl_list = []
     obsdates = []
     for idx,asic_obj in enumerate(self.asic_list):
@@ -582,6 +583,7 @@ def plot_timeline_focalplane(self):
             
     args['subtitle'] = '\n'.join(subttl_list)
     args['obsdate'] = min(obsdates)
+    args['pngname'] = 'QUBIC_focal_plane_timeline_%s.png' % args['obsdate'].strftime('%Y%m%dT%H%M%S')
 
     plot_fp(args)
     return args
@@ -605,7 +607,7 @@ def plot_responsivity(self,TES=None,asic=None,xwin=True,npts_region=500,window_s
 
 
         
-def plot_iv_focalplane(self,labels=True):
+def plot_iv_focalplane(self,labels=True,xwin=True):
     '''
     plot all the I-V curves in the focal plane
     '''
@@ -613,6 +615,7 @@ def plot_iv_focalplane(self,labels=True):
     args= {}
     args['title'] = 'QUBIC Focal Plane I-V curves: %s' % self.dataset_name
     if not labels: args['nolabels'] = True
+    args['xwin'] = xwin
     
     subttl_list = []
     obsdates = []
@@ -657,6 +660,7 @@ def plot_iv_focalplane(self,labels=True):
 
     if len(obsdates)>0:
         args['obsdate'] = min(obsdates)
+    args['pngname'] = 'QUBIC_focal_plane_IV_%s.png' % args['obsdate'].strftime('%Y%m%dT%H%M%S')
 
     plot_fp(args)
     return args

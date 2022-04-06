@@ -54,6 +54,11 @@ def plot_fp(args):
     nrows = pix_grid.shape[0]
     ncols = pix_grid.shape[1]
 
+    if 'xwin' in args.keys():
+        xwin = args['xwin']
+    else:
+        xwin = True
+    
     if 'figsize' in args.keys():
         figsize = args['figsize']
     else:
@@ -115,7 +120,8 @@ def plot_fp(args):
     else:
         print_labels = True
     
-    plt.ion()
+    if xwin: plt.ion()
+    else: plt.ioff()
     fig,ax=plt.subplots(nrows,ncols,figsize=figsize)
     fig.text(0.5,0.985,ttl,ha='center',fontsize=ttlfontsize)
     figure_window_title(fig,ttl)
@@ -201,6 +207,6 @@ def plot_fp(args):
                                  bbox=label_boxprops,transform = ax[row,col].transAxes)
             
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
-    plt.show()
+    if xwin: plt.show()
 
     return

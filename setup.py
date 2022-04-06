@@ -83,7 +83,8 @@ for exec_dir in exec_dir_list:
 
 
 scripts = ['scripts/quicklook.py',
-           'scripts/Vphi_analysis.py']
+           'scripts/Vphi_analysis.py',
+           'scripts/IV_analysis.py']
 
 if len(sys.argv)>1 and sys.argv[1]=='install' and exec_dir_ok:
     print('installing executable scripts...')

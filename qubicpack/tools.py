@@ -12,7 +12,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 tools for reading/writing and organizing data
 
 """
-from __future__ import division, print_function
 import numpy as np
 import sys,os,time,subprocess,struct,re
 import datetime as dt

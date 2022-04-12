@@ -204,7 +204,10 @@ def calsource_info(self):
             continue
 
         if parm=='duty_cycle':
-            info[dev][parm] = float(val)
+            if val.lower()=='none':
+                info[dev][parm] = 'none'
+            else:
+                info[dev][parm] = float(val)
             continue
             
 

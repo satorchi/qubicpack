@@ -314,8 +314,8 @@ def demodulate(self,
     amplitude = 0.5*(data.max() - data.min())
     calinfo = self.calsource_info()
     if given_period is None:
-        if calinfo is not None and 'frequency' in calinfo['modulator'].keys():
-            period = 1.0/self.calsource_info()['modulator']['frequency']
+        if calinfo is not None and 'frequency' in calinfo['modulator'].keys() and calinfo['modulator']['frequency']!='none':
+            period = 1.0/calinfo['modulator']['frequency']
         else:
             period = 1.0
     
@@ -339,13 +339,8 @@ def demodulate(self,
 
     # fit source to sine curve
     if use_calsource:
+        # period is either given as an argument, or taken from calsource_info (see above)
         amplitude = 0.5*(data_src.max() - data_src.min())
-        if self.calsource_info() is not None:
-            period = 1.0/self.calsource_info()['modulator']['frequency']
-        elif given_period is None:
-            period = 1.0
-        else:
-            period = given_period
         timeshift = 0.0
         amplitude_offset = 0.0
         first_guess = (amplitude,period,timeshift,amplitude_offset)

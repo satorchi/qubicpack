@@ -315,7 +315,7 @@ def demodulate(self,
     calinfo = self.calsource_info()
     if given_period is None:
         if calinfo is not None and 'frequency' in calinfo['modulator'].keys():
-            period = self.calsource_info()['modulator']['frequency']
+            period = 1.0/self.calsource_info()['modulator']['frequency']
         else:
             period = 1.0
     
@@ -341,7 +341,7 @@ def demodulate(self,
     if use_calsource:
         amplitude = 0.5*(data_src.max() - data_src.min())
         if self.calsource_info() is not None:
-            period = self.calsource_info()['modulator']['frequency']
+            period = 1.0/self.calsource_info()['modulator']['frequency']
         elif given_period is None:
             period = 1.0
         else:

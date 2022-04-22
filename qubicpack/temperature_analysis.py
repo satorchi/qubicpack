@@ -565,25 +565,26 @@ def fit_Pbath(T_pts, P_pts, p0=None,ftol=1e-8,verbosity=0):
     T_data = np.array(T_pts).reshape(npts)
     P_data = np.array(P_pts).reshape(npts)
 
+    m = Minuit(least_squares,
+               K=K,
+               T0=T0,
+               n=n)
+    m.errordef = Minuit.LEAST_SQUARES
+    
+    m.limits['T0'] = (0,2)
+    m.limits['n'] = (0,10)
+    
+    m.errors['K'] = 0.1*K
+    m.errors['T0'] = 0.1*T0
+    m.errors['n'] =0.1*n
+
     try:
-        m = Minuit(least_squares,
-                   K=K,
-                   T0=T0,
-                   n=n,
-                   errordef=1,
-                   error_K=0.2*K,
-                   error_T0=0.2*T0,
-                   error_n=0.2*n,
-                   limit_T0=(0,2),
-                   limit_n=(0,10))
-        
         m.migrad()
-        m.get_fmin()
-        ans = m.get_param_states()
-        for idx,parm in enumerate(ans):
-            ret[parm['name']] = parm['value']
+        # m.get_fmin()
+        for idx,parm in enumerate(['K','T0','n']):
+            ret[parm] = m.values[parm]
             if verbosity>0:
-                print('%i: %s=%.6e fixed=%s, constant=%s' % (idx,parm['name'],parm['value'],parm['is_fixed'],parm['is_const']))
+                print('%i: %s=%.6e' % (idx,parm,ret[parm]))
         Chisq = least_squares(ret['K'],ret['T0'],ret['n'])
         ret['Chi square'] = Chisq
         ret['fit'] = ((K,T0,n),None) # retaining compatibility with curve_fit output

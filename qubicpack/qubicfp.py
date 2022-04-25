@@ -10,8 +10,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 class to read/plot data from the entire QUBIC focal plane
 '''
-from __future__ import division, print_function
-
 import numpy as np
 import datetime as dt
 import sys,os,time
@@ -105,6 +103,7 @@ class qubicfp:
         plot_iv_focalplane,\
         filter_iv_all,\
         ngood,\
+        is_good,\
         make_iv_tex_report,\
         make_iv_report
 

@@ -1984,10 +1984,10 @@ def read_filter(self):
     datestr=self.obsdate.strftime(datefmt)
     picklename=str('QUBIC_TES_ASIC%i_%s.filter.pickle' % (self.asic,datestr))
     if not os.path.exists(picklename):
-        print('No previously saved filter information: %s' % picklename)
+        self.printmsg('No previously saved filter information: %s' % picklename,verbosity=1)
         return None
 
-    print('Reading previously saved filter information: %s' % picklename)
+    self.printmsg('Reading previously saved filter information: %s' % picklename,verbosity=1)
     h=open(picklename,'rb')
     filtersummary=pickle.load(h,encoding='latin1')
     h.close()

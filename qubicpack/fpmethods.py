@@ -677,6 +677,17 @@ def ngood(self):
         if asic_obj is not None:
             tot_ngood += asic_obj.ngood()
     return tot_ngood
+
+def is_good(self):
+    '''
+    return a boolean array of evaluation for each TES
+    '''
+    is_good_list = []
+    for asic_obj in self.asic_list:
+        if asic_obj is not None:
+            is_good_list.append(asic_obj.is_good_iv())
+    return np.concatenate(is_good_list)
+    
     
 def filter_iv_all(self,
                   R1adjust=1.0,

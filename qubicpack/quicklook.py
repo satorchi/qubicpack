@@ -254,24 +254,28 @@ def plot_azel(self,ax=None,fontsize=12):
     for tstamp in t:
         tdate.append(dt.datetime.utcfromtimestamp(tstamp))
     
-    if az is not None:
-        ax.plot(tdate,az,marker='D',markersize=0.2*fontsize,ls='none',color='blue',label='Azimuth')
-    if el is not None:
-        ax.plot(tdate,el,marker='D',markersize=0.2*fontsize,ls='none',color='red',label='Elevation')
-        
     if az is None:
         ax.text(0.5,0.5,'No azimuth information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+    else:
+        ax.plot(tdate,az,marker='D',markersize=0.2*fontsize,ls='none',color='blue',label='Azimuth')
+        ax.set_ylabel('Azimuth / Degrees',fontsize=fontsize)    
+        ax.legend(loc='lower left',fontsize=fontsize)
+        
     if el is None:
         ax.text(0.5,0.4,'No elevation information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
+    else:
+        axel = ax.twinx()
+        axel.plot(tdate,el,marker='D',markersize=0.2*fontsize,ls='none',color='red',label='Elevation')
+        axel.set_ylabel('Elevation / Degrees',fontsize=fontsize)    
+        axel.legend(loc='upper right',fontsize=fontsize)
+
         
-    ax.set_ylabel('Position / Degrees',fontsize=fontsize)    
     ax.set_xlabel('Date / UT',fontsize=fontsize)
-    ax.legend(fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)
     
     if newplot:
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
-    return ax
+    return fig
 
 def plot_hwp(self,ax=None,fontsize=12):
     '''

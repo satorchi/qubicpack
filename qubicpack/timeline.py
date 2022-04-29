@@ -503,8 +503,8 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             peak1=self.timeline_conversion['peak1']
             shift=self.timeline_conversion['shift']
 
+    ysine = None
     if plot_bias:
-        ysine = None
         if biasphase is not None:
             self.printmsg('DEBUG: taking ysine from QubicStudio FITS file',verbosity=4)
             ysine = self.timeline_vbias

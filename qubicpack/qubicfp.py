@@ -96,6 +96,7 @@ class qubicfp:
         sample_period,\
         timeline,\
         timeline_array,\
+        tod,\
         plot_timeline,\
         plot_timeline_focalplane,\
         plot_iv,\

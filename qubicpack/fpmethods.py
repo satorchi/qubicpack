@@ -585,10 +585,12 @@ def tod(self):
     timeaxis = None
     timeaxis_list = []
     do_interp = []
-    msg_interp = []
+    asic_ctr = 0
     for asic_idx,asicobj in enumerate(self.asic_list):
         if asicobj is None: continue
-
+        asic_ctr += 1
+        do_interp.append(False)
+        
         tstamps = asicobj.timeaxis(datatype='sci')
         timeaxis_list.append(tstamps)
         if timeaxis is None:
@@ -596,23 +598,25 @@ def tod(self):
             compare_idx = asic_idx
             continue
 
-        do_interp.append(False)
-        msg = ''
         if timeaxis.size!=tstamps.size:
-            msg = 'Interpolating:  Not the same number of samples between ASIC%i and ASIC%i' % (compare_idx,asic_idx)
+            msg = 'Interpolation required:  Not the same number of samples between ASIC%i and ASIC%i' % (compare_idx,asic_idx)
+            self.printmsg(msg,verbosity=2)
             do_interp[-1] = True
         else:
             tdiff = timeaxis - tstamps
             if tdiff.min()!=0 or tdiff.max()!=0:
-                msg = 'Interpolating:  Samples at different timestamps for ASIC%i and ASIC%i' % (compare_idx,asic_idx)
+                msg = 'Interpolation required:  Samples at different timestamps for ASIC%i and ASIC%i' % (compare_idx,asic_idx)
+                self.printmsg(msg,verbosity=2)
                 do_interp[-1] = True
-        msg_interp.append(msg)
-                    
+
     # prepare the numpy array
     n_asics = len(do_interp)
     todarray = np.empty((n_asics*NPIXELS,timeaxis.size))
     todarray[:] = np.nan
 
+    self.printmsg('number of ASICs with data: %i' % asic_ctr,verbosity=3)
+    self.printmsg('   should be equal: n_asics = %i ' % n_asics,verbosity=3)
+            
     base_asic = compare_idx+1
     todarray[compare_idx*NPIXELS:(compare_idx+1)*NPIXELS,:] = self.asic(base_asic).timeline_array()
 
@@ -630,7 +634,6 @@ def tod(self):
             todarray[(asic_ctr-1)*NPIXELS:asic_ctr*NPIXELS,:] = tline_array
             continue
         
-        self.printmsg(msg_interp[asic_ctr-1],verbosity=2)
         tstamps = timeaxis_list[asic_ctr-1]
         for TESidx in range(NPIXELS):            
             tline_interp = np.interp(timeaxis, tstamps, tline_array[TESidx,:])

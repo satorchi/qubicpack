@@ -204,7 +204,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
 
     return time_axis_index
 
-def timeaxis(self,datatype=None,axistype='pps',asic=None):
+def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
     '''
     wrapper to return the time axis for data.
     the datatypes are the various hk or scientific
@@ -224,8 +224,11 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None):
     if datatype not in self.hk.keys():
         if datatype=='ASIC_SUMS' and self.__object_type__=='qubicfp':
             if asic is None:
-                self.printmsg('Please enter a valid ASIC number')
-                return None
+                args = self.args_ok(TES,asic)
+                if args is None:
+                    self.printmsg('Please enter a valid ASIC or TES number')
+                    return None
+                TES,asic = args
             asic_idx = asic - 1
             return self.asic_list[asic_idx].timeline_timeaxis(axistype=axistype)
 

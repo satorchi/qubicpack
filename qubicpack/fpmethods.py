@@ -390,8 +390,10 @@ def args_ok(self,TES=None,asic=None):
     return None if not valid
     return tuple (TES,asic)
     '''
+
+    self.printmsg('checking arguments:  TES=%s, asic=%s' % (TES,asic),verbosity=3)
     
-    if asic is None and TES!='no TES number required':
+    if asic is None and TES=='no TES number required':
         self.printmsg('Please give an asic number')
         return None
 
@@ -399,15 +401,19 @@ def args_ok(self,TES=None,asic=None):
         self.printmsg('Please give a TES number')
         return None
 
-    TESidx = TES-1
+    if TES=='no TES number required':
+        self.printmsg('no TES number required',verbosity=3)
+        TESidx = -1
+    else:
+        TESidx = TES-1
     
     if asic is None:
         asic_idx = TESidx // NPIXELS
         asic = asic_idx + 1
     else:
         asic_idx = asic - 1
-
-    if asic_idx<0:
+        
+    if asic<=0:
         self.printmsg('Please give a valid asic number')
         return None
         
@@ -422,6 +428,9 @@ def args_ok(self,TES=None,asic=None):
         self.printmsg('Please give a valid TES number')
         return None
 
+    TESidx = TESidx % NPIXELS
+    TES = TESidx + 1
+
     return (TES,asic)
 
 def asic(self,asic=None):
@@ -432,6 +441,7 @@ def asic(self,asic=None):
     if args is None:return
     TES,asic = args
     asic_idx = asic - 1
+    self.printmsg('return object for asic=%i' % asic,verbosity=2)
     return self.asic_list[asic_idx]
     
 def Rfeedback(self,asic=None):
@@ -565,13 +575,75 @@ def timeline_array(self,asic=None):
 
     asic_idx = asic-1
     return self.asic_list[asic_idx].timeline_array()
-    
+
+def tod(self):
+    '''
+    return a tuple containing the time axis, and the array of all TES timelines
+    this is the timeaxis for all ASIC interpolated to the first ASIC
+    '''
+
+    timeaxis = None
+    timeaxis_list = []
+    do_interp = []
+    msg_interp = []
+    for asic_idx,asicobj in enumerate(self.asic_list):
+        if asicobj is None: continue
+
+        tstamps = asicobj.timeaxis(datatype='sci')
+        timeaxis_list.append(tstamps)
+        if timeaxis is None:
+            timeaxis = tstamps
+            compare_idx = asic_idx
+            continue
+
+        do_interp.append(False)
+        msg = ''
+        if timeaxis.size!=tstamps.size:
+            msg = 'Interpolating:  Not the same number of samples between ASIC%i and ASIC%i' % (compare_idx,asic_idx)
+            do_interp[-1] = True
+        else:
+            tdiff = timeaxis - tstamps
+            if tdiff.min()!=0 or tdiff.max()!=0:
+                msg = 'Interpolating:  Samples at different timestamps for ASIC%i and ASIC%i' % (compare_idx,asic_idx)
+                do_interp[-1] = True
+        msg_interp.append(msg)
+                    
+    # prepare the numpy array
+    n_asics = len(do_interp)
+    todarray = np.empty((n_asics*NPIXELS,timeaxis.size))
+    todarray[:] = np.nan
+
+    base_asic = compare_idx+1
+    todarray[compare_idx*NPIXELS:(compare_idx+1)*NPIXELS,:] = self.asic(base_asic).timeline_array()
+
+    # interpolate those timelines that need to be interpolated
+    asic_ctr = 0
+    for asic_idx,asicobj in enumerate(self.asic_list):
+        if asicobj is None: continue
+        asic_ctr += 1
+
+        self.printmsg('asic index = %i, asic counter = %i' % (asic_idx,asic_ctr),verbosity=3)
+        asic = asic_idx + 1
+        tline_array = self.asic(asic).timeline_array()
+        
+        if not do_interp[asic_ctr-1]:
+            todarray[(asic_ctr-1)*NPIXELS:asic_ctr*NPIXELS,:] = tline_array
+            continue
+        
+        self.printmsg(msg_interp[asic_ctr-1],verbosity=2)
+        tstamps = timeaxis_list[asic_ctr-1]
+        for TESidx in range(NPIXELS):            
+            tline_interp = np.interp(timeaxis, tstamps, tline_array[TESidx,:])
+            todarray[(asic_ctr-1)*NPIXELS+TESidx,:] = tline_interp
+            
+
+    return (timeaxis,todarray)
 
 def timeline(self,TES=None,asic=None):
     '''
     wrapper to get a timeline for a TES from an asic object
     '''
-    args =self.args_ok('no TES number required',asic)
+    args =self.args_ok(TES,asic)
     if args is None:return
     TES,asic = args
     return self.asic(asic).timeline(TES=TES)
@@ -581,9 +653,10 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps',ax=None,
     '''
     wrapper to plot timeline of the asic object
     '''
-    args =self.args_ok('no TES number required',asic)
+    args =self.args_ok(TES,asic)
     if args is None:return
     TES,asic = args
+    self.printmsg('plotting timeline for asic=%i, TES=%i' % (asic,TES),verbosity=2)
     return self.asic(asic).plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
     
 def plot_timeline_focalplane(self,xwin=True):
@@ -620,7 +693,7 @@ def plot_iv(self,TES=None,asic=None,multi=False,xwin=True,best=True):
     '''
     wrapper to plot I-V of the asic object
     '''
-    args =self.args_ok('no TES number required',asic)
+    args =self.args_ok(TES,asic)
     if args is None:return
     TES,asic = args
     return self.asic(asic).plot_iv(TES=TES,multi=multi,xwin=xwin,best=best)
@@ -630,7 +703,7 @@ def plot_responsivity(self,TES=None,asic=None,xwin=True,npts_region=500,window_s
     '''
     wrapper to plot responsivity of a TES
     '''
-    args =self.args_ok('no TES number required',asic)
+    args =self.args_ok(TES,asic)
     if args is None:return
     TES,asic = args
     return self.asic(asic).plot_responsivity(TES,xwin,npts_region,window_size,filter_sigma,plot_model,rmax,rmin)

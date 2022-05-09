@@ -441,7 +441,7 @@ def asic(self,asic=None):
     if args is None:return
     TES,asic = args
     asic_idx = asic - 1
-    self.printmsg('return object for asic=%i' % asic,verbosity=2)
+    self.printmsg('return object for asic=%i' % asic,verbosity=3)
     return self.asic_list[asic_idx]
     
 def Rfeedback(self,asic=None):

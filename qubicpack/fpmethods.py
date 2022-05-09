@@ -16,6 +16,7 @@ import sys,os,time
 
 from qubicpack.qubicasic import qubicasic
 from qubicpack.plot_fp import plot_fp
+from qubicpack.utilities import NPIXELS,TES_index
 
 def assign_defaults(self):
     '''default values for object variables
@@ -385,35 +386,51 @@ def args_ok(self,TES=None,asic=None):
     check if arguments are okay for the wrapper
 
     if TES or asic is None, then it is requested
-    if TES or asic is 0, then it is ignored (argument not required)
+    if TES is greater than 128, then return the ASIC number and the TES number for that ASIC
+    return None if not valid
+    return tuple (TES,asic)
     '''
-    if asic is None:
+    
+    if asic is None and TES!='no TES number required':
         self.printmsg('Please give an asic number')
-        return False
-
-    asic_idx = asic - 1
-    if asic>len(self.asic_list) or self.asic_list[asic_idx] is None:
-        self.printmsg('No data for ASIC %i' % asic)
-        return False
+        return None
 
     if TES is None:
         self.printmsg('Please give a TES number')
-        return False
+        return None
+
+    TESidx = TES-1
+    
+    if asic is None:
+        asic_idx = TESidx // NPIXELS
+        asic = asic_idx + 1
+    else:
+        asic_idx = asic - 1
+
+    if asic_idx<0:
+        self.printmsg('Please give a valid asic number')
+        return None
+        
+    if asic>len(self.asic_list) or self.asic_list[asic_idx] is None:
+        self.printmsg('No data for ASIC %i' % asic)
+        return None
 
     if TES=='no TES number required':
-        return True
+        return (None,asic)
     
     if TES < 1:
         self.printmsg('Please give a valid TES number')
-        return False
+        return None
 
-    return True
+    return (TES,asic)
 
 def asic(self,asic=None):
     '''
     return the requested asic object
     '''
-    if not self.args_ok('no TES number required',asic):return
+    args =self.args_ok('no TES number required',asic)
+    if args is None:return
+    TES,asic = args
     asic_idx = asic - 1
     return self.asic_list[asic_idx]
     
@@ -461,7 +478,9 @@ def bias_phase(self,asic=0):
     '''
     return the bias on the detectors
     '''
-    if not self.args_ok(TES='no TES number required',asic=asic):return None
+    args =self.args_ok('no TES number required',asic)
+    if args is None:return
+    TES,asic = args
     asic_idx = asic-1
     if asic_idx >= 0:
         self.printmsg('Returning bias phase for ASIC %i' % (asic_idx+1),verbosity=2)
@@ -498,7 +517,9 @@ def timeline_vbias(self,asic=0):
     '''
     wrapper to get the bias voltage for the TES timeline
     '''
-    if not self.args_ok(TES='no TES number required',asic=asic):return None
+    args =self.args_ok('no TES number required',asic)
+    if args is None:return
+    TES,asic = args
     asic_idx = asic-1
     if asic_idx >= 0:
         self.printmsg('Returning bias voltage for ASIC %i' % (asic_idx+1),verbosity=2)
@@ -538,9 +559,9 @@ def timeline_array(self,asic=None):
     '''
     wrapper to get the timeline array for an asic
     '''
-    if asic is None:
-        self.printmsg('Please enter an asic number')
-        return None
+    args =self.args_ok('no TES number required',asic)
+    if args is None:return
+    TES,asic = args
 
     asic_idx = asic-1
     return self.asic_list[asic_idx].timeline_array()
@@ -550,18 +571,20 @@ def timeline(self,TES=None,asic=None):
     '''
     wrapper to get a timeline for a TES from an asic object
     '''
-    if not self.args_ok(TES,asic):return None
-    asic_idx = asic-1
-    return self.asic_list[asic_idx].timeline(TES=TES)
+    args =self.args_ok('no TES number required',asic)
+    if args is None:return
+    TES,asic = args
+    return self.asic(asic).timeline(TES=TES)
 
 
 def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps',ax=None,fontsize=12):
     '''
     wrapper to plot timeline of the asic object
     '''
-    if not self.args_ok(TES,asic):return None
-    asic_idx = asic-1
-    return self.asic_list[asic_idx].plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
+    args =self.args_ok('no TES number required',asic)
+    if args is None:return
+    TES,asic = args
+    return self.asic(asic).plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
     
 def plot_timeline_focalplane(self,xwin=True):
     '''
@@ -597,16 +620,20 @@ def plot_iv(self,TES=None,asic=None,multi=False,xwin=True,best=True):
     '''
     wrapper to plot I-V of the asic object
     '''
-
-    if not self.args_ok(TES,asic):return    
-    asic_idx = asic - 1
-    return self.asic_list[asic_idx].plot_iv(TES=TES,multi=multi,xwin=xwin,best=best)
+    args =self.args_ok('no TES number required',asic)
+    if args is None:return
+    TES,asic = args
+    return self.asic(asic).plot_iv(TES=TES,multi=multi,xwin=xwin,best=best)
 
 def plot_responsivity(self,TES=None,asic=None,xwin=True,npts_region=500,window_size=51,filter_sigma=10,
                       plot_model=True,rmax=None,rmin=None):
-    if not self.args_ok(TES,asic):return None
-    asic_idx = asic - 1
-    return self.asic_list[asic_idx].plot_responsivity(TES,xwin,npts_region,window_size,filter_sigma,plot_model,rmax,rmin)
+    '''
+    wrapper to plot responsivity of a TES
+    '''
+    args =self.args_ok('no TES number required',asic)
+    if args is None:return
+    TES,asic = args
+    return self.asic(asic).plot_responsivity(TES,xwin,npts_region,window_size,filter_sigma,plot_model,rmax,rmin)
 
 
         

@@ -381,7 +381,7 @@ def exist_data(self):
         
 
 #### wrappers to return values
-def args_ok(self,TES=None,asic=None):
+def args_ok(self,TES=None,asic=None,allow_multiple_TES=False):
     '''
     check if arguments are okay for the wrapper
 
@@ -391,17 +391,66 @@ def args_ok(self,TES=None,asic=None):
     return tuple (TES,asic)
     '''
 
-    self.printmsg('checking arguments:  TES=%s, asic=%s' % (TES,asic),verbosity=3)
-    
-    if asic is None and TES=='no TES number required':
-        self.printmsg('Please give an asic number')
-        return None
+    self.printmsg('checking arguments:  TES=%s, asic=%s' % (TES,asic),verbosity=4)
 
+    # first, count the number of asics that have data
+    nasics = 0
+    for asicobj in self.asic_list:
+        if asicobj is None: continue
+        if asicobj.exist_timeline_data(): nasics += 1
+    self.printmsg('Number of ASICs with data: %i' % nasics,verbosity=3)
+
+    if nasics==0:
+        self.printmsg('There is no data!')
+        return None
+    
     if TES is None:
         self.printmsg('Please give a TES number')
         return None
+    
+    if allow_multiple_TES:
+        if TES=='all':
+            if asic is not None: # asking for all TES from a particular ASIC
+                TES = np.ones((NPIXELS),dtype=bool)
+                return (TES,asic)
+            # asking for all TES from all ASICs
+            TES = np.ones((NPIXELS*nasics),dtype=bool)
+            return (TES,None)
+        
+        errmsg = 'The TES to be used should be defined by an array of Boolean with a size that is a multiple of %i' % NPIXELS
+        if isinstance(TES,np.ndarray):
+            if not TES.dtype==bool\
+               or not len(TES.shape)==1:
+                self.printmsg(errmsg)
+                return None            
+       
+            nTES = TES.size
+            if nTES%NPIXELS != 0:
+                self.printmsg(errmsg)
+                return None
+       
+            nasics_requested = nTES//NPIXELS 
+            self.printmsg('The number of ASICs required for %i TES is %i' % (nTES,nasics_requested),verbosity=3)
+            if nasics_requested==1:
+                if asic is None:
+                    self.printmsg('Please give an asic number')
+                    return None
+                return (TES,asic)
+            
+            if nTES!=nasics*NPIXELS:
+                errmsg = 'The size of the requested set of TES is %i and it does not match the total number of TES=%i' % (nTES,nasics*NPIXELS)
+                self.printmsg(errmsg)
+                return None
+            return (TES,None)
+
+    # from here on, TES should not be an array
+            
 
     if TES=='no TES number required':
+        if asic is None:
+            self.printmsg('Please give an asic number')
+            return None
+            
         self.printmsg('no TES number required',verbosity=3)
         TESidx = -1
     else:
@@ -412,12 +461,13 @@ def args_ok(self,TES=None,asic=None):
         asic = asic_idx + 1
     else:
         asic_idx = asic - 1
-        
+
+    self.printmsg('DEBUG: type(asic) should be int: %s' % (type(asic)),verbosity=4)
     if asic<=0:
         self.printmsg('Please give a valid asic number')
         return None
-        
-    if asic>len(self.asic_list) or self.asic_list[asic_idx] is None:
+
+    if asic>len(self.asic_list) or self.asic_list[asic_idx] is None or not self.asic_list[asic_idx].exist_timeline_data():
         self.printmsg('No data for ASIC %i' % asic)
         return None
 

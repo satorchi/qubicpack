@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.signal import fftconvolve
 
-from qubicpack.utilities import figure_window_title
+from qubicpack.utilities import figure_window_title, NPIXELS
 
 def renorm(ar):
     return (ar - np.mean(ar)) / np.std(ar)
@@ -182,12 +182,10 @@ def demodulate(self,
 
     xwin:  if making a plot, do not plot to screen if xwin==False
     '''
-    if asic is None:
-        print("\nPlease give an asic number\n")
-        return None
-    if TES is None:
-        print("\nPlease give a TES number or an array of TES to average together, or 'all'\n")
-        return None
+    args =self.args_ok(TES,asic,allow_multiple_TES=True)
+    if args is None:return
+    TES,asic = args
+    
     if interval is None: # set interval to have no effect
         t0_interval = 0
         tend_interval = float((dt.datetime.utcnow() + dt.timedelta(days=7)).strftime('%s'))
@@ -203,28 +201,34 @@ def demodulate(self,
     retval['dataset'] = self.dataset_name
     retval['calsource info'] = self.calsource_info()
 
-    if isinstance(TES,np.ndarray) and TES.shape==(128,) and TES.dtype==bool:
-        self.printmsg('taking average of %i TES from ASIC %i' % (TES.sum(),asic))
-        TESstr = 'average of %i selected TES' % TES.sum()
-        adu = self.timeline_array(asic=asic)
-        data = adu[TES].mean(axis=0)
-    elif TES=='all':
-        self.printmsg('taking average of all TES from ASIC %i' % asic)
-        TESstr = 'all TES'
-        adu = self.timeline_array(asic=asic)
-        data = adu.mean(axis=0)
+    if isinstance(TES,np.ndarray):
+        TESstr = 'average of %i selected TES out of %i' % (TES.sum(),TES.size)
+        TESfilenamestr = 'average-%i-TES' % TES.sum()
+        if asic is None:
+            ASICstr = 'all ASICs'
+            ASICfilenamestr = 'all-ASICs'
+            t_data_orig,adu = self.tod()
+            data = adu[TES].mean(axis=0)
+        else:            
+            ASICstr = 'ASIC %i' % asic            
+            ASICfilenamestr = 'ASIC%03i'
+            adu = self.timeline_array(asic=asic)
+            t_data_orig = self.timeaxis(datatype='sci',asic=asic,axistype=timeaxistype)
+            data = adu[TES].mean(axis=0)
     else:
-        try:
-            data = self.timeline(asic=asic,TES=TES)
-            if data is None: return retval
-            TESstr = 'TES%03i' % TES
-        except:
-            self.printmsg('ERROR! Inappropriate argument for TES.')
-            return retval
-    data_label = 'ASIC %i, %s' % (asic,TESstr)
+        TESstr = 'TES %i' % TES
+        TESfilenamestr = 'TES%03i' % TES
+        ASICstr = 'ASIC %i' % asic                    
+        ASICfilenamestr = 'ASIC%03i' % asic                    
+        data = self.timeline(asic=asic,TES=TES)
+        if data is None: return retval
+        t_data_orig = self.timeaxis(datatype='sci',asic=asic,axistype=timeaxistype)
+
+        
+    data_label = '%s, %s' % (ASICstr,TESstr)
+    data_label_filenamestr = '%s_%s' % (ASICfilenamestr,TESfilenamestr)
     retval['data label'] = data_label
         
-    t_data_orig = self.timeaxis(datatype='sci',asic=asic,axistype=timeaxistype)
     t_data = t_data_orig.copy()
     t0_data = t_data[0]
     if t0_data > 1494453600: # if the timeaxis is made from the sampling time and starts at zero
@@ -233,7 +237,7 @@ def demodulate(self,
         do_tzone_correction = False
     
     t_src_orig,v_src = self.calsource()
-    if v_src is None or not calsource:
+    if not calsource or v_src is None:
         use_calsource = False
         msg = 'No calsource.'
         self.printmsg(msg,verbosity=3)
@@ -545,7 +549,8 @@ def demodulate(self,
     axes[-1].set_xlabel('period / seconds')
     axes[-1].set_ylabel('number of points per bin')
 
-    pngname = 'demodulation_diagnostic_ASIC%i_%s_%s.png' % (asic,TESstr.replace(' ',''),t0_filenamestr)    
+    
+    pngname = 'demodulation_diagnostic_%s_%s.png' % (data_label_filenamestr,t0_filenamestr)    
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     retval['pngname'] = pngname
         

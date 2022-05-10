@@ -408,8 +408,12 @@ def args_ok(self,TES=None,asic=None,allow_multiple_TES=False):
         self.printmsg('Please give a TES number')
         return None
     
+    if isinstance(TES,list) or isinstance(TES,tuple):
+        TES = np.array(TES)
+        
     if allow_multiple_TES:
-        if TES=='all':
+
+        if isinstance(TES,str) and TES=='all':
             if asic is not None: # asking for all TES from a particular ASIC
                 TES = np.ones((NPIXELS),dtype=bool)
                 return (TES,asic)
@@ -442,11 +446,13 @@ def args_ok(self,TES=None,asic=None,allow_multiple_TES=False):
                 self.printmsg(errmsg)
                 return None
             return (TES,None)
-
+    
     # from here on, TES should not be an array
-            
+    if not allow_multiple_TES and isinstance(TES,np.ndarray):
+        self.printmsg('Multiple TES are not permitted for this application')
+        return None
 
-    if TES=='no TES number required':
+    if isinstance(TES,str) and TES=='no TES number required':
         if asic is None:
             self.printmsg('Please give an asic number')
             return None

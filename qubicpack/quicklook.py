@@ -239,6 +239,7 @@ def plot_azel(self,ax=None,fontsize=12):
     else:
         newplot = False
         ax.text(0.5,1.0,ttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
+        fig = ax.get_figure()
 
     if t is None:
         ax.text(0.5,0.5,'No Platform information',va='center',ha='center',fontsize=2*fontsize,transform=ax.transAxes)
@@ -275,7 +276,7 @@ def plot_azel(self,ax=None,fontsize=12):
     
     if newplot:
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
-    return fig
+    return ax
 
 def plot_hwp(self,ax=None,fontsize=12):
     '''

@@ -493,6 +493,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     ipeak1=timeline_npts-1
     peak0=time_axis[ipeak0]
     peak1=time_axis[ipeak1]
+    ysine = None
     if plot_bias:
         if self.timeline_conversion is None:
             self.timeline2adu(TES=TES,timeline_index=timeline_index,timeaxis=timeaxis)
@@ -506,8 +507,6 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             peak1=self.timeline_conversion['peak1']
             shift=self.timeline_conversion['shift']
 
-    ysine = None
-    if plot_bias:
         if biasphase is not None:
             self.printmsg('DEBUG: taking ysine from QubicStudio FITS file',verbosity=4)
             ysine = self.timeline_vbias
@@ -537,7 +536,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         ax.text(0.5,1.0,ttl+'\n'+subttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
 
     
-    curve1=ax.plot(time_axis,current,label='I-V timeline',color='blue')
+    curve1=ax.plot(time_axis,current,label='TES current',color='blue')
 
     #ymax=max([current[ipeak0],current[ipeak1]])
     ymax=np.nanmax(current)
@@ -550,11 +549,11 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     if np.isnan(yrange) or yrange==0:
         yrange = 0.1
     yminmax=(ymin-0.02*yrange,ymax+0.02*yrange)
-    ax.plot([peak0,peak0],yminmax,color='red')
-    ax.plot([peak1,peak1],yminmax,color='red')
     ax.set_ylim(yminmax)
-
+    
     if plot_bias:
+        ax.plot([peak0,peak0],yminmax,color='red',label='sine curve first peak')
+        ax.plot([peak1,peak1],yminmax,color='red',label='sine curve second peak')
         if fitparms is None:
             ax_bias = ax.twinx()
             ax_bias.set_ylabel('Bias / V',rotation=270,va='bottom',fontsize=fontsize)
@@ -572,9 +571,9 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         curves = curve1+curve2
     else:
         curves = curve1
-        
+
     labs = [l.get_label() for l in curves]
-    ax.legend(curves, labs, loc=0, fontsize=fontsize)
+    ax.legend(curves, labs, loc='upper right',fontsize=fontsize)
 
     pngname=str('TES%03i_array-%s_ASIC%i_timeline_%s.png' % (TES,self.detector_name,self.asic,timeline_start.strftime('%Y%m%dT%H%M%SUTC')))
     pngname_fullpath=self.output_filename(pngname)
@@ -583,8 +582,12 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     if xwin:plt.show()
     else: plt.close('all')
 
-    if fitparms: return fitparms
-    return True
+    retval = {}
+    retval['fitparms'] = fitparms
+    retval['ax'] = ax
+    retval['curves'] = curves
+    retval['plotname'] = pngname
+    return retval
 
 
 def plot_timeline_physical_layout(self,

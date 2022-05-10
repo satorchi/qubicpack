@@ -652,7 +652,7 @@ def timeline(self,TES=None,asic=None):
     return self.asic(asic).timeline(TES=TES)
 
 
-def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps',ax=None,fontsize=12):
+def plot_timeline(self,TES=None,asic=None,plot_bias=False,timeaxis='pps',ax=None,fontsize=12,plot_calsource=False):
     '''
     wrapper to plot timeline of the asic object
     '''
@@ -660,7 +660,18 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=True,timeaxis='pps',ax=None,
     if args is None:return
     TES,asic = args
     self.printmsg('plotting timeline for asic=%i, TES=%i' % (asic,TES),verbosity=2)
-    return self.asic(asic).plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
+    ret = self.asic(asic).plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
+
+    if not plot_calsource: return
+
+    ax = ret['ax']
+    t_src,v_src = self.calsource()
+    axsrc = ax.twinx()
+    curvesrc = axsrc.plot(t_src,v_src,color='red',label='calibration source')
+    curves = ret['curves']+curvesrc
+    labs = [l.get_label() for l in curves]
+    ax.legend(curves, labs, loc='upper right',facecolor='white',framealpha=0.7)
+    return 
     
 def plot_timeline_focalplane(self,xwin=True):
     '''

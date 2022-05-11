@@ -125,6 +125,10 @@ class qubicfp:
 
     from .demodulate import\
         demodulate
+
+    from .mapmaking import\
+        make_map_no_modulation,\
+        plot_map
     
     def __init__(self):
 

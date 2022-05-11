@@ -727,7 +727,7 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=False,timeaxis='pps',ax=None
     curves = ret['curves']+curvesrc
     labs = [l.get_label() for l in curves]
     ax.legend(curves, labs, loc='upper right',facecolor='white',framealpha=0.7)
-    return 
+    return True
     
 def plot_timeline_focalplane(self,xwin=True):
     '''

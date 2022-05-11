@@ -20,6 +20,7 @@ Final mapmaking will be more sophisticated and will be implemented in qubicsoft 
 '''
 import numpy as np
 import healpy as hp
+from matplotlib import pyplot as plt
 colour = None
 def interpolate_azscan(az_axis,azpts,datapts,debug=False):
     '''

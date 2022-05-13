@@ -13,6 +13,7 @@ methods for the QUBIC focal plane class qubicfp
 import numpy as np
 import datetime as dt
 import sys,os,time
+from copy import copy
 
 from qubicpack.qubicasic import qubicasic
 from qubicpack.plot_fp import plot_fp
@@ -632,71 +633,136 @@ def timeline_array(self,asic=None):
     asic_idx = asic-1
     return self.asic_list[asic_idx].timeline_array()
 
+def nsamples4interpolation(nsamples,epsilon=0.01,verbosity=0):
+    '''
+    find a good number of samples to use for the interpolated results
+    it should be bigger than nsamples, but not too much
+    try to get a power of 2, or nearly
+    '''
+    solution = {}
+    if nsamples%2==0:
+        fallback_nsamples = nsamples
+    else:
+        fallback_nsamples = nsamples + 1
+    solution['fallback'] = fallback_nsamples
+
+    max_delta = int(epsilon*nsamples)
+    bitpower = int(np.log(fallback_nsamples)/np.log(2)) + 1
+    new_nsamples = fallback_nsamples
+    
+    primes = np.array((3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,
+                       101,103,107,109,113,127,131,137,139,149,151,157,163,167,173))
+
+    attempted_nsamples = []
+    delta = max_delta + 1
+    counter = 1
+    gotit = False
+    while not gotit and counter<10000:
+        for prime in primes:
+            for primepower in range(4):
+                new_nsamples = (prime**primepower) * (2**bitpower)
+                attempted_nsamples.append(new_nsamples)
+                delta = new_nsamples - nsamples
+                if delta<0: continue
+                if delta<max_delta:
+                    gotit = True
+                    solution['bitpower'] = bitpower
+                    solution['prime'] = prime
+                    solution['primepower'] = primepower
+                    break
+                
+            if gotit: break            
+        if gotit: break
+
+        for prime1 in primes:
+            for prime2 in primes:
+                new_nsamples = (prime1*prime2) * (2**bitpower)
+                attempted_nsamples.append(new_nsamples)
+                delta = new_nsamples - nsamples
+                if delta<0: continue
+                if delta<max_delta:
+                    gotit = True
+                    solution['bitpower'] = bitpower
+                    solution['prime1'] = prime1
+                    solution['prime2'] = prime2
+                    break
+            if gotit: break            
+        if gotit: break
+                                
+        counter += 1
+        bitpower -=1
+            
+    new_nsamples = nsamples + delta
+    if not gotit: new_samples = fallback_nsamples
+    
+    if verbosity>0:
+        if gotit:
+            print('suggest nsamples=%i which is ' % new_nsamples,end=' ')
+            if 'primepower' in solution.keys():
+                print('2^%i*%i' % (bitpower,prime))
+            else:
+                print('2^%i*%i*%i' % (bitpower,prime1,prime2))
+        else:
+            print("didn't find anything... returning default nsamples=%i" % new_nsamples)
+
+    
+    solution['new_nsamples'] = new_nsamples
+    solution['attempted'] = np.array(attempted_nsamples)
+    return solution
+
 def tod(self):
     '''
     return a tuple containing the time axis, and the array of all TES timelines
     this is the timeaxis for all ASIC interpolated to the first ASIC
     '''
-
-    timeaxis = None
     timeaxis_list = []
-    do_interp = []
+    nsamples_list = []
+    t0_list = []
+    tfinal_list = []
     asic_ctr = 0
     for asic_idx,asicobj in enumerate(self.asic_list):
         if asicobj is None: continue
         asic_ctr += 1
-        do_interp.append(False)
         
         tstamps = asicobj.timeaxis(datatype='sci')
         timeaxis_list.append(tstamps)
-        if timeaxis is None:
-            timeaxis = tstamps
-            compare_idx = asic_idx
-            continue
+        nsamples_list.append(tstamps.size)
+        t0_list.append(tstamps[0])
+        tfinal_list.append(tstamps[-1])
 
-        if timeaxis.size!=tstamps.size:
-            msg = 'Interpolation required:  Not the same number of samples between ASIC%i and ASIC%i' % (compare_idx,asic_idx)
-            self.printmsg(msg,verbosity=2)
-            do_interp[-1] = True
-        else:
-            tdiff = timeaxis - tstamps
-            if tdiff.min()!=0 or tdiff.max()!=0:
-                msg = 'Interpolation required:  Samples at different timestamps for ASIC%i and ASIC%i' % (compare_idx,asic_idx)
-                self.printmsg(msg,verbosity=2)
-                do_interp[-1] = True
+    # choose number of samples for interpolation
+    nsample_finder = nsamples4interpolation(max(nsamples_list),verbosity=self.verbosity)
+    nsamples = nsample_finder['new_nsamples']
+
+    # make the new timestamps axis
+    t_tod = np.empty(nsamples,dtype=float)
+    t0 = min(t0_list)
+    tfinal = max(tfinal_list)
+    t_tod = t0 + (tfinal-t0)*np.arange(nsamples)/(nsamples-1)
 
     # prepare the numpy array
-    n_asics = len(do_interp)
-    todarray = np.empty((n_asics*NPIXELS,timeaxis.size))
+    n_asics = copy(asic_ctr)
+    todarray = np.empty((n_asics*NPIXELS,nsamples),dtype=float)
     todarray[:] = np.nan
 
     self.printmsg('number of ASICs with data: %i' % asic_ctr,verbosity=3)
-    self.printmsg('   should be equal: n_asics = %i ' % n_asics,verbosity=3)
             
-    base_asic = compare_idx+1
-    todarray[compare_idx*NPIXELS:(compare_idx+1)*NPIXELS,:] = self.asic(base_asic).timeline_array()
-
-    # interpolate those timelines that need to be interpolated
+    # interpolate the timelines
     asic_ctr = 0
     for asic_idx,asicobj in enumerate(self.asic_list):
         if asicobj is None: continue
         asic_ctr += 1
-
+        
         self.printmsg('asic index = %i, asic counter = %i' % (asic_idx,asic_ctr),verbosity=3)
         asic = asic_idx + 1
         tline_array = self.asic(asic).timeline_array()
         
-        if not do_interp[asic_ctr-1]:
-            todarray[(asic_ctr-1)*NPIXELS:asic_ctr*NPIXELS,:] = tline_array
-            continue
-        
         tstamps = timeaxis_list[asic_ctr-1]
         for TESidx in range(NPIXELS):            
-            tline_interp = np.interp(timeaxis, tstamps, tline_array[TESidx,:])
-            todarray[(asic_ctr-1)*NPIXELS+TESidx,:] = tline_interp
-            
+            tline_interp = np.interp(t_tod, tstamps, tline_array[TESidx,:])
+            todarray[(asic_ctr-1)*NPIXELS+TESidx,:] = tline_interp            
 
-    return (timeaxis,todarray)
+    return (t_tod,todarray)
 
 def timeline(self,TES=None,asic=None):
     '''

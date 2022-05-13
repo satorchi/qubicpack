@@ -58,6 +58,7 @@ class qubicasic:
         get_from_keyboard,\
         pps2date,\
         RawMask,\
+        FLL_State,\
         get_hk,\
         gps,\
         pps,\

@@ -539,6 +539,23 @@ def relay_heater(self,asic=None,timeline_index=0):
         return 'OFF'
     return 'UNKNOWN'
 
+def FLL_State(self,asic=None):
+    '''
+    return the Flux Lock Loop state
+    '''
+    if asic is None:
+        self.printmsg('Please enter an asic number')
+        return None
+
+    asic_idx = asic-1
+    if asic_idx>len(self.asic_list):
+        self.printmsg('ASIC%i does not exist' % asic)
+        return None
+    
+    asicobj = self.asic_list[asic_idx]
+    if asicobj is None:return None
+    
+    return asicobj.FLL_State()
 
 #### timeline methods
 def bias_phase(self,asic=0):

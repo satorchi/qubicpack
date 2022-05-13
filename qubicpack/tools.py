@@ -1439,6 +1439,20 @@ def bias_phase(self):
     
     return sinephase
 
+def FLL_State(self):
+    '''
+    return the FLL state.  We reset the Flux Lock Loop regularly.
+    NOTE:  there is a variable called FLL_state which is still here for historical reasons
+           It was used in the acquisition method when we ran the Oxford dilution fridge.
+    '''
+    hktype = 'CONF_ASIC%i' % self.asic
+    fllkey = 'FLL_State'
+    if hktype not in self.hk.keys():
+        self.printmsg('No ASIC configuration data!')
+        return None
+    fll_state = self.hk[hktype][fllkey]
+    return fll_state
+
 def calsource(self):
     '''
     return the calibration source data

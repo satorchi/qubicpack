@@ -92,6 +92,7 @@ class qubicfp:
         bias_phase,\
         timeline_vbias,\
         Rfeedback,\
+        FLL_State,\
         relay_heater,\
         sample_period,\
         timeline,\

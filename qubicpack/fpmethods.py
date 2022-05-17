@@ -382,7 +382,7 @@ def exist_data(self):
         
 
 #### wrappers to return values
-def args_ok(self,TES=None,asic=None,allow_multiple_TES=False):
+def args_ok(self,TES=None,asic=None,allow_multiple_TES=False,asic_only_required=False):
     '''
     check if arguments are okay for the wrapper
 
@@ -404,11 +404,22 @@ def args_ok(self,TES=None,asic=None,allow_multiple_TES=False):
     if nasics==0:
         self.printmsg('There is no data!')
         return None
-    
-    if TES is None:
+
+    # at least one of asic or TES has to be specified
+    if asic is None and TES is None:
+        if asic_only_required:
+            self.printmsg('Please give an asic number')
+        else:
+            self.printmsg('Please give a TES number')
+        return None            
+
+
+    # unless we only want the asic number, we must have something for TES
+    if TES is None and not asic_only_required:
         self.printmsg('Please give a TES number')
         return None
-    
+
+    # if TES is given as a list or tuple, change it to a numpy array
     if isinstance(TES,list) or isinstance(TES,tuple):
         TES = np.array(TES)
         
@@ -453,14 +464,7 @@ def args_ok(self,TES=None,asic=None,allow_multiple_TES=False):
         self.printmsg('Multiple TES are not permitted for this application')
         return None
 
-    if isinstance(TES,str) and TES=='no TES number required':
-        if asic is None:
-            self.printmsg('Please give an asic number')
-            return None
-            
-        self.printmsg('no TES number required',verbosity=3)
-        TESidx = -1
-    else:
+    if TES is not None:
         TESidx = TES-1
     
     if asic is None:
@@ -478,7 +482,7 @@ def args_ok(self,TES=None,asic=None,allow_multiple_TES=False):
         self.printmsg('No data for ASIC %i' % asic)
         return None
 
-    if TES=='no TES number required':
+    if asic_only_required:
         return (None,asic)
     
     if TES < 1:
@@ -490,11 +494,11 @@ def args_ok(self,TES=None,asic=None,allow_multiple_TES=False):
 
     return (TES,asic)
 
-def asic(self,asic=None):
+def asic(self,asic=None,TES=None):
     '''
     return the requested asic object
     '''
-    args =self.args_ok('no TES number required',asic)
+    args =self.args_ok(None,asic,asic_only_required=True)
     if args is None:return
     TES,asic = args
     asic_idx = asic - 1
@@ -558,18 +562,18 @@ def FLL_State(self,asic=None):
     return asicobj.FLL_State()
 
 #### timeline methods
-def bias_phase(self,asic=0):
+def bias_phase(self,asic=0,TES=None):
     '''
     return the bias on the detectors
     '''
-    args =self.args_ok('no TES number required',asic)
-    if args is None:return
-    TES,asic = args
-    asic_idx = asic-1
-    if asic_idx >= 0:
-        self.printmsg('Returning bias phase for ASIC %i' % (asic_idx+1),verbosity=2)
+    args = self.args_ok(TES,asic,asic_only_required=True)
+    if args is not None:
+        TES,asic = args
+        asic_idx = asic-1
+        self.printmsg('Returning bias phase for ASIC %i' % asic,verbosity=2)
         return self.asic_list[asic_idx].bias_phase()
 
+    # otherwise, compare to see if Vbias is different between ASICs
     # check all the values against the first non-None ASIC object
     bp0 = None
     warning_msg = 'WARNING! Bias phase value not equal to that of ASIC %i at index %i: %f != %f'
@@ -597,18 +601,18 @@ def bias_phase(self,asic=0):
         self.printmsg('WARNING! The bias phase is different between the ASICs.  To see where, please set verbosity>2 and rerun bias_phase()')
     return bp0
 
-def timeline_vbias(self,asic=0):
+def timeline_vbias(self,asic=None,TES=None):
     '''
     wrapper to get the bias voltage for the TES timeline
     '''
-    args =self.args_ok('no TES number required',asic)
-    if args is None:return
-    TES,asic = args
-    asic_idx = asic-1
-    if asic_idx >= 0:
-        self.printmsg('Returning bias voltage for ASIC %i' % (asic_idx+1),verbosity=2)
+    args =self.args_ok(TES,asic,asic_only_required=True)
+    if args is not None:
+        TES,asic = args
+        asic_idx = asic-1
+        self.printmsg('Returning bias voltage for ASIC %i' % asic,verbosity=2)
         return self.asic_list[asic_idx].timeline_vbias
-    
+
+    # otherwise, compare to see if Vbias is different between ASICs
     vb0 = None
     warning_msg = 'WARNING! Bias voltage value not equal to that of ASIC %i at index %i: %f != %f'
     warn = False
@@ -639,11 +643,11 @@ def sample_period(self,asic=None):
     asic_idx = asic-1
     return self.asic_list[asic_idx].sample_period()
 
-def timeline_array(self,asic=None):
+def timeline_array(self,asic=None,TES=None):
     '''
     wrapper to get the timeline array for an asic
     '''
-    args =self.args_ok('no TES number required',asic)
+    args =self.args_ok(TES,asic,asic_only_required=True)
     if args is None:return
     TES,asic = args
 

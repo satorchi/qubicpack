@@ -810,7 +810,7 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=False,timeaxis='pps',ax=None
     ax = ret['ax']
     t_src,v_src = self.calsource()
     axsrc = ax.twinx()
-    curvesrc = axsrc.plot(t_src,v_src,color='red',label='calibration source')
+    curvesrc = axsrc.plot(t_src,-v_src,color='red',label='calibration source')
     curves = ret['curves']+curvesrc
     labs = [l.get_label() for l in curves]
     ax.legend(curves, labs, loc='upper right',facecolor='white',framealpha=0.7)

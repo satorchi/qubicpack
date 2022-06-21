@@ -1510,6 +1510,7 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper().find('DET')==0: return 'ASIC_SUMS'
     if ftype.upper().find('MMR')==0: return 'MMR_HK'
     if ftype.upper().find('MGC')==0: return 'MGC_HK'
+    if ftype.upper().find('TBATH')==0: return 'EXTERN_HK'
     return ftype.upper()
 
 def qubicstudio_hk_truename(self,hktype):
@@ -1523,7 +1524,7 @@ def qubicstudio_hk_truename(self,hktype):
     if hktype.upper().find('AV')==0: return hktype.upper()
     if hktype.upper() == 'CALSOURCE': return 'CALSOURCE'
     if hktype.upper() == 'SOURCE': return 'CALSOURCE'
-    
+    if hktype.upper() == 'TBATH': return 'AVS47_1_CH2'
     return hktype
 
 def azel_etc(self,TES=None):

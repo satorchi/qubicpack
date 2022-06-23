@@ -499,7 +499,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
             tempstr = match[0].replace('mK','')
             self.temperature = 1e-3*float(tempstr)
             self.tdata[-1]['TES_TEMP'] = self.temperature
-            self.printmsg('Assigning TES temperature from the dataset name: %.1fmK' % 1000*self.temperature,verbosity=2)
+            self.printmsg('Assigning TES temperature from the dataset name: %.1fmK' % (1000*self.temperature),verbosity=2)
 
     # that's it.  give up.  the temperature is unknown.
     if self.temperature is None or self.temperature<0:

@@ -510,10 +510,10 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     # assign bath temperature to asic objects.  This is useful for infotext()
     if self.temperature is not None and self.__object_type__=='qubicfp':
         for asic_obj in self.asic_list:
-            if asic_obj is not None:
-                self.printmsg('assigning bath temperature of %.3fK to asic %i' % (self.temperature,asic_obj.asic),verbosity=2)
-                asic_obj.tdata[-1]['TES_TEMP'] = self.temperature
-                asic_obj.temperature = self.temperature
+            if asic_obj is None: continue
+            self.printmsg('assigning bath temperature of %.3fK to asic %i' % (self.temperature,asic_obj.asic),verbosity=2)
+            asic_obj.tdata[-1]['TES_TEMP'] = self.temperature
+            asic_obj.temperature = self.temperature
             
 
     # now try to find the corresponding calsource file, if necessary
@@ -529,6 +529,7 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     # read IV evaluation if it exists
     if self.__object_type__=='qubicfp':
         for asic_obj in self.asic_list:
+            if asic_obj is None: continue
             asic_obj.read_filter()
     else:
         self.read_filter()

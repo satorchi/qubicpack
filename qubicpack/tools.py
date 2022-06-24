@@ -801,6 +801,15 @@ def read_qubicstudio_asic_fits(self,hdulist):
     npts = len(timestamp)
     for tstamp in timestamp:
         dateobs.append(dt.datetime.utcfromtimestamp(tstamp))
+    if npts==0:
+        tdata['ASICDATE'] = None
+        tdata['BEGASIC%i' % asic] = None
+        tdata['ENDASIC%i' % asic] = None
+        msg = 'ASIC%i: There are no housekeeping measurements!' % asic
+        self.printmsg(msg)
+        tdata['WARNING'].append(msg)
+        return self.read_qubicstudio_hkfits(hdu)
+
     tdata['ASICDATE'] = dateobs
     tdata['BEGASIC%i' % asic] = dateobs[0]
     tdata['ENDASIC%i' % asic] = dateobs[-1]
@@ -820,6 +829,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
             self.printmsg(msg)
             tdata['WARNING'].append(msg)
             break
+            
 
     # get bias level (this is given directly in Volts.  No need to translate from DAC values)
     # TESAmplitude is in fact, peak-to-peak, so multiply by 0.5

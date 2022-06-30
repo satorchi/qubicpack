@@ -526,15 +526,16 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     # run biasphase() in order to assign timeline_vbias
     biasphase = self.bias_phase()
 
-    # read IV evaluation if it exists
+    # read IV evaluation if it exists, and also assign the dataset name to the qubicasic objects
     if self.__object_type__=='qubicfp':
         for asic_obj in self.asic_list:
             if asic_obj is None: continue
             asic_obj.read_filter()
+            asic_obj.dataset_name = self.dataset_name
     else:
         self.read_filter()
 
-
+        
     if self.obsdate is not None: return True
     
     # check if there's an observation date.  If not, get it from the first available housekeeping

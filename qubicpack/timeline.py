@@ -138,12 +138,25 @@ def sample_period(self,timeline_index=None):
     '''
     if not self.exist_timeline_data():return None
 
-    if timeline_index is not None and 'NSAMPLES' in self.tdata[timeline_index].keys():
-        self.nsamples = self.tdata[timeline_index]['NSAMPLES']        
-    if self.nsamples is None:return None
+    if timeline_index is None: timeline_index = 0
+
+    if 'NSAMPLES' in self.tdata[timeline_index].keys():
+        self.nsamples = self.tdata[timeline_index]['NSAMPLES']
+        
+    if self.nsamples is None:
+        time_axis = self.timeline_computertime(timeline_index)
+        timeline_npts = len(time_axis)
+        if time_axis is None:  return None
+            
+        measured_sample_period = (time_axis[-1] - time_axis[0])/(timeline_npts-1)
+        self.nsamples = measured_sample_period
+
+    if self.nsamples is None:
+        self.printmsg('WARNING!  No value for nsamples.  Assuming nsamples = 100',verbosity=1)
+        self.nsamples = 100
     
-    npixels=self.NPIXELS_sampled
-    if npixels is None:npixels=self.NPIXELS
+    npixels = self.NPIXELS_sampled
+    if npixels is None: npixels = self.NPIXELS
     period = 1.0 / (2e6 / npixels / self.nsamples)
     return period
 
@@ -159,6 +172,29 @@ def timeline_npts(self):
     timeline_size = int(np.ceil(self.tinteg / sample_period))
     return timeline_size
 
+def timeline_computertime(self,timeline_index=None):
+    '''
+    return the scientific time axis given by the computer date (not the GPS)
+    '''
+    if timeline_index is None\
+       and self.hk is not None\
+       and 'ASIC_SUMS' in self.hk.keys()\
+       and 'ComputerDate' in self.hk['ASIC_SUMS'].keys():
+        
+        timestamps = self.hk['ASIC_SUMS']['ComputerDate']
+        if len(timestamps)==0: return None
+        return timestamps
+
+    if timeline_index is None: timeline_index = 0    
+    if 'DATE-OBS' in self.tdata[timeline_index].keys():
+        timeline_date = self.tdata[timeline_index]['DATE-OBS']
+        if len(timeline_date)==0: return None
+        timestamps = np.array( [t.timestamp() for t in timeline_date] )
+        return timestamps
+
+    self.printmsg('ERROR! No Computer Time.',verbosity=2)
+    return None
+
 def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
     '''
     the timeline time axis for scientific data (TES)
@@ -168,17 +204,18 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
     self.printmsg('DEBUG: call to timeline_timeaxis with axistype=%s' % axistype,verbosity=4)
     
     if not self.exist_timeline_data():return None
-    if timeline_index is None:timeline_index = 0
+    
+    computertime = self.timeline_computertime(timeline_index)
 
-    if 'DATE-OBS' in self.tdata[timeline_index].keys():
-        timeline_date=self.tdata[timeline_index]['DATE-OBS']
-    else:
-        timeline_date = self.obsdate
+    if timeline_index is None:timeline_index = 0
 
     timeline_npts = self.tdata[timeline_index]['TIMELINE'].shape[1]    
     sample_period = self.sample_period(timeline_index)
-    time_axis_index = sample_period*np.arange(timeline_npts)
-
+    if sample_period is None:
+        time_axis_index = None
+    else:
+        time_axis_index = sample_period*np.arange(timeline_npts)
+    
     if axistype.lower()=='index':
         return time_axis_index
 
@@ -195,13 +232,10 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
         return time_axis_index
 
     if axistype.lower()=='computertime':
-        if isinstance(timeline_date,list) and isinstance(timeline_date[0],dt.datetime):
-            time_axis = np.array([ eval(t.strftime('%s.%f')) for t in timeline_date ])
-            t0 = time_axis[0]
-            return time_axis
-        self.printmsg('ERROR! No Computer Time.',verbosity=2)
-        return time_axis_index
+        time_axis = self.timeline_computertime(timeline_index)
+        return time_axis
 
+    self.printmsg('timeline_timeaxis returning index time.',verbosity=2)
     return time_axis_index
 
 def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
@@ -318,6 +352,8 @@ def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):
     time_axis=self.timeline_timeaxis(timeline_index,axistype=timeaxis)
     measured_sample_period = (time_axis[-1] - time_axis[0])/(timeline_npts-1)
     retval['measured_sample_period'] = measured_sample_period
+    if sample_period is None:
+        sample_period = measured_sample_period
 
     # use the bias_phase if it exists
     bias_phase = self.bias_phase()
@@ -351,7 +387,7 @@ def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):
     else:
         period_firstguess = self.bias_frequency
         
-    bias_period_npts=int(period_firstguess/sample_period)
+    bias_period_npts=int(period_firstguess/sample_period) # should we be using measured_sample_period here?
     self.debugmsg('period npts = %i' % bias_period_npts)
         
     # skip the first few seconds which are often noisy

@@ -632,13 +632,13 @@ def timeline_vbias(self,asic=None,TES=None):
         self.printmsg('WARNING! The Vbias is different between the ASICs.  To see where, please set verbosity>2 and rerun timeline_vbias()')
     return vb0
 
-def sample_period(self,asic=None):
+def sample_period(self,TES=None,asic=None):
     '''
     wrapper to get the sample period for an asic
     '''
-    if asic is None:
-        self.printmsg('Please enter an asic number')
-        return None
+    args =self.args_ok(TES,asic,asic_only_required=True)
+    if args is None:return
+    TES,asic = args
 
     asic_idx = asic-1
     return self.asic_list[asic_idx].sample_period()
@@ -942,7 +942,9 @@ def is_good(self):
     is_good_list = []
     for asic_obj in self.asic_list:
         if asic_obj is not None:
-            is_good_list.append(asic_obj.is_good_iv())
+            asic_is_good_list = asic_obj.is_good_iv()
+            if asic_is_good_list is None:                
+            is_good_list.append(asic_is_good_list)
     return np.concatenate(is_good_list)
     
     

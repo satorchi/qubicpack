@@ -2387,7 +2387,11 @@ def is_good_iv(self,TES=None):
     '''
 
     filterinfo=self.filterinfo(TES)
-    if filterinfo is None:return False
+    if filterinfo is None:
+        if TES is None:
+            return None
+        else:
+            return False
 
     if TES is None:
         filtersummary=filterinfo

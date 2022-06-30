@@ -146,6 +146,7 @@ class qubicasic:
         sample_period,\
         timeline_npts,\
         timeline_timeaxis,\
+        timeline_computertime,\
         timeaxis,\
         determine_bias_modulation,\
         timeline2adu,\

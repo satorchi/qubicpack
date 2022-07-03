@@ -2544,21 +2544,21 @@ def best_iv_curve(self,TES=None):
     if TES is not None:
         TES_idx = TES_index(TES)
         istart,iend=self.selected_iv_curve(TES)
-        bias = self.bias_factor*self.vbias[istart:iend]
-        adu = self.adu[TES_idx,istart:iend]
-        return bias, adu
+        Vtes = self.Vtes(TES)[istart:iend]
+        Ites = self.Ites(TES)[istart:iend]
+        return np.array((Vtes, Ites))
 
-    adu_best = []
-    bias_best = []
+    V_best = []
+    I_best = []
     for TES_idx in range(self.NPIXELS):
         TES = TES_idx + 1
-        fit = filterinfo[TES_idx]['fit']
         istart,iend=self.selected_iv_curve(TES)
-        bias = self.bias_factor*self.vbias[istart:iend]
-        bias_best.append(bias)
-        adu_best.append(self.adu[TES_idx,istart:iend])
+        Vtes = self.Vtes(TES)[istart:iend]
+        Ites = self.Ites(TES)[istart:iend]
+        V_best.append(Vtes)
+        I_best.append(Ites)
         
-    return np.array(bias_best),np.array(adu_best)
+    return np.array((V_best,I_best))
         
 def Ites(self,TES):
     '''

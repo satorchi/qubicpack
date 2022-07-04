@@ -130,6 +130,9 @@ class qubicfp:
     from .mapmaking import\
         make_map_no_modulation,\
         plot_map
+
+    from .qubiciv import\
+        write_iv_fits
     
     def __init__(self):
 

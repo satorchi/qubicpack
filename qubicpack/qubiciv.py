@@ -73,7 +73,7 @@ def write_iv_fits(fpobject,elog='',wikipage=''):
     toolong = False
     for key in hdrval.keys():
         val = hdrval[key]
-        comment = self.hdr_comment[key]
+        comment = hdr_comment[key]
 
         fmt = 'A%i' % max((len(val),len(comment)))
         col = fits.Column(name=key, format=fmt, unit='text', array=[val,comment])
@@ -142,7 +142,7 @@ def read_iv_fits(filename,verbosity=1):
     '''
     read a set of I-V curves from a fits file
     '''
-    if not os.path.is_file(filename):
+    if not os.path.isfile(filename):
         print('File not found! %s' % filename)
         return None
 
@@ -190,7 +190,7 @@ def read_iv_fits(filename,verbosity=1):
         npts = hdu.header['NAXIS2']
         datkey = hdu.header['IV_AXIS']
         if datkey=='V':
-            dat = np.zeros(2,128,npts,dtype=np.float64)
+            dat = np.zeros((2,128,npts),dtype=np.float64)
             datidx = 0
         else:
             datidx = 1
@@ -199,8 +199,10 @@ def read_iv_fits(filename,verbosity=1):
             print('reading I-V curve:  %i points %s for ASIC %i' % (npts,datkey,asic))
             
         for TESidx in range(128):
-            dat[datidx,TESidx,:] = hdu.data.field(TESidx)            
-        ivcurves_list.append(dat)
+            dat[datidx,TESidx,:] = hdu.data.field(TESidx)
+        if datidx==1:
+            ivcurves_list.append(dat)
 
-        
+    return ivcurves_list
+
             

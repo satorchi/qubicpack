@@ -943,7 +943,7 @@ def is_good(self):
     for asic_obj in self.asic_list:
         if asic_obj is not None:
             asic_is_good_list = asic_obj.is_good_iv()
-            if asic_is_good_list is None:                
+            if asic_is_good_list is None: continue
             is_good_list.append(asic_is_good_list)
     return np.concatenate(is_good_list)
     

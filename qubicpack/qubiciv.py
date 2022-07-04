@@ -95,12 +95,13 @@ def write_iv_fits(fpobject,elog='',wikipage=''):
 
     # prepare the hdulist
     hdulist = [prihdu]
-
     # the I-V curves are in an HDU for each ASIC
     # because the number of sample points is not necessarily the same between ASICs
     nasics = 0
     for asicobj in fpobject.asic_list:
         if asicobj is None: continue
+        if not asicobj.exist_iv_data(): continue
+        
         nasics += 1
         if verbosity>0: print('ASIC %i' % nasics)
         ivcurves = asicobj.best_iv_curve() # tuple with two arrays of shape (128,npts): V,I for each TES

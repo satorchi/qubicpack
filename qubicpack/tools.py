@@ -1208,7 +1208,10 @@ def pps2date(self,pps,gps):
                 prev = gps[idx]
 
     separations = np.array(separations[1:])
-
+    if separations.size==0:
+        self.printmsg('no pps intervals!',verbosity=1)
+        return None
+    
     self.printmsg('mean pps interval is %.4f second' % separations.mean(),verbosity=2)
     self.printmsg('max pps interval is  %.4f second' % separations.max(),verbosity=2)
     self.printmsg('min pps interval is  %.4f second' % separations.min(),verbosity=2)

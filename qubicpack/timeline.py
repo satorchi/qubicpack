@@ -206,6 +206,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
     if not self.exist_timeline_data():return None
     
     computertime = self.timeline_computertime(timeline_index)
+    t0 = computertime[0]
 
     if timeline_index is None:timeline_index = 0
 
@@ -213,8 +214,12 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
     sample_period = self.sample_period(timeline_index)
     if sample_period is None:
         time_axis_index = None
+        time_axis_default = computertime
+        default_descr = "computer time"
     else:
         time_axis_index = sample_period*np.arange(timeline_npts)
+        time_axis_default = t0 + time_axis_index
+        default_descr = "sample rate with start time given by the initial computer time"
     
     if axistype.lower()=='index':
         return time_axis_index
@@ -225,18 +230,18 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
             gps = self.gps(hk='ASIC_SUMS')
             time_axis = self.pps2date(pps,gps)
             if time_axis is None:
-                self.printmsg('ERROR!  Using sample rate to make a time axis.',verbosity=2)
-                return time_axis_index
+                self.printmsg('ERROR! Using default based on %s' % default_descr,verbosity=2)
+                return time_axis_default
             return time_axis
-        self.printmsg('ERROR! No PPS data.  Using sample rate to make a time axis.',verbosity=2)
-        return time_axis_index
+        self.printmsg('ERROR! No PPS data.  Using default based on %s' % default_descr,verbosity=2)
+        return time_axis_default
 
     if axistype.lower()=='computertime':
-        time_axis = self.timeline_computertime(timeline_index)
+        time_axis = computertime
         return time_axis
 
-    self.printmsg('timeline_timeaxis returning index time.',verbosity=2)
-    return time_axis_index
+    self.printmsg('timeline_timeaxis returning time axis based on %s.' % default_descr,verbosity=2)
+    return time_axis_default
 
 def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
     '''
@@ -279,8 +284,9 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
     span = tend - tstart
     npts = len(self.hk[datatype]['ComputerDate'])
     tindex = (span/npts)*np.arange(npts)
-    t_default = tindex
-    t_default_str = 'index time'
+    
+    t_default = self.hk[datatype]['ComputerDate']
+    t_default_str = 'computer time'
 
     tstamp = None
     if 'RaspberryDate' in self.hk[datatype].keys():

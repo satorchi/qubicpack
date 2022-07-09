@@ -267,7 +267,7 @@ def make_map_no_modulation(self,
             
     return retval
 
-def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True):
+def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,vmin=None,vmax=None):
     '''
     plot the map using information in the mapinfo dictionary which was returned by make_map_no_modulation()
 
@@ -350,7 +350,7 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True):
                 ax = fig.add_axes((.1+idx*figwidth,.1,figwidth,.8))
 
         if label in image.keys():
-            ax.imshow(img,extent=azel_limits)
+            ax.imshow(img,extent=azel_limits,vmin=vmin,vmax=vmax)
         else:
             colour = []
             for elidx in range(el.size): colour.append(None)

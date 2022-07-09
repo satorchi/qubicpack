@@ -805,7 +805,7 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=False,timeaxis='pps',ax=None
     self.printmsg('plotting timeline for asic=%i, TES=%i' % (asic,TES),verbosity=2)
     ret = self.asic(asic).plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
 
-    if not plot_calsource: return True
+    if not plot_calsource: return ret
 
     ax = ret['ax']
     t_src,v_src = self.calsource()

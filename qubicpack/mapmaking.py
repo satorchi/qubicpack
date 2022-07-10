@@ -279,7 +279,6 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
     'az scans'     : cross cuts at each elevation
  
     '''
-
     markers = {}
     markers['scan up'] = '^'
     markers['scan down'] = 'v'
@@ -369,8 +368,8 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
                     else:
                         curve = ax.plot(az,img[elidx,:],marker=marker,ls='none',color=colour[elidx])
                             
-            
-        ax.text(0.5,1.01,label,ha='center',va='bottom',transform=ax.transAxes)
+        ttl = '%s -- %s' % (mapinfo['title'],label)
+        ax.text(0.5,1.01,ttl,ha='center',va='bottom',transform=ax.transAxes)
         if projected:
             ax.set_xlabel('$\phi$ / degrees')
         else:

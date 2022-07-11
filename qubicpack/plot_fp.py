@@ -101,18 +101,18 @@ def plot_fp(args):
         lutmax = args['lutmax']
  
     face_colours = {}
-    face_colours['ASIC0'] = 'black'
+    face_colours['ASIC0'] = 'white'
     face_colours['ASIC1'] = 'white'
     face_colours['ASIC2'] = 'white'
 
     curve_colours = {}
-    curve_colours['ASIC0'] = 'black'
+    curve_colours['ASIC0'] = 'white'
     curve_colours['ASIC1'] = 'black'
     curve_colours['ASIC2'] = 'blue'
 
     label_boxprops = dict(boxstyle='round, pad=0.1', facecolor='white', alpha=1.0)
     label_colours = {}
-    label_colours['ASIC0'] = 'black'
+    label_colours['ASIC0'] = 'white'
     label_colours['ASIC1'] = 'black'
     label_colours['ASIC2'] = 'blue'
     if 'nolabels' in args.keys() and args['nolabels']:
@@ -200,11 +200,13 @@ def plot_fp(args):
             #print('(%i,%i) : facecolour=%s, labelcolour=%s' % (row,col,face_colour,label_colour))
             ax[row,col].set_facecolor(face_colour)
             label_boxprops['facecolor'] = face_colour
-            if print_labels:
+            if print_labels and asic!=0:
                 ax[row,col].text(text_x,text_y,pix_label,
                                  va='top',ha='center',
                                  color=label_colour,fontsize=labelfontsize,
                                  bbox=label_boxprops,transform = ax[row,col].transAxes)
+            if asic==0:
+                ax[row,col].axis('off')
             
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin: plt.show()

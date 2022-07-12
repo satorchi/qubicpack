@@ -190,20 +190,20 @@ def plot_fp(args):
                 if xminmax_key in args.keys() and args[xminmax_key] is not None:
                     xminmax = args[xminmax_key]
                 else:
-                    xminmax = (curve_x.min(),curve_x.max())
+                    xminmax = (np.nanmin(curve_x),np.nanmax(curve_x))
 
                 if yminmax_key in args.keys() and args[yminmax_key] is not None:
                     yminmax = args[yminmax_key]
                 else:
-                    yminmax = (curve.min(),curve.max())
+                    yminmax = (np.nanmin(curve),np.nanmax(curve))
 
-                if azel_key  in args.keys() and args[azel_key] is not None:
+                if azel_key in args.keys() and args[azel_key] is not None:
                     azel_extents = args[azel_key]
                 else:
                     azel_extents = None
                     
                 text_x = 0.5
-                text_y = 0.9
+                text_y = 1.0
                 labelfontsize = 0.8*fontsize
                 if asicgood_key in args.keys() and not args[asicgood_key][TES_idx]:
                     face_colour='black'
@@ -231,7 +231,7 @@ def plot_fp(args):
             label_boxprops['facecolor'] = face_colour
             if print_labels and asic!=0:
                 ax[row,col].text(text_x,text_y,pix_label,
-                                 va='top',ha='center',
+                                 va='bottom',ha='center',
                                  color=label_colour,fontsize=labelfontsize,
                                  bbox=label_boxprops,transform = ax[row,col].transAxes)
             if asic==0:

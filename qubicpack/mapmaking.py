@@ -21,6 +21,9 @@ Final mapmaking will be more sophisticated and will be implemented in qubicsoft 
 import numpy as np
 import healpy as hp
 from matplotlib import pyplot as plt
+from qubicpack.plot_fp import plot_fp
+
+
 colour = None
 def interpolate_azscan(az_axis,azpts,datapts,debug=False):
     '''
@@ -267,6 +270,42 @@ def make_map_no_modulation(self,
             
     return retval
 
+def make_all_maps(self,
+                  el_stepsize=0.3,
+                  az_npts=1000,
+                  backforth=True,
+                  tau=None,
+                  hk_timeoffset=None,
+                  debug=False):
+    '''
+    make all the maps for the focal plane and return a list of mapinfo
+
+    arguments are the same as for make_map_no_modulation()
+    arguments:
+         el_stepsize = how much we moved in elevation after each azimuth scan
+                       (maybe we can determine this from the elevation data)
+         az_npts = interpolate the azimuth scan onto this number of points
+         backforth = True/False did we go back and forth in azimuth on the same elevation?
+         tau = time constant (None if not applying the deconvolution)
+         debug = True/False should we make a plot of the azimuth scans?
+
+    '''
+    mapinfo_list = []
+    nTES = self.NASIC * 128
+    for TESidx in range(nTES):
+        TES = TESidx + 1
+        mapinfo = self.make_map_no_modulation(el_stepsize=el_stepsize,
+                                              az_npts=az_npts,
+                                              TES=TES,
+                                              backforth=backforth,
+                                              tau=tau,
+                                              hk_timeoffset=hk_timeoffset,
+                                              debug=debug)
+        mapinfo_list.append(mapinfo)
+        self.mapinfo_list = mapinfo_list
+    
+    return mapinfo_list
+
 def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,vmin=None,vmax=None):
     '''
     plot the map using information in the mapinfo dictionary which was returned by make_map_no_modulation()
@@ -305,7 +344,7 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
 
     az = mapinfo['az']
     el = mapinfo['el']
-    azel_limits = (az[0],az[-1],el[-1],el[0])
+    azel_limits = (az.min(),az.max(),el.min(),el.max())
     ttl = mapinfo['title']
     fileprefix = 'QUBIC_map_%s' % ttl.replace(', ','__').replace(' ','_')
 
@@ -349,7 +388,7 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
                 ax = fig.add_axes((.1+idx*figwidth,.1,figwidth,.8))
 
         if label in image.keys():
-            ax.imshow(img,extent=azel_limits,vmin=vmin,vmax=vmax)
+            ax.imshow(img,extent=azel_limits,origin='upper',vmin=vmin,vmax=vmax)
         else:
             colour = []
             for elidx in range(el.size): colour.append(None)
@@ -387,3 +426,54 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
         filename = '%s.png' % fileprefix
         fig.savefig(filename,format='png',dpi=100,bbox_inches='tight')
     return
+
+def plot_maps_focalplane(self,projected=True):
+    '''
+    plot all the maps on the focal plane
+    '''
+    try:
+        self.mapinfo_list
+    except:
+        self.mapinfo_list = None
+    if self.mapinfo_list is None:
+        mapinfo_list = self.make_all_maps()
+
+    fpinfo = {}
+    fpinfo['nolabels'] = True
+    fpinfo['title'] = self.dataset_name
+    fpinfo['pngname'] = '%s_maps.png' % self.dataset_name.replace(' ','_')
+    
+    for asicobj in self.asic_list:
+        if asicobj is None: continue
+
+        key = 'ASIC%i' % asicobj.asic
+        azel_key = '%s azel extents' % key
+
+        ASICidx = asicobj.asic - 1
+        TESidx = 128*ASICidx # first TES of that ASIC
+
+        az_npts = self.mapinfo_list[TESidx]['az npts']
+        az = self.mapinfo_list[TESidx]['az']
+        el_npts = self.mapinfo_list[TESidx]['el npts']
+        el = self.mapinfo_list[TESidx]['el']
+
+        fpinfo[azel_key] = (az.min(),az.max(),el.min(),el.max())
+        
+        img_array = np.zeros((128,el_npts,az_npts))
+        for idx in range(128):
+            TESidx = 128*ASICidx + idx
+            mapinfo = self.mapinfo_list[TESidx]
+            img = mapinfo['image combined']
+            if projected:
+                img_array[idx,:,:] = project_image(mapinfo['az'],mapinfo['az'],mapinfo['el'],img)
+            else:
+                img_array[idx,:,:] = img
+
+        fpinfo[key] = img_array
+
+
+    ans = plot_fp(fpinfo)
+    return fpinfo
+
+
+        

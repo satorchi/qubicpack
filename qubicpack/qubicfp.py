@@ -129,7 +129,10 @@ class qubicfp:
 
     from .mapmaking import\
         make_map_no_modulation,\
-        plot_map
+        make_all_maps,\
+        plot_maps_focalplane
+        
+    
 
     from .qubiciv import\
         write_iv_fits

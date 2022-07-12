@@ -34,10 +34,12 @@ def plot_fp(args):
     
     the argument is a dictionary with the curves and options
     valid keywords (n is the ASIC number):
-      'ASIC<n>' : the array of NPIXELS curves
+      'ASIC<n>' : the array of NPIXELS curves or images
       'ASIC<n> x-axis' : x-axis (use this to plot bias curves)
       'ASIC<n> bg' : the value to determine the background colour
       'ASIC<n> good' : an array of bool for each TES (good or not)
+      'ASIC<n> x-minmax' : min,max of x-axis or extents of imshow
+      'ASIC<n> y-minmax' : min,max of y-axis or extents of imshow
       'obsdate' : observation date (datetime object)
       'title' : plot title
       'subtitle' : plot subtitle
@@ -162,6 +164,9 @@ def plot_fp(args):
             asicbg_key = '%s bg' % asic_key
             asicgood_key = '%s good' % asic_key
             xaxis_key = '%s x-axis' % asic_key
+            xminmax_key = '%s x-minmax' % asic_key
+            yminmax_key = '%s y-minmax' % asic_key
+            azel_key = '%s azel extents' % asic_key
             
             face_colour = face_colours[asic_key]
             label_colour = label_colours[asic_key]
@@ -173,11 +178,30 @@ def plot_fp(args):
 
 
             if asic_key in args.keys() and args[asic_key] is not None:
+                data_array = args[asic_key]
+                ndims = len(data_array.shape)
+                curve = args[asic_key][TES_idx]
+                
                 if xaxis_key in args.keys() and args[xaxis_key] is not None:
                     curve_x = args[xaxis_key][TES_idx]
                 else:
-                    curve_x = range(args[asic_key].shape[1])
-                curve = args[asic_key][TES_idx]
+                    curve_x = np.array(range(args[asic_key].shape[1]))
+
+                if xminmax_key in args.keys() and args[xminmax_key] is not None:
+                    xminmax = args[xminmax_key]
+                else:
+                    xminmax = (curve_x.min(),curve_x.max())
+
+                if yminmax_key in args.keys() and args[yminmax_key] is not None:
+                    yminmax = args[yminmax_key]
+                else:
+                    yminmax = (curve.min(),curve.max())
+
+                if azel_key  in args.keys() and args[azel_key] is not None:
+                    azel_extents = args[azel_key]
+                else:
+                    azel_extents = None
+                    
                 text_x = 0.5
                 text_y = 0.9
                 labelfontsize = 0.8*fontsize
@@ -192,7 +216,12 @@ def plot_fp(args):
                         face_colour=mylut(args[asicbg_key][TES_idx],lutmin,lutmax)
 
 
-                ax[row,col].plot(curve_x,curve,color=curve_colour)
+                if ndims>2:
+                    ax[row,col].imshow(curve,extent=azel_extents,vmin=yminmax[0],vmax=yminmax[1],aspect='equal')
+                else:
+                    ax[row,col].plot(curve_x,curve,color=curve_colour)
+                    ax[row,col].set_xlim(xminmax)
+                    ax[row,col].set_ylim(yminmax)
 
             
                 

@@ -305,7 +305,7 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
 
     az = mapinfo['az']
     el = mapinfo['el']
-    azel_limits = (az[0],az[-1],el[0],el[-1])
+    azel_limits = (az[0],az[-1],el[-1],el[0])
     ttl = mapinfo['title']
     fileprefix = 'QUBIC_map_%s' % ttl.replace(', ','__').replace(' ','_')
 

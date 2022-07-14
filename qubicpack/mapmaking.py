@@ -107,10 +107,10 @@ def project2healpix(img,az,el,nside=256):
     
 
 def make_map_no_modulation(self,
+                           TES=None,
+                           asic=None,
                            el_stepsize=0.3,
                            az_npts=1000,
-                           asic=None,
-                           TES=None,
                            backforth=True,
                            tau=None,
                            hk_timeoffset=None,
@@ -427,7 +427,7 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
         fig.savefig(filename,format='png',dpi=100,bbox_inches='tight')
     return
 
-def plot_maps_focalplane(self,projected=True):
+def plot_maps_focalplane(self,projected=True,plot_image=None):
     '''
     plot all the maps on the focal plane
     '''
@@ -438,10 +438,20 @@ def plot_maps_focalplane(self,projected=True):
     if self.mapinfo_list is None:
         mapinfo_list = self.make_all_maps()
 
+    if plot_image is None:
+        plot_image = 'combined'
+
+    known_image_list = ['scan up','scan down','combined','diff']
+    if plot_image not in known_image_list:
+        print('Please choose an image type from one of:  %s' % (' | '.join(known_image_list)))
+        return None
+    image_key = 'image %s' % plot_image
+        
     fpinfo = {}
     fpinfo['nolabels'] = True
     fpinfo['title'] = self.dataset_name
     fpinfo['pngname'] = '%s_maps.png' % self.dataset_name.replace(' ','_')
+    fpinfo['subtitle'] = '%s image' % plot_image
     
     for asicobj in self.asic_list:
         if asicobj is None: continue
@@ -463,7 +473,7 @@ def plot_maps_focalplane(self,projected=True):
         for idx in range(128):
             TESidx = 128*ASICidx + idx
             mapinfo = self.mapinfo_list[TESidx]
-            img = mapinfo['image combined']
+            img = mapinfo[image_key]
             if projected:
                 img_array[idx,:,:] = project_image(mapinfo['az'],mapinfo['az'],mapinfo['el'],img)
             else:

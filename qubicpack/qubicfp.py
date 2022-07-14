@@ -87,6 +87,7 @@ class qubicfp:
         read_qubicstudio_asic_fits,\
         read_qubicpack_fits,\
         exist_data,\
+        nasics,\
         args_ok,\
         asic,\
         bias_phase,\

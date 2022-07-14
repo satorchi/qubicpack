@@ -36,6 +36,7 @@ def assign_defaults(self):
     self.dataset_name = None
     self.datadir = None
     self.assign_fitsblurbs()
+    self.mapinfo_list = None
     return
 
 def assign_verbosity(self,verbosity):
@@ -382,6 +383,17 @@ def exist_data(self):
         
 
 #### wrappers to return values
+def nasics(self):
+    '''
+    count the number of asics that have data
+    '''
+    nasics = 0
+    for asicobj in self.asic_list:
+        if asicobj is None: continue
+        if asicobj.exist_timeline_data(): nasics += 1
+    self.printmsg('Number of ASICs with data: %i' % nasics,verbosity=3)
+    return nasics
+    
 def args_ok(self,TES=None,asic=None,allow_multiple_TES=False,asic_only_required=False):
     '''
     check if arguments are okay for the wrapper
@@ -395,11 +407,7 @@ def args_ok(self,TES=None,asic=None,allow_multiple_TES=False,asic_only_required=
     self.printmsg('checking arguments:  TES=%s, asic=%s' % (TES,asic),verbosity=4)
 
     # first, count the number of asics that have data
-    nasics = 0
-    for asicobj in self.asic_list:
-        if asicobj is None: continue
-        if asicobj.exist_timeline_data(): nasics += 1
-    self.printmsg('Number of ASICs with data: %i' % nasics,verbosity=3)
+    nasics = self.nasics()
 
     if nasics==0:
         self.printmsg('There is no data!')

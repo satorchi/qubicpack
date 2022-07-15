@@ -407,7 +407,7 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
                     else:
                         curve = ax.plot(az,img[elidx,:],marker=marker,ls='none',color=colour[elidx])
                             
-        ttl = '%s -- %s' % (mapinfo['title'],label)
+        ttl = '%s\n%s' % (mapinfo['title'],label)
         ax.text(0.5,1.01,ttl,ha='center',va='bottom',transform=ax.transAxes)
         if projected:
             ax.set_xlabel('$\phi$ / degrees')

@@ -1540,6 +1540,7 @@ def qubicstudio_hk_truename(self,hktype):
     if hktype.upper() == 'CALSOURCE': return 'CALSOURCE'
     if hktype.upper() == 'SOURCE': return 'CALSOURCE'
     if hktype.upper() == 'TBATH': return 'AVS47_1_CH2'
+    if hktype.upper() == 'HWP': return 'HWP-Position'
     return hktype
 
 def azel_etc(self,TES=None):

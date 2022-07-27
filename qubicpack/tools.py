@@ -1535,8 +1535,13 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper().find('MGC')==0: return 'MGC_HK'
     if ftype.upper().find('TBATH')==0: return 'EXTERN_HK'
 
-    if self.temperature_labels is None: return ftype.upper()
-        
+    # if we give a particular HK data name, return the associated filetype
+    for key in self.hk.keys():
+        for datkey in self.hk[key]:
+            if ftype.upper() == datkey.upper(): return key
+
+    # maybe we gave a temperature label
+    if self.temperature_labels is None: return ftype.upper()        
     for key in self.temperature_labels.keys():
         if ftype.upper() == self.temperature_labels[key].upper(): return 'EXTERN_HK'
         

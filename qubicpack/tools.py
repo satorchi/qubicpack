@@ -1534,11 +1534,14 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper().find('MMR')==0: return 'MMR_HK'
     if ftype.upper().find('MGC')==0: return 'MGC_HK'
     if ftype.upper().find('TBATH')==0: return 'EXTERN_HK'
+    if ftype.upper() == 'SWITCH1': return 'INTERN_HK'
+    if ftype.upper() == 'SWITCH2': return 'INTERN_HK'
 
     # if we give a particular HK data name, return the associated filetype
+    hktruename = self.qubicstudio_hk_truename(ftype)
     for key in self.hk.keys():
         for datkey in self.hk[key]:
-            if ftype.upper() == datkey.upper(): return key
+            if hktruename == datkey: return key
 
     # maybe we gave a temperature label
     if self.temperature_labels is None: return ftype.upper()        

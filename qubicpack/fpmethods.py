@@ -37,6 +37,7 @@ def assign_defaults(self):
     self.datadir = None
     self.assign_fitsblurbs()
     self.mapinfo_list = None
+    self.assign_temperature_labels()
     return
 
 def assign_verbosity(self,verbosity):

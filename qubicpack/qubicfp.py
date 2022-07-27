@@ -30,6 +30,7 @@ class qubicfp:
         read_fits,\
         find_calsource,\
         find_hornswitch,\
+        assign_bath_temperature,\
         read_qubicstudio_dataset,\
         read_calsource_fits,\
         read_qubicstudio_fits,\
@@ -61,7 +62,8 @@ class qubicfp:
         assign_obsdate,\
         assign_detector_name,\
         guess_detector_name,\
-        assign_logfile
+        assign_logfile,\
+        assign_temperature_labels
 
     from .timeline import\
         timeaxis

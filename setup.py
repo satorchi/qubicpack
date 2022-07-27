@@ -12,7 +12,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 setup.py for qubicpack only.  
 Use this to install qubicpack without pystudio
 '''
-from __future__ import division, print_function
 import os,sys,subprocess
 import datetime as dt
 from setuptools import setup

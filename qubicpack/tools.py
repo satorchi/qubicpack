@@ -391,6 +391,80 @@ def find_hornswitch(self,datadir):
     
     return files
 
+def assign_bath_temperature(self):
+    '''
+    assign the TES bath temperature from the housekeeping data
+    '''
+    if self.tdata is None:self.tdata = [{}]
+    tdata = self.tdata[-1]
+
+    # the bath temperature probes, in order of preference
+    bath_probes = ['TES stage','MGC3_PID_0_Mes','MMR3_CH2_R']
+    for probe in bath_probes:
+        testemp = None
+        hkdat = self.get_hk(probe)
+        if hkdat is None: continue
+
+        if probe=='MMR3_CH2_R':
+            # transfer function recalibrated 2020-06-18
+            # R=Ro*exp(sqrt(Tg/T): Ro=8.44521 Ohm Tg=31.18887 K
+            # see elog: https://elog-qubic.in2p3.fr/demo/443
+            Ro=8.44521
+            Tg=31.18887
+            R = hkdat
+            try:
+                testemp = Tg/(np.log(R/Ro))**2
+            except:
+                testemp = None
+        else:
+            testemp = hkdat
+
+        if testemp is not None: break
+
+    # we need the time axis to make the clean Tbath array
+    hktstamps = self.timeaxis(datatype=probe)
+
+    # filter spike artefacts in the HK data
+    if testemp is not None:
+        idxok = (testemp<0.5) & (testemp>0)
+        if idxok.sum()==0:
+            idxok = (testemp<300) & (testemp>0)
+
+    if testemp is None or idxok.sum()==0:
+        # in desperation, temperature given in the dataset title
+        if self.dataset_name is not None:
+            match = re.search('[0-9][0-9][0-9]mK',self.dataset_name)
+            if match:
+                tempstr = match[0].replace('mK','')
+                temperature = 1e-3*float(tempstr)
+                testemp = np.array([temperature])
+                idxok = np.array([True])
+                self.temperature = temperature
+                self.tdata[-1]['TES_TEMP'] = self.temperature
+                self.printmsg('Assigning TES temperature from the dataset name: %.1fmK' % (1000*self.temperature),verbosity=1)
+
+    if testemp is None or idxok.sum()==0:
+        # that's it.  give up.  the temperature is unknown.
+        self.printmsg('WARNING!  Bath temperature is unknown!',verbosity=1)
+        return
+        
+    min_temp = testemp[idxok].min()
+    max_temp = testemp[idxok].max()
+    temperature = testemp[idxok].mean()
+        
+    self.printmsg('TES temperature varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
+    self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
+    self.tdata[-1]['TES_TEMP'] = temperature
+    self.temperature = temperature
+
+    # assign the bath temperature to the asic objects
+    self.assign_temperature(temperature)
+
+    # assign a clean Tbath array with its timestamps
+    self.Tbath = (hktstamps[idxok],testemp[idxok])
+    
+    return
+
 def read_qubicstudio_dataset(self,datadir,asic=None):
     '''
     read a QubicStudio data set which consists of a number of FITS files in a directory
@@ -453,68 +527,11 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         for filename in files:
             chk = self.read_fits(filename)
 
+    # assign bath temperature
+    self.assign_bath_temperature()
 
-
-    # try to assign bath temperature if the default sensor is unavailable    
-    # temperature given by MGC
-    if (self.temperature is None or self.temperature<0) and 'MGC_HK' in self.hk.keys():
-        if 'MGC3_PID_0_Mes' in self.hk['MGC_HK'].keys():
-            testemp = self.hk['MGC_HK']['MGC3_PID_0_Mes']
-            min_temp = testemp.min()
-            max_temp = testemp.max()
-            temperature = testemp.mean()
-            self.printmsg('TES temperature measured by MGC varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
-            self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
-            self.tdata[-1]['TES_TEMP'] = temperature
-            self.temperature = temperature
-
-    # try to assign bath temperature if the default sensor is unavailable    
-    # temperature given by MMR
-    if (self.temperature is None or self.temperature<0) and 'MMR_HK' in self.hk.keys():
-        # transfer function recalibrated 2020-06-18
-        # R=Ro*exp(sqrt(Tg/T): Ro=8.44521 Ohm Tg=31.18887 K
-        # see elog: https://elog-qubic.in2p3.fr/demo/443
-        Ro=8.44521
-        Tg=31.18887
-        if 'MMR3_CH2_R' in self.hk['MMR_HK'].keys() and self.hk['MMR_HK']['MMR3_CH2_R'].min() > 100:
-            R = self.hk['MMR_HK']['MMR3_CH2_R']
-            try:
-                testemp = Tg/(np.log(R/Ro))**2
-                min_temp = testemp.min()
-                max_temp = testemp.max()
-                temperature = testemp.mean()
-                self.printmsg('TES temperature measured by MMR varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
-                self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
-                self.tdata[-1]['TES_TEMP'] = temperature
-                self.temperature = temperature
-            except:
-                pass
-
-            
-    # try to assign bath temperature if the default sensor is unavailable               
-    # in desperation, temperature given in the dataset title
-    if (self.temperature is None or self.temperature<0) and self.dataset_name is not None:
-        match = re.search('[0-9][0-9][0-9]mK',self.dataset_name)
-        if match:
-            tempstr = match[0].replace('mK','')
-            self.temperature = 1e-3*float(tempstr)
-            self.tdata[-1]['TES_TEMP'] = self.temperature
-            self.printmsg('Assigning TES temperature from the dataset name: %.1fmK' % (1000*self.temperature),verbosity=2)
-
-    # that's it.  give up.  the temperature is unknown.
-    if self.temperature is None or self.temperature<0:
-        self.printmsg('WARNING!  Bath temperature is unknown!',verbosity=2)
-        
-        
-        
-    # assign bath temperature to asic objects.  This is useful for infotext()
-    if self.temperature is not None and self.__object_type__=='qubicfp':
-        for asic_obj in self.asic_list:
-            if asic_obj is None: continue
-            self.printmsg('assigning bath temperature of %.3fK to asic %i' % (self.temperature,asic_obj.asic),verbosity=2)
-            asic_obj.tdata[-1]['TES_TEMP'] = self.temperature
-            asic_obj.temperature = self.temperature
-            
+    # assign temperature labels
+    self.assign_temperature_labels()
 
     # now try to find the corresponding calsource file, if necessary
     if 'CALSOURCE' not in self.hk.keys():
@@ -929,20 +946,11 @@ def read_qubicstudio_hkfits(self,hdu):
 def read_qubicstudio_hkextern_fits(self,hdu):
     '''
     read the housekeeping data
+    the main item of interest here is the TES bath temperature
+    which is read in assign_bath_temperature()
+    this wrapper is kept for historical reasons
     '''
-    if self.tdata is None:self.tdata = [{}]
-    tdata = self.tdata[-1]
-    testemp = hdu.data.field(5)
-    min_temp = testemp.min()
-    max_temp = testemp.max()
-    temperature = testemp.mean()
-    self.printmsg('TES temperature varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
-    self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
-    self.tdata[-1]['TES_TEMP'] = temperature
-    self.temperature = temperature
-
-    self.read_qubicstudio_hkfits(hdu)
-    return
+    return self.read_qubicstudio_hkfits(hdu)
 
 def read_qubicpack_fits(self,h):
     '''
@@ -1526,6 +1534,12 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper().find('MMR')==0: return 'MMR_HK'
     if ftype.upper().find('MGC')==0: return 'MGC_HK'
     if ftype.upper().find('TBATH')==0: return 'EXTERN_HK'
+
+    if self.temperature_labels is None: return ftype.upper()
+        
+    for key in self.temperature_labels.keys():
+        if ftype.upper() == self.temperature_labels[key].upper(): return 'EXTERN_HK'
+        
     return ftype.upper()
 
 def qubicstudio_hk_truename(self,hktype):
@@ -1541,6 +1555,12 @@ def qubicstudio_hk_truename(self,hktype):
     if hktype.upper() == 'SOURCE': return 'CALSOURCE'
     if hktype.upper() == 'TBATH': return 'AVS47_1_CH2'
     if hktype.upper() == 'HWP': return 'HWP-Position'
+
+    if self.temperature_labels is None: return hktype
+
+    for key in self.temperature_labels.keys():
+        if hktype.upper() == self.temperature_labels[key].upper(): return key
+    
     return hktype
 
 def azel_etc(self,TES=None):

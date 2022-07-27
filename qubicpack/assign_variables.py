@@ -74,6 +74,7 @@ def assign_defaults(self):
     self.hornswitch_files = None
     self.hk = {}
     self.assign_fitsblurbs()
+    self.temperature_labels = None
     return
 
 def assign_fitsblurbs(self):
@@ -206,15 +207,46 @@ def assign_ip(self,ip):
 
 
 def assign_temperature(self,temp):
-    if (not isinstance(temp,int)) and (not isinstance(temp,float)):
+    try:
+        temperature = float(temp)
+    except:
         self.printmsg('ERROR! Temperature should be a number in Kelvin (not milliKelvin)')
-        self.temperature=None
+        self.temperature = None
         return None
-    else:
-        self.temperature=temp
-        if self.tdata is not None:
-            self.tdata[-1]['TES_TEMP'] = temp
+    
+    self.temperature = temperature
+    if self.tdata is None: self.tdata = [{}]
+    self.tdata[-1]['TES_TEMP'] = temperature
     return self.temperature
+
+def assign_temperature_labels(self):
+    '''
+    read temperature labels
+    '''
+    pkg_dir = os.path.dirname(__file__)
+    label_file = os.sep.join([pkg_dir,'data','TD_TEMPERATURE_LABELS.txt'])
+    if not os.path.isfile(label_file):
+        self.temperature_labels = None
+        self.printmsg('could not find temperature labels: %s' % label_file,verbosity=3)
+        return
+    h = open(label_file)
+    lines = h.read().split('\n')
+    h.close()
+    self.temperature_labels = {}
+    for line in lines:
+        if line=='': continue
+        keyval = line.split('=')
+        if len(keyval)<2: continue
+        key = keyval[0].strip()
+        val = keyval[1].strip()
+        self.temperature_labels[key] = val
+
+    # assign the temperature labels to the asic objects
+    for asicobj in self.asic_list:
+        if asicobj is None: continue
+        asicobj.temperature_labels = self.temperature_labels
+        
+    return
 
 def assign_obsdate(self,d=None):
     '''

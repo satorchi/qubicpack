@@ -329,7 +329,12 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
         self.printmsg('GPS is zero.  Using %s instead' % t_default_str)
         return t_default
 
-    return self.pps2date(pps,gps)
+    pps_time = self.pps2date(pps,gps)
+    if pps_time is None:
+        self.printmsg('Could not get timeaxis from PPS/GPS.  Using %s instead' % t_default_str)
+        return t_default
+
+    return pps_time
     
 
 def determine_bias_modulation(self,TES,timeline_index=None,timeaxis='pps'):

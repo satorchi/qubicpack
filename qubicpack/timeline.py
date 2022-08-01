@@ -286,7 +286,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
     tindex = (span/npts)*np.arange(npts)
     
     t_default = self.hk[datatype]['ComputerDate']
-    t_default_str = 'computertime'
+    t_default_str = 'computer time'
 
     tstamp = None
     if 'RaspberryDate' in self.hk[datatype].keys():

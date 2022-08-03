@@ -2,6 +2,7 @@
 $Id: ana_Fiber_TimeConstant.py
 $auth: Sophie Henrot-Versille <versille@lal.in2p3.fr>
 $created: Mon 14 Aug 2017 1
+$updated: Wed 03 Aug 2022 10:30:51 CEST by Steve for compatibility with qubicpack and python3
 re-reading of binary files produced by run_AnaFibre.py which
 stores for each file of dataFiles_Fibres and for each TES
 the mean template of the signal measured on a pulse of the
@@ -38,7 +39,7 @@ if doplot:
             dF=dataFiles.dataFibre[i]
             #            if dF["asic"]=="2" and dF["AmpFibre"]=="120mV" and dF["I_fll"]=="50" :                                                                    
             if dF["asic"]=="1" and dF["AmpFibre"]=="20mV" and int(dF["I_fll"])!=75:
-                print i 
+                print(i)
                 tofit=dataToPlot[i][tes][402:500]
                 x=numpy.arange(402,500)
                 remove=tofit.min()
@@ -54,13 +55,13 @@ if doplot:
                     plt.xlabel("Time (s)")
                     plt.ylabel("Signal (arbitrary unit)")
                     plt.plot(x,func(x,*xo),'r-')
-                    print "|| Voffset=",dF["Voffset"],",I_fll=",dF["I_fll"],'|| ',tes+1,'|| ', res, "||"
+                    print("|| Voffset=",dF["Voffset"],",I_fll=",dF["I_fll"],'|| ',tes+1,'|| ', res, "||")
                     vec_results.append(res)
                 except RuntimeError:
                     print("Error - curve_fit failed")
                     vec_results.append(0)
 
-        print vec_results
+        print(vec_results)
         get_results.append(vec_results)
         if count_fit==4:
             plt.title("TES="+str(tes+1)+",ASIC="+str(int(dF["asic"])))

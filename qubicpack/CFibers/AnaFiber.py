@@ -2,15 +2,53 @@
 $Id: AnaFiber.py
 $auth: Sophie Henrot-Versille <versille@lal.in2p3.fr>
 $created: Mon 14 Aug 2017 1
+$updated: Wed 03 Aug 2022 09:53:58 CEST by Steve for compatibility with changes to qubicpack
 set of class to Analyse timeline measurements when Carbon fibers are
 pulsed in fron of the TES arrays of QUBIC
 """
-
-from qubicpack import qubicpack as qp
+import os,struct
 import matplotlib.pyplot as plt
-import pandas as pandas
-import numpy as numpy
+import pandas
+import numpy as np
+import datetime as dt
+from qubicpack.pix2tes import assign_pix_grid, assign_pix2tes
 
+pix_grid = assign_pix_grid()
+obsdate = dt.datetime.strptime('2017-07-13T15:14:00','%Y-%m-%dT%H:%M:%S')
+TES2PIX = assign_pix2tes(obsdate)
+
+def read_bins(filename):
+    '''
+    This is to read the binary files produced by Sophie for the carbon fibre measurement of 2017-07-13
+    They can be found on the CC-IN2P3 server in the directory:
+    /sps/qubic/Users/archive/Calib/Data_13_07_2017
+ 
+    see wiki page:
+    http://qubic.in2p3.fr/wiki/pmwiki.php/TD/P73TestWithACarbonFiberSource
+    '''
+    if not isinstance(filename,str):
+        print('ERROR! please enter a valid filename.')
+        return None
+            
+    if not os.path.exists(filename):
+        print('ERROR! file not found: %s' % filename)
+        return None
+            
+    print('reading binary file: %s, I suppose this is a timeline' % filename)
+
+    h = open(filename,'rb')
+    fsize = h.seek(0,os.SEEK_END)
+    h.seek(0,os.SEEK_SET)
+    datlist = []
+    while h.tell() < (fsize-14-128*4):
+        h.seek(14,os.SEEK_CUR)
+        xbytes = h.read(4*128)
+        x = struct.unpack('128i',xbytes)
+        datlist.append(x)
+    h.close()
+    data = np.array(datlist)
+
+    return data
 
 class DataOfOneAsic:
     def __init__(self, asic, timelines=[],tes_blacklist=[],minStep=20000):
@@ -51,11 +89,11 @@ class DataOfOneAsic:
             if tes == 44:
                 plt.plot(self.tesDataObj[tes].get_timeline())
             d,pic_array=self.tesDataObj[tes].compute_summedData(doplot)
-            picked=numpy.where(numpy.array(pic_array)<0)
-            if numpy.size(picked)<10:
+            picked=np.where(np.array(pic_array)<0)
+            if np.size(picked)<10:
                 tes_blacklist.append(tes)
             #if tes == 44:
-            #    print numpy.size(picked)
+            #    print np.size(picked)
         self.tes_blacklist=tes_blacklist
         return tes_blacklist
 
@@ -67,14 +105,14 @@ class DataOfOneAsic:
             tfromLib2=self.timelines[tes]
             tfromLib=tfromLib2[self.minStep:] 
             if not tes in self.tes_blacklist:
-                mean_gliss=pandas.rolling_mean(tfromLib,50)
+                mean_gliss = pandas.Series(tfromLib).rolling(window=50).mean()
                 mean_gliss=mean_gliss[50:]
-                delta_mean=numpy.fabs(mean_gliss.max()-mean_gliss.min())
+                delta_mean=np.fabs(mean_gliss.max()-mean_gliss.min())
                 if delta_mean>max_sig:
                     max_sig=delta_mean
                     max_tes=tes
                 #print delta_mean, max_sig
-        print 'chosen tes=',max_tes
+        print('chosen tes=',max_tes)
         self.maxTES=max_tes
         if doplot:
             data_maxtes=(self.timelines[max_tes])[self.minStep:]
@@ -87,7 +125,7 @@ class DataOfOneAsic:
         return self.maxTES, self.picArray
 
     def set_TESMaxSig(self,tesMax=1,doplot=False):
-        print 'replacing maxTES by ', tesMax
+        print('replacing maxTES by ', tesMax)
         self.maxTES=tesMax
         if doplot:
             data_maxtes=(self.timelines[max_tes])[self.minStep:]
@@ -105,6 +143,7 @@ class DataOfOneAsic:
         for tes in range(128):
 #            if not tes in self.tes_blacklist:
             d=(self.tesDataObj[tes]).sumWithPicArray(pic_array=pic_array)
+            if d is None: return None
             allSummedData.append(d)
 #            else:
 #                allSummedData.append([])
@@ -145,7 +184,7 @@ class DataOfOneTES:
     def compute_summedData(self,doplot=False):
         datai=self.timeline
         size_data=datai.size
-        axe_xdata=numpy.arange(size_data)
+        axe_xdata=np.arange(size_data)
         dmean=datai.mean()
         period=0
         max_period=-1000
@@ -189,13 +228,13 @@ class DataOfOneTES:
                 pic_array.append(1000)
                 count_i+=1
 
-        array_signal_Summed = numpy.asarray(summed_signal)
+        array_signal_Summed = np.asarray(summed_signal)
         if doplot:
             plt.figure()
             plt.plot(datai)
             plt.plot(pic_array)
             plt.show()
-        array_norm_Summed=numpy.array(norm_signal)
+        array_norm_Summed=np.array(norm_signal)
         array_signal_Summed/=array_norm_Summed
         if doplot:
             plt.figure()
@@ -207,23 +246,24 @@ class DataOfOneTES:
 
 
     def sumWithPicArray(self,pic_array=[]):
-        if numpy.size(pic_array)==0:
-            print 'the program will not work ! choose an appropriate pic_array'
+        if np.size(pic_array)==0:
+            print('the program will not work ! choose an appropriate pic_array')
+            return None
         Allsummed=[]
         pic_array_ori=pic_array
-        picked=numpy.where(numpy.array(pic_array_ori)<0)
+        picked=np.where(np.array(pic_array_ori)<0)
         pic_array=pic_array_ori[picked[0][0]:]
         period_for_sommation=picked[0][1]-picked[0][0]
         summed=[]
         count_period=0
         tfromLib2=self.timeline
         tfromLib=tfromLib2[picked[0][0]:]
-        summed=numpy.zeros(period_for_sommation)        
+        summed=np.zeros(period_for_sommation)        
         count_pic=0
-        data_pdt_la_periode=numpy.zeros(period_for_sommation)
-        for d in range(numpy.size(pic_array)):
+        data_pdt_la_periode=np.zeros(period_for_sommation)
+        for d in range(np.size(pic_array)):
             index=d-count_pic
-            if index< period_for_sommation and d<picked[0][numpy.size(picked)-1]:
+            if index< period_for_sommation and d<picked[0][np.size(picked)-1]:
                 data_pdt_la_periode[index]=(tfromLib[d])
             if pic_array[d]<0:
                 count_pic=d
@@ -231,7 +271,7 @@ class DataOfOneTES:
                     for i in range(period_for_sommation):
                         summed[i]+=data_pdt_la_periode[i]-data_pdt_la_periode.mean()
                     count_period+=1
-                    data_pdt_la_periode=numpy.zeros(period_for_sommation)
+                    data_pdt_la_periode=np.zeros(period_for_sommation)
         summed/=count_period
         self.summedWithPeak=summed
         return(summed)
@@ -248,15 +288,13 @@ def plot_Fiber_on_focalPlane(dataToPlot,tagd, xwin=True,figsize=(16,16),color="b
     plot an image of the TES array labeling each pixel
     dataToPlot is an array[asic,pixel]
     '''
-    go=qp()
-    go.figsize=figsize
     fontsize=figsize[0]
     ttlfontsize=fontsize*1.2
     
     ttl='QUBIC TES array\nASIC1 in blue.  ASIC2 in green.'
     
-    nrows=go.pix_grid.shape[0]
-    ncols=go.pix_grid.shape[1]
+    nrows=pix_grid.shape[0]
+    ncols=pix_grid.shape[1]
     
     if xwin: plt.ion()
     else: plt.ioff()
@@ -265,13 +303,13 @@ def plot_Fiber_on_focalPlane(dataToPlot,tagd, xwin=True,figsize=(16,16),color="b
     plt.rc('xtick', labelsize=9)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=9)    # fontsize of the tick labels
     
-    fig,ax=plt.subplots(nrows,ncols,figsize=go.figsize)
+    fig,ax=plt.subplots(nrows,ncols,figsize=figsize)
     if xwin: fig.manager.canvas.set_window_title('plt:  '+ttl)
     fig.suptitle(ttl,fontsize=ttlfontsize)
 
 
-    TES_translation_table_ASIC1=go.TES2PIX[0]
-    TES_translation_table_ASIC2=go.TES2PIX[1]
+    TES_translation_table_ASIC1=TES2PIX[0]
+    TES_translation_table_ASIC2=TES2PIX[1]
     
     #WhichTranslat=TES_translation_table_ASIC1
     #if self.asic == "2":
@@ -322,9 +360,9 @@ def plot_Fiber_on_focalPlane(dataToPlot,tagd, xwin=True,figsize=(16,16),color="b
                     count_bad+=1
 
                 alld=dataToPlot[asic_of_pixel-1]
-		d=alld[int(pix_label)-1]
-	        d=d[2:]
-                if numpy.size(d)!=0: 
+                d=alld[int(pix_label)-1]
+                d=d[2:]
+                if np.size(d)!=0: 
                     mini=d.min()
                     maxi=d.max()
                     deltai=maxi-mini
@@ -333,7 +371,7 @@ def plot_Fiber_on_focalPlane(dataToPlot,tagd, xwin=True,figsize=(16,16),color="b
                     current.set_ylim([mini,maxi])
                     current.plot(d,color=color,linewidth=2.0)
 
-    print 'count_bad',count_bad
+    print('count_bad',count_bad)
     plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin: 
         fig.show()

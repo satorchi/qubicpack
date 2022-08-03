@@ -52,7 +52,6 @@ class qubicasic:
         read_qubicstudio_science_fits,\
         read_qubicstudio_asic_fits,\
         read_qubicstudio_hkfits,\
-        read_bins,\
         output_filename,\
         data_subdir,\
         get_from_keyboard,\

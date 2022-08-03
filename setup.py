@@ -34,7 +34,7 @@ with open('README.md') as f:
 setup(install_requires=['numpy'],
       name=DISTNAME,
       version=VERSION,
-      packages=[DISTNAME],
+      packages=[DISTNAME,DISTNAME+'/CFibers'],
       zip_safe=False,
       package_data={DISTNAME: ['data/*']},
       author=AUTHOR,

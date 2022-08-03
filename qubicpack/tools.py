@@ -1109,41 +1109,6 @@ def read_qubicpack_fits(self,h):
 
     return
 
-
-def read_bins(self,filename):
-    if not isinstance(filename,str):
-        self.printmsg('ERROR! please enter a valid filename.')
-        return None
-            
-    if not os.path.exists(filename):
-        self.printmsg('ERROR! file not found: %s' % filename)
-        return None
-            
-    self.printmsg('reading binary file: %s, I suppose this is a timeline' % filename)
-
-    data=[]
-    with open(filename, "rb") as f:
-        b = f.read(14)
-        data.append(struct.unpack('128i', f.read(4*128)))
-        while f.read(14) != "": data.append(struct.unpack('128i', f.read(4*128)))
-        
-    data=np.asarray(zip(*data))
-    self.NPIXELS=128
-    npts=int(data.size/128.)
-
-    timeline_array=[]
-    timeline_tes=np.empty((npts))
-    for n in range(self.NPIXELS):
-        timeline_tes=data[n]        
-        timeline_array.append(timeline_tes)
-
-    timeline_array=np.array(timeline_array)
-    self.tdata=[]
-    tdata={}
-    tdata['TIMELINE']=timeline_array
-    self.tdata.append(tdata)
-    f.close()
-    return
         
 def get_from_keyboard(self,msg,default=None):
     ''''

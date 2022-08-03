@@ -36,7 +36,6 @@ class qubicfp:
         read_qubicstudio_fits,\
         read_qubicstudio_hkextern_fits,\
         read_qubicstudio_hkfits,\
-        read_bins,\
         output_filename,\
         data_subdir,\
         get_from_keyboard,\

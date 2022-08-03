@@ -2,6 +2,7 @@
 $Id: plot_Fibers_FP.py
 $auth: Sophie Henrot-Versille <versille@lal.in2p3.fr>
 $created: Mon 14 Aug 2017 1
+$updated: Wed 03 Aug 2022 10:28:24 CEST by Steve for compatibility with updates to qubicpack and python
 will search for bad pixels according to the data of the TES
 recorded with the Carbon fibers and show them on the focal
 plane (adapted from Steve Torchinsky's example in scripts/)
@@ -9,8 +10,8 @@ plane (adapted from Steve Torchinsky's example in scripts/)
 
 import numpy as numpy
 import matplotlib.pyplot as plt
-import dataFiles_Fibres as dataFiles
-import AnaFiber as AnaFibre
+import qubicpack.CFibers.dataFiles_Fibres as dataFiles
+import qubicpack.CFibers.AnaFiber as AnaFibre
 from scipy.optimize import curve_fit  
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -129,9 +130,9 @@ with PdfPages('all.pdf') as pdf:
                 pdf.savefig()
                 plt.close()
                 count_bad+=1
-                print 'Bad Pixel',asic+1,tes+1
+                print('Bad Pixel',asic+1,tes+1)
             
             valtag.append(valtagdi)
         tagd.append(valtag)
-print "bad from real decompte", count_bad
-AnaFibre.plot_Fiber_on_focalPlane(data,tagd,xwin=True,figsize=(16,16),color="yellow",pngname="fibreData1307_6.5_50_120.png")                                                                                  
+print("bad from real decompte", count_bad)
+AnaFibre.plot_Fiber_on_focalPlane(data,tagd,xwin=True,figsize=(16,16),color="yellow",pngname="fibreData1307_6.5_50_120.png")

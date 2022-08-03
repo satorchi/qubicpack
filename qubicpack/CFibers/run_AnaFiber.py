@@ -2,22 +2,24 @@
 $Id: run_AnaFiber.py
 $auth: Sophie Henrot-Versille <versille@lal.in2p3.fr>
 $created: Mon 14 Aug 2017 1
+$updated: Wed 03 Aug 2022 09:48:41 CEST by Steve for compatibility with changes to qubicpack
 make use of the AnaFiber set of classes to sum-up the
 signal measured for the Carbon fiber pulses and store
 them to binary files
 """
-
+import os
 import numpy as numpy
 import pandas as pandas
-from qubicpack import qubicpack as qp
-import AnaFiber  as AnaFibre
+import qubicpack.CFibers.AnaFiber as AnaFibre
 import matplotlib.pyplot as plt
-import dataFiles_Fibres as dataFiles
+import qubicpack.CFibers.dataFiles_Fibres as dataFiles
+from qubicpack.utilities import Qubic_DataDir
 from matplotlib.backends.backend_pdf import PdfPages
 
 
+doPlot = True
 
-
+data_dir = Qubic_DataDir(datadir='/sps/qubic/Users/archive/Calib',datafile='Data_13_07_2017')
 
 dataToPlot=[]
 allMinMax=[]
@@ -27,21 +29,23 @@ for i in range(numpy.size(dataFiles.dataFibre)):
 #for i in range(9,10):
 
     dF=dataFiles.dataFibre[i]
-    print dF["file"]
-    
-    go=qp()
-    go.read_bins(dF["file"])
+    print(dF["file"])
+    filename = os.sep.join([data_dir,dF['file']])
+    if not os.path.isfile(filename):
+        print('file not found: %s' % filename)
+        continue
+              
+    raw_timelines = AnaFibre.read_bins(filename)
     
     timelines=[]
     timelinessaved=[]
     for tes in range(128):
-        test=go.timelines[tes]
+        test = raw_timelines[tes]
         timelinessaved.append(test)
-        pand=pandas.rolling_mean(test,1000)
+        pand = pandas.Series(test).rolling(window=1000).mean()
         pand=test[:numpy.size(test)-500]-pand[500:]
         pand=pand[~numpy.isnan(pand)]
         timelines.append(pand[250:])
-#        timelines.append(go.timelines[tes])
         
     allTimeLines.append(timelinessaved)
 
@@ -67,7 +71,6 @@ for i in range(numpy.size(dataFiles.dataFibre)):
 
     plt.figure()
 
-    doPlot=False
     if doPlot:
         dataObj=data.get_tesDataObj()
         for tes in data.get_TESBlackList():
@@ -157,7 +160,7 @@ if doplot:
                 n,bins,patches=plt.hist(dataToPlot[i][tes],50)
                 DeltaV.append(numpy.abs(bins.max()-bins.min()))
                 Voff.append(float(dF["Voffset"].replace("V","")))
-                print float(dF["Voffset"].replace("V","")), numpy.abs(bins.max()-bins.min()),i 
+                print(float(dF["Voffset"].replace("V","")), numpy.abs(bins.max()-bins.min()),i)
     plt.figure()
     plt.plot(Voff,DeltaV,label=tes)
     plt.xlim([4,8])
@@ -172,7 +175,7 @@ if doplot:
             dF=dataFiles.dataFibre[i]
             if dF["asic"]=="2" and dF["AmpFibre"]=="120mV" and dF["I_fll"]=="50" :
                 if tes==0:
-                    print 'file',i
+                    print('file',i)
                 tMinMax=allMinMax[i][tes]
                 Voff.append(float(dF["Voffset"].replace("V","")))
                 DeltaV.append(numpy.fabs(tMinMax[0]-tMinMax[1]))
@@ -180,6 +183,4 @@ if doplot:
     plt.xlim([4,8])
     plt.legend()
     plt.show()
-                             
-                
-
+    

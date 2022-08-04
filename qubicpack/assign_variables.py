@@ -18,6 +18,7 @@ import matplotlib
 
 from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index
 from qubicpack.pix2tes import assign_pix_grid, assign_pix2tes, tes2pix, pix2tes, TES2PIX
+from qubicpack import __file__
 
 ### the rest of the defs are methods of the qubicasic object
 
@@ -239,8 +240,25 @@ def assign_temperature_labels(self):
         if len(keyval)<2: continue
         key = keyval[0].strip()
         val = keyval[1].strip()
-        self.temperature_labels[key] = val
+        #self.temperature_labels[key] = val
 
+        # QubicStudio assigned different keynames to these
+        if key.find('AVS')==0:
+            qskey = key.upper()
+            self.temperature_labels[qskey] = val
+        
+        if key.find('HEATER')==0:
+            heater_num = int(key.replace('HEATER',''))
+            qskey = 'Heaters_Amp_%i' % (heater_num - 1)
+            self.temperature_labels[qskey] = val
+            qskey = 'Heaters_Volt_%i' % (heater_num - 1)
+            self.temperature_labels[qskey] = val
+        
+        if key.find('TEMPERATURE')==0:
+            temp_num = int(key.replace('TEMPERATURE',''))
+            qskey = 'Temp_%i' % (temp_num - 1)
+            self.temperature_labels[qskey] = val
+            
     # assign the temperature labels to the asic objects
     for asicobj in self.asic_list:
         if asicobj is None: continue

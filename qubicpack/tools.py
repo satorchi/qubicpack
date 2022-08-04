@@ -1280,6 +1280,8 @@ def get_hk(self,data=None,hk=None,asic=None):
     '''
     return the data for a requested housekeeping
     '''
+    self.printmsg('DEBUG: get_hk() called with data=%s hk=%s asic=%s' % (data,hk,asic),verbosity=4)
+    
     data = self.qubicstudio_hk_truename(data)
     if data is None:
         self.printmsg('Please enter a valid housekeeping type')
@@ -1483,6 +1485,7 @@ def qubicstudio_filetype_truename(self,ftype):
     return the valid key name given a nickname for the QubicStudio
     filetype within the dataset
     '''
+    self.printmsg('DEBUG: calling filetype_truename with ftype=%s' % ftype,verbosity=4)
     if ftype is None: return None
     if ftype.upper() == 'PLATFORM': return 'INTERN_HK'
     if ftype.upper() == 'HK': return 'INTERN_HK'
@@ -1518,6 +1521,7 @@ def qubicstudio_hk_truename(self,hktype):
     '''
     return the valid key name for a given housekeeping nickname
     '''
+    self.printmsg('DEBUG: calling hk_truename with hktype=%s' % hktype,verbosity=4)
     if hktype.upper() == 'SWITCH1': return 'RFSwitch 1 closed'
     if hktype.upper() == 'SWITCH2': return 'RFSwitch 2 closed'
     if hktype.upper() == 'AZ': return 'Platform-Azimut'

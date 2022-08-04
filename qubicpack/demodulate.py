@@ -91,12 +91,12 @@ def fold_data(xpts,ypts,period,nbins=100):
 
     new_nbins = len(unique_idxbins) # this should be the same!
     if new_nbins!=nbins:
-        print('correcting for increased nbins! nbins=%i' % new_nbins)
+        print('correcting for change of nbins! nbins=%i instead of given nbins=%i' % (new_nbins,nbins))
     x_bin = np.zeros(new_nbins,dtype=float)
     y_bin = np.zeros(new_nbins,dtype=float)
     err_bin = np.zeros(new_nbins,dtype=float)
-    for idx in unique_idxbins:
-        idxrange = np.where(idx_bins==idx)
+    for idx,idx_bin in enumerate(unique_idxbins):
+        idxrange = np.where(idx_bins==idx_bin)
         x_bin[idx] = x_fold[idxrange].mean()
         y_bin[idx] = ypts[idxrange].mean()
         err_bin[idx] = ypts[idxrange].std()

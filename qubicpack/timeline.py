@@ -189,7 +189,10 @@ def timeline_computertime(self,timeline_index=None):
     if 'DATE-OBS' in self.tdata[timeline_index].keys():
         timeline_date = self.tdata[timeline_index]['DATE-OBS']
         if len(timeline_date)==0: return None
-        timestamps = np.array( [t.timestamp() for t in timeline_date] )
+        # fix weirdness
+        t = timeline_date[0]
+        utcoffset = t.timestamp() - dt.datetime.utcfromtimestamp(t.timestamp()).timestamp()
+        timestamps = np.array( [(t.timestamp()+utcoffset) for t in timeline_date] )
         return timestamps
 
     self.printmsg('ERROR! No Computer Time.',verbosity=2)
@@ -263,7 +266,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
     if datatype not in self.hk.keys():
         if datatype=='ASIC_SUMS' and self.__object_type__=='qubicfp':
             if asic is None:
-                args = self.args_ok(TES,asic)
+                args = self.args_ok(TES,asic,asic_only_required=True)
                 if args is None:
                     self.printmsg('Please enter a valid ASIC or TES number')
                     return None
@@ -512,7 +515,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     else:
         newplot = False
         
-    ax.set_xlabel('time  /  seconds',fontsize=fontsize)
+    ax.set_xlabel('date UT',fontsize=fontsize)
     ax.set_ylabel('Current  /  $\mu$A',fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)
     if warning_str:
@@ -582,8 +585,14 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     else:
         ax.text(0.5,1.0,ttl+'\n'+subttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
 
+    # plot date instead of timestamp
+    time_axis_date = np.empty(len(time_axis),dtype=dt.datetime)
+    for idx,tstamp in enumerate(time_axis):
+        time_axis_date[idx] = dt.datetime.utcfromtimestamp(tstamp)
+    peak0_date = time_axis_date[ipeak0]
+    peak1_date = time_axis_date[ipeak1]
     
-    curve1=ax.plot(time_axis,current,label='TES current',color='blue')
+    curve1=ax.plot(time_axis_date,current,label='TES current',color='blue')
 
     #ymax=max([current[ipeak0],current[ipeak1]])
     ymax=np.nanmax(current)
@@ -599,8 +608,8 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     ax.set_ylim(yminmax)
     
     if plot_bias:
-        ax.plot([peak0,peak0],yminmax,color='red',label='sine curve first peak')
-        ax.plot([peak1,peak1],yminmax,color='red',label='sine curve second peak')
+        ax.plot([peak0_date,peak0_date],yminmax,color='red',label='sine curve first peak')
+        ax.plot([peak1_date,peak1_date],yminmax,color='red',label='sine curve second peak')
         if fitparms is None:
             ax_bias = ax.twinx()
             ax_bias.set_ylabel('Bias / V',rotation=270,va='bottom',fontsize=fontsize)
@@ -614,7 +623,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             curve2_ax = ax
         self.printmsg('DEBUG: plotting sine curve for bias: len(time_axis)=%i, len(ysine)=%i'
                       % (len(time_axis),len(ysine)),verbosity=4)
-        curve2 = curve2_ax.plot(time_axis,ysine,label=sinelabel,color='green')
+        curve2 = curve2_ax.plot(time_axis_date,ysine,label=sinelabel,color='green')
         curves = curve1+curve2
     else:
         curves = curve1

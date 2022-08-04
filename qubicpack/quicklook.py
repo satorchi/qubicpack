@@ -267,7 +267,7 @@ def plot_azel(self,ax=None,fontsize=12):
     else:
         axel = ax.twinx()
         axel.plot(tdate,el,marker='D',markersize=0.2*fontsize,ls='none',color='red',label='Elevation')
-        axel.set_ylabel('Elevation / Degrees',fontsize=fontsize)    
+        axel.set_ylabel('Elevation / Degrees',fontsize=fontsize,rotation=270)    
         axel.legend(loc='upper right',fontsize=fontsize)
 
         

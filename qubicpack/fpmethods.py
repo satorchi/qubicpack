@@ -804,7 +804,7 @@ def timeline(self,TES=None,asic=None):
     return self.asic(asic).timeline(TES=TES)
 
 
-def plot_timeline(self,TES=None,asic=None,plot_bias=False,timeaxis='pps',ax=None,fontsize=12,plot_calsource=False):
+def plot_timeline(self,TES=None,asic=None,plot_bias=False,timeaxis='pps',ax=None,fontsize=12,plot_calsource=False,plot_azel=False):
     '''
     wrapper to plot timeline of the asic object
     '''
@@ -814,15 +814,45 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=False,timeaxis='pps',ax=None
     self.printmsg('plotting timeline for asic=%i, TES=%i' % (asic,TES),verbosity=2)
     ret = self.asic(asic).plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
 
-    if not plot_calsource: return ret
-
+    curves = ret['curves']
     ax = ret['ax']
-    t_src,v_src = self.calsource()
-    axsrc = ax.twinx()
-    curvesrc = axsrc.plot(t_src,-v_src,color='red',label='calibration source')
-    curves = ret['curves']+curvesrc
+    fig = ax.get_figure()
+    if plot_calsource:
+        t_src,v_src = self.calsource()
+        d_src = np.empty(len(t_src),dtype=dt.datetime)
+        for idx,tstamp in enumerate(t_src):
+            d_src[idx] = dt.datetime.utcfromtimestamp(tstamp)            
+        axsrc = ax.twinx()
+        curvesrc = axsrc.plot(d_src,-v_src,color='red',label='calibration source')
+        curves += curvesrc
+
+    if plot_azel:
+        az = self.azimuth()
+        el = self.elevation()
+        t_hk = self.timeaxis(datatype='platform')
+        d_hk = np.empty(len(t_hk),dtype=dt.datetime)
+        for idx,tstamp in enumerate(t_hk):
+            d_hk[idx] = dt.datetime.utcfromtimestamp(tstamp)            
+        
+        axaz = ax.twinx()
+        curves += axaz.plot(d_hk,az,color='red',label='azimuth')
+        axaz.tick_params(axis='y',labelcolor='red')
+        axaz.set_ylim(az.min(),az.max())
+        axaz.set_ylabel('azimuth',rotation=270,ha='right',va='bottom',color='red')
+
+        axel = ax.twinx()
+        curves += axel.plot(d_hk,el,color='green',label='elevation')
+        axel.tick_params(axis='y',labelcolor='green')
+        axel.set_ylim(el.min(),el.max())
+        axel.set_ylabel('elevation',rotation=270,ha='left',va='bottom',color='green')
+        axel.tick_params(axis='y',pad=80)
+    
+
     labs = [l.get_label() for l in curves]
     ax.legend(curves, labs, loc='upper right',facecolor='white',framealpha=0.7)
+    pngname = '%s_TES%03i_ASIC%02i_timeline.png' % (self.dataset_name,TES,asic)
+    fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+            
     return True
     
 def plot_timeline_focalplane(self,xwin=True):

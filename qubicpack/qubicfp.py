@@ -133,7 +133,14 @@ class qubicfp:
         make_map_no_modulation,\
         make_all_maps,\
         plot_maps_focalplane
-        
+    
+    from .hwp_analysis import\
+        assign_hwp_chunkinfo,\
+        chunkify_by_position
+
+    from .ASD import\
+        plot_powerspectrum,\
+        plot_powerspectrum_focalplane
     
 
     from .qubiciv import\

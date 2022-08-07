@@ -157,7 +157,6 @@ class qubicasic:
     from .ASD import\
         plot_ASD,\
         plot_ASD_all,\
-        plot_ASD_physical_layout,\
         make_ASD_tex_report
     
     from .timestamping_diagnostic import\

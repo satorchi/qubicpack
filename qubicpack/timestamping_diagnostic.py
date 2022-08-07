@@ -17,21 +17,79 @@ import numpy as np
 from qubicpack.utilities import figure_window_title
 
 '''
-# this script was originally tested on the following data:
-a2=qp()
-a2.read_qubicstudio_dataset('2019/2019-02-22/2019-02-22_16.28.01__Scan2/',asic=2)
-pps = a2.hk['ASIC_SUMS']['PPS']
-gps = a2.hk['ASIC_SUMS']['GPSDate']
-tstamps    = a2.timeline_timeaxis(axistype='pps')
-indextime  = a2.timeline_timeaxis(axistype='index')
-compstamps = a2.timeline_timeaxis(axistype='computertime')
+   the first version of this script was tested on the following data:
+   2019/2019-02-22/2019-02-22_16.28.01__Scan2
 '''
+
+def find_pps_peaks_scidata(pps):
+    '''
+    find the pps peaks for scientific data
+    for the scientific data, the PPS is a square wave, 1 second on, 1 second off
+    '''
+    retval = {}
+        
+    # when the gradient is non-zero we have a pulse rise or fall detected
+    ppsgrad = np.gradient(pps)
+    idxhigh = np.where(ppsgrad>0)[0]
+    idxlow  = np.where(ppsgrad<0)[0]
+
+    # the gradient is non-zero for the sample at the start of the rise, and the next one at the end of the rise
+    # we take every other one, which is when the high pulse is detected
+    oddidx = 1 + 2*np.arange(len(idxhigh)//2)
+    pps_high = idxhigh[oddidx]
+    retval['pps_high'] = pps_high
+    
+    # we do the same for the end of the pulse
+    oddidx = 2*np.arange(len(idxlow)//2)
+    pps_low_idx = idxlow[oddidx]
+    retval['pps_low'] = pps_low_idx
+
+    # the PPS is a square wave 1 second on, 1 second off
+    # samples per pps is the number of samples per second
+    x1 = np.empty(len(pps_high)+1,dtype=int)
+    x2 = np.empty(len(pps_high)+1,dtype=int)
+    x1[0:len(pps_high)] = pps_high
+    x2[1:len(pps_high)+1] = pps_high
+    samples_per_pps = (x1 - x2)[1:-1]
+    sample_rate = 0.5*samples_per_pps.mean()
+    retval['samples_per_pps'] = samples_per_pps
+    retval['mean_samples_per_second'] = sample_rate
+    retval['pps_indexes'] = pps_high
+
+    return retval
+
+def find_pps_peaks_hkdata(pps):
+    '''
+    find the pps peaks for housekeeping data
+    for housekeeping data, the PPS is a pulse (single sample) followed by ~6 samples
+    '''
+    retval = {}
+
+    pps_high = np.where(pps==1)[0]
+    retval['pps_high'] = pps_high
+    retval['pps_indexes'] = pps_high
+    
+    pps_low = np.where(pps==0)[0]
+    retval['pps_low'] = pps_low
+
+    # samples per pps is the number of samples per second
+    x1 = np.empty(len(pps_high)+1,dtype=int)
+    x2 = np.empty(len(pps_high)+1,dtype=int)
+    x1[0:len(pps_high)] = pps_high
+    x2[1:len(pps_high)+1] = pps_high
+    samples_per_pps = (x1 - x2)[1:-1]
+    sample_rate = 0.5*samples_per_pps.mean()
+    retval['samples_per_pps'] = samples_per_pps
+    retval['mean_samples_per_second'] = sample_rate    
+    
+    return retval
 
 def timestamp_diagnostic(self,hk=None,asic=None):
     '''
     calculate the diagnostic of the derived timestamps
     '''
     analysis = {}
+    analysis['dataset'] = self.dataset_name
     
     hk = self.qubicstudio_filetype_truename(hk)
     if hk is None: hk = 'ASIC_SUMS'
@@ -81,7 +139,6 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     pps = self.pps(hk=hk,asic=asic)
     if pps is None: return None
     gps = self.gps(hk=hk,asic=asic)
-    if gps is None: return None
     analysis['pps'] = pps
     analysis['gps'] = gps
     
@@ -102,36 +159,24 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     analysis['lost_idx'] = lost_idx
     analysis['lost_txt'] = lost_txt
     
-    
-    ########## find where we have potential problems
-    if max(gps)==0:
-        refclock = compstamps
-        self.printmsg('Bad GPS data.  Using the computer time instead.',verbosity=2)
-        analysis['tstamps_title'] += ' (based on computer clock.  Bad GPS data)'
+    if hk=='ASIC_SUMS':
+        ans = find_pps_peaks_scidata(pps)
     else:
-        refclock = gps
-    
-    separations = []
-    separations_idx = []
-    pps_high = np.where(pps==1)[0]
-    pps_indexes = []
-    prev = gps[0]
-    for idx in pps_high:
-        if (idx>0 and pps[idx-1]==0) or (idx<npts-1 and pps[idx+1]==0):
-            sep = refclock[idx] - prev
-            if sep != 0:
-                pps_indexes.append(idx)
-                separations.append(sep)
-                separations_idx.append(idx)
-                prev = refclock[idx]
+        ans = find_pps_peaks_hkdata(pps)
+        
+    for key in ans.keys():
+        analysis[key] = ans[key]
+    pps_high = analysis['pps_high']
+    pps_indexes = analysis['pps_indexes']
+    pps_low = analysis['pps_low']
+    samples_per_pps = analysis['samples_per_pps']
+    sample_rate = analysis['mean_samples_per_second']
+        
 
-    separations = np.array(separations[1:])
-    separations_idx = np.array(separations_idx[1:])
-    self.printmsg('number of separations: %i' % len(separations),verbosity=2)
     self.printmsg('number of samples: %i' % len(pps),verbosity=2)
-    analysis['pps_high'] = pps_high
-    analysis['separations'] = separations
-    analysis['pps_indexes'] = pps_indexes
+    self.printmsg('number of pulses: %i' % len(pps_high),verbosity=2)
+    self.printmsg('samples per second: %.3f' % sample_rate,verbosity=2)
+
 
     if len(pps_indexes)<2:
         analysis['samples_per_pps'] = None
@@ -141,23 +186,15 @@ def timestamp_diagnostic(self,hk=None,asic=None):
         analysis['weird_event'] = []
         self.printmsg('ERROR! insufficient PPS data',verbosity=2)
         return analysis
-    
-    samples_per_pps = []
-    idx_prev = pps_indexes[0]
-    for idx in pps_indexes[1:]:
-        nsamples = idx - idx_prev
-        samples_per_pps.append(nsamples)
-        idx_prev = idx
-    samples_per_pps = np.array(samples_per_pps,dtype=np.float)
+
     mean_samples_per_pps = samples_per_pps.mean()
-    sigma_samples_per_pps = samples_per_pps.std()
-    self.printmsg('mean number of samples between pulses: %i' % mean_samples_per_pps,verbosity=2)
-    self.printmsg('expected number of samples between pulses: %.1f' % (float(len(pps))/len(separations)),verbosity=2)
-    self.printmsg('sigma samples between pulses: %.1f' % sigma_samples_per_pps,verbosity=2)
-    analysis['samples_per_pps'] = samples_per_pps
     analysis['mean_samples_per_pps'] = mean_samples_per_pps
-    analysis['avg samples_per_pps txt'] = 'avg number of samples between events: %.2f' % mean_samples_per_pps
+    sigma_samples_per_pps = samples_per_pps.std()
     analysis['sigma_samples_per_pps'] = sigma_samples_per_pps
+    self.printmsg('mean number of samples between pulses: %i' % mean_samples_per_pps,verbosity=2)
+    self.printmsg('expected number of samples between pulses: %.1f' % (float(len(pps))/len(pps_high)),verbosity=2)
+    self.printmsg('sigma samples between pulses: %.1f' % sigma_samples_per_pps,verbosity=2)
+    analysis['avg samples_per_pps txt'] = 'avg number of samples between events: %.2f (%.3f samples/second)' % (mean_samples_per_pps,sample_rate)
 
     weird_event = []
     weird_idx = []
@@ -167,19 +204,31 @@ def timestamp_diagnostic(self,hk=None,asic=None):
             weird_event.append(idx)
             weird_idx.append(pps_indexes[idx])
     self.printmsg('number of anomolous events: %i' % len(weird_event),verbosity=2)
-    analysis['weird_idx'] = weird_idx
-    analysis['weird_event'] = weird_event
+    analysis['weird_idx'] = np.array(weird_idx)
+    analysis['weird_event'] = np.array(weird_event)
 
-    mean_separation = separations.mean()
+    mean_separation = mean_samples_per_pps/sample_rate
     self.printmsg('mean separation between pulses is %.4f second' % mean_separation,verbosity=2)
-    max_separation = separations.max()
+    max_separation = samples_per_pps.max()/sample_rate
     self.printmsg('max separation between pulses is %.4f second' % max_separation,verbosity=2)
-    min_separation = separations.min()
+    min_separation = samples_per_pps.min()/sample_rate
     self.printmsg('min separation between pulses is %.4f second' % min_separation,verbosity=2)
     
+    ########## use the GPS to make the timeaxis
+    if gps is None or max(gps)==0 or max(gps)==min(gps):
+        refclock = compstamps
+        self.printmsg('Bad GPS data.  Using the computer time instead.',verbosity=2)
+        analysis['tstamps_title'] += ' (based on computer clock.  Bad GPS data)'
+    else:
+        refclock = gps
+
+    
     tstamps = self.pps2date(pps,refclock)
-    t0 = tstamps[0]
     analysis['tstamps'] = tstamps
+    if tstamps is None:
+        self.printmsg('Could not assign timestamps from reference clock',verbosity=2)
+        return analysis
+    t0 = tstamps[0]
 
     # do a line fit to get drift of the sampling clock
     xpts = np.arange(len(tstamps))
@@ -226,12 +275,15 @@ def plot_pps(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,
     if analysis['lost_txt'] is not None:
         ax.text(0.99,1.1,analysis['lost_txt'],ha='right',va='bottom',fontsize=fontsize,transform=ax.transAxes)
 
-    ax.plot(analysis['pps'])
+    ax.plot(analysis['pps'],label='PPS')
+    ax.plot(analysis['pps_high'],np.ones(analysis['pps_high'].size,dtype=int),ls='none',marker='^',color='green',label='pulse start')
+    ax.plot(analysis['pps_low'],np.zeros(analysis['pps_low'].size,dtype=int),ls='none',marker='v',color='pink',label='pulse end')
     ax.set_ylabel('PPS Level')
     ax.set_xlabel('sample number')
     ax.tick_params(axis='both',labelsize=fontsize)
     for idx in analysis['weird_idx']:
-        ax.plot((idx,idx),(0,1),color='red',ls='dashed')
+        ax.plot((idx,idx),(0,1),color='red',ls='dashed',label='anomaly')
+    ax.legend(loc='upper right')    
 
     if newplot:
         pngname = '%s_full.png' % png_rootname
@@ -242,6 +294,7 @@ def plot_pps(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,
         if newplot:
             pngname = '%s_zoom.png' % png_rootname
             fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+    
     return
 
 def plot_pps_nsamples(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,fontsize=12):

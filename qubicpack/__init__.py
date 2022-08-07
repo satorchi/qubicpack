@@ -11,7 +11,6 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 a class with tools which are generally useful for scripts using pystudio
 """
-from __future__ import division, print_function
 import numpy as np
 import datetime as dt
 import sys,os,time
@@ -172,7 +171,6 @@ class qubicpack:
     from .ASD import\
         plot_ASD,\
         plot_ASD_all,\
-        plot_ASD_physical_layout,\
         make_ASD_tex_report
 
     from .oxford import\

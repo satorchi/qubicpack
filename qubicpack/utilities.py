@@ -13,6 +13,7 @@ common utilities used in the qubicpack classes
 '''
 import sys,os
 import datetime as dt
+import numpy as np
 import matplotlib.pyplot as plt
 
 # on 6 Feb 2018, we reversed the wires for the ASICs

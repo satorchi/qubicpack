@@ -147,9 +147,14 @@ def fmt4latex(num,nsigfigs):
         if val<1:
             expo -= 1
             val *= 10
-        fmt_str = '$%%.%if\\times10^{%%i}$' % nsigfigs
-        num_str = fmt_str % (val,expo)
+        if expo==0:
+            fmt_str = '$%%.%if$' % nsigfigs
+            num_str = fmt_str % val
+        else:
+            fmt_str = '$%%.%if\\times10^{%%i}$' % nsigfigs
+            num_str = fmt_str % (val,expo)
     except:
         num_str = '%.6e' % num
 
     return num_str
+

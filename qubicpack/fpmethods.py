@@ -804,9 +804,14 @@ def timeline(self,TES=None,asic=None):
     return self.asic(asic).timeline(TES=TES)
 
 
-def plot_timeline(self,TES=None,asic=None,plot_bias=False,timeaxis='pps',ax=None,fontsize=12,plot_calsource=False,plot_azel=False):
+def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
+                  plot_bias=False,
+                  plot_calsource=False,
+                  plot_azel=False,
+                  plot_Tbath=False):
     '''
-    wrapper to plot timeline of the asic object
+    wrapper to plot timeline of the asic object 
+    and plotted together with various possible housekeeping information
     '''
     args =self.args_ok(TES,asic)
     if args is None:return
@@ -846,14 +851,28 @@ def plot_timeline(self,TES=None,asic=None,plot_bias=False,timeaxis='pps',ax=None
         axel.set_ylim(el.min(),el.max())
         axel.set_ylabel('elevation',rotation=270,ha='left',va='bottom',color='green')
         axel.tick_params(axis='y',pad=80)
+
+    if plot_Tbath:
+        t_Tbath,Tbath = self.Tbath
+        d_Tbath = np.empty(len(t_Tbath),dtype=dt.datetime)
+        for idx,tstamp in enumerate(t_Tbath):
+            d_Tbath[idx] = dt.datetime.utcfromtimestamp(tstamp)            
+        
+        axbath = ax.twinx()
+        curves += axbath.plot(d_Tbath,Tbath,color='magenta',label='T$_\mathrm{bath}$')
+        axbath.tick_params(axis='y',labelcolor='magenta')
+        axbath.set_ylim(Tbath.min(),Tbath.max())
+        axbath.set_ylabel('T$_\mathrm{bath}$ / K',rotation=270,ha='right',va='bottom',color='magenta')
+    
     
 
     labs = [l.get_label() for l in curves]
     ax.legend(curves, labs, loc='upper right',facecolor='white',framealpha=0.7)
     pngname = '%s_TES%03i_ASIC%02i_timeline.png' % (self.dataset_name,TES,asic)
+    ret['pngname'] = pngname
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
             
-    return True
+    return ret
     
 def plot_timeline_focalplane(self,xwin=True):
     '''

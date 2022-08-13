@@ -808,7 +808,8 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
                   plot_bias=False,
                   plot_calsource=False,
                   plot_azel=False,
-                  plot_Tbath=False):
+                  plot_Tbath=False,
+                  plot_hwp=False):
     '''
     wrapper to plot timeline of the asic object 
     and plotted together with various possible housekeeping information
@@ -864,6 +865,18 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         axbath.set_ylim(Tbath.min(),Tbath.max())
         axbath.set_ylabel('T$_\mathrm{bath}$ / K',rotation=270,ha='right',va='bottom',color='magenta')
     
+    if plot_hwp:
+        hwp = self.hwp_position()
+        t_hwp = self.timeaxis(datatype='hwp')
+        d_hwp = np.empty(len(t_hwp),dtype=dt.datetime)
+        for idx,tstamp in enumerate(t_hwp):
+            d_hwp[idx] = dt.datetime.utcfromtimestamp(tstamp)            
+        
+        axhwp = ax.twinx()
+        curves += axhwp.plot(d_hwp,hwp,color='purple',label='T$_\mathrm{bath}$')
+        axhwp.tick_params(axis='y',labelcolor='purple')
+        axhwp.set_ylim(hwp.min(),hwp.max())
+        axhwp.set_ylabel('HWP position',rotation=270,ha='right',va='bottom',color='purple')
     
 
     labs = [l.get_label() for l in curves]

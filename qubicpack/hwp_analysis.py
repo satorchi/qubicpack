@@ -282,7 +282,7 @@ def assign_hwp_chunkinfo(self,TES=None,asic=None):
         return chunkinfo
 
     # if it's not a known dataset, then try to chunkify by reading the HWP position
-    return self.chunkify_by_position(self,TES,asic)
+    return self.chunkify_by_position(TES,asic)
                  
 def chunkify_by_position(self,TES=None,asic=None,padding=1):
     '''

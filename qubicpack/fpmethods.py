@@ -873,7 +873,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
             d_hwp[idx] = dt.datetime.utcfromtimestamp(tstamp)            
         
         axhwp = ax.twinx()
-        curves += axhwp.plot(d_hwp,hwp,color='purple',label='T$_\mathrm{bath}$')
+        curves += axhwp.plot(d_hwp,hwp,color='purple',label='HWP')
         axhwp.tick_params(axis='y',labelcolor='purple')
         axhwp.set_ylim(hwp.min(),hwp.max())
         axhwp.set_ylabel('HWP position',rotation=270,ha='right',va='bottom',color='purple')

@@ -58,8 +58,6 @@ are with another pointing.***
   we couldn't go to the end positions for fear of breaking the thing
 
 '''
-import qubic.demodulation_lib as demodlib
-import qubic.fibtools as fibtools
 import scipy.ndimage.filters as filters
 from scipy.optimize import curve_fit
 import numpy as np
@@ -534,54 +532,6 @@ def chunkify_hwp_scan(timeaxis,
     retval['chunks'] = chunk_list
     
     return retval
-
-def chunkify_jch(self,asic=None,TES=None):
-    '''
-    From the HWP position measured by QUBIC Studio we define the
-    various data chunks each corresponding to a given HWP position. We
-    also cut a fraction of the data to let the HWP reach a stable
-    position. We remove situations where the HWP data is 255 which
-    means it has not been read by QUBIC Studio.
-    '''
-    args = self.args_ok(TES,asic)
-    if args is None:return
-    TES,asic = args
-
-    hwp_chunks = []
-    hwp_pos_chunk = []
-    istart = 0
-    tocut = 2000
-    hwp_pos = hwp_data[istart]
-    for i in range(len(hwp_data)):
-        if (hwp_data[i] == int(hwp_data[i])):
-            if (hwp_data[i] != hwp_data[istart]):
-                if hwp_data[istart] != 255:
-                    hwp_chunks.append([istart+tocut, i-tocut])
-                    hwp_pos_chunk.append(int(hwp_data[istart]))
-                istart = i
-
-        
-    print(np.unique(np.array(hwp_pos_chunk)))
-
-    angles = np.arange(7)*15
-    thvals = np.zeros(len(hwp_chunks))
-    t_data = self.timeaxis(datatype='sci',asic=asic)
-    t0 = t_data[0]
-    for i in range(len(hwp_chunks)):
-        chunk = hwp_chunks[i]
-        plt.plot((t_data[chunk[0]:chunk[1]]-t0)/3600, newdata[chunk[0]:chunk[1]], color=colour[hwp_pos_chunk[i]-1])
-        thvals[i] = angles[hwp_pos_chunk[i]-1]
-
-
-    plt.xlim(0,np.max((data['t_data '+asic]-t0)/3600))
-    mm,ss = fibtools.meancut(newdata,3)
-    pltylim(mm-2*ss,mm+3*ss)
-    for i in arange(1,8):
-        plt.plot(-1,-1, 'o',color=cols[i-1], label='HWP Pos = {} ; Angle = {} deg.'.format(i, angles[i-1]))
-    plt.legend()
-    plt.title('TES {} ASIC {}'.format(TES,asic))
-    return
-
 
 
 ##################################################################

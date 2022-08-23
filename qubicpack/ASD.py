@@ -24,7 +24,6 @@ import pickle
 from qubicpack.utilities import TES_index, figure_window_title
 from qubicpack.plot_fp import plot_fp
 
-import qubic.fibtools as fibtools
 import scipy.ndimage.filters as filters
 
 def plot_ASD(self,TES=None,
@@ -286,6 +285,7 @@ def make_ASD_tex_report(self,reslist=None,timeline_index=0):
 def plot_powerspectrum_focalplane(self,xwin=True,amin=None,amax=None,nbins=None):
     '''
     plot the ASD for each TES in it's location in the focal plane
+    this is not working properly
     '''
 
     if nbins is None:nbins=1
@@ -342,65 +342,12 @@ def plot_powerspectrum_focalplane(self,xwin=True,amin=None,amax=None,nbins=None)
     
 def plot_powerspectrum(self,TES=None,asic=None):
     '''
-    We have a look at the power spectrum of the source signal, and set the filtering and source modulation frequency
-    written by JCH, adapted by Steve from the jupyter notebooks:
-       HWP-2019-12-23.Rmd
-       Analyse-HWP-Results.Rmd
+    We cannot have fibtools here because of a problem with circular importing.
+    so there is no sophisticated filtering before the calculation of the power spectrum
     '''
     args = self.args_ok(TES,asic)
     if args is None:return
     TES,asic = args
 
-    tt = self.timeaxis(datatype="sci",asic=asic)    
-    t0 = tt[0]
-    dd = self.timeline(asic=asic,TES=TES)
-
-    thefreqmod = self.calsource_info()['modulator']['frequency']
-
-
-    period = 1./ thefreqmod
-    lowcut = 0.8
-    highcut = 70
-
-    xmin = 0.01
-    xmax = 90.
-    ymin = 1e1
-    ymax = 1e17
-
-    fig = plt.figure()
-    fig.canvas.manager.set_window_title('plt: powerspectrum')
-    ax = fig.add_axes((0.05,0.1,0.9,0.85))
-    ############ Power spectrum
-    spectrum_f, freq_f = fibtools.power_spectrum(tt, dd, rebin=True)
-    ax.plot(freq_f, filters.gaussian_filter1d(spectrum_f,1),label='Raw Data')
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-    ax.set_xlabel('Frequency [Hz]',fontsize=16)
-    ax.set_ylabel('Power Spectrum',fontsize=16)
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
-    ttl = '%s TES%03i ASIC%02i Power spectrum' % (self.dataset_name,TES,asic)
-    ax.text(0.5,1.02,ttl,ha='center',va='bottom',transform=ax.transAxes,fontsize=20)
-
-    for i in range(10):
-        ax.plot([1./period*i,1./period*i],[ymin,ymax],'k--',alpha=0.3)
-
-    ax.plot([lowcut, lowcut],[ymin,ymax],'k')
-    ax.plot([highcut, highcut],[ymin,ymax],'k')
-
-    ########## New Power spectrum
-    nharm = 10
-    notch = np.array([[1.724, 0.005, nharm]])
-    newdata = fibtools.filter_data(tt, dd, lowcut, highcut, notch=notch, rebin=True, verbose=True, order=5)
-    spectrum_f2, freq_f2 = fibtools.power_spectrum(tt, newdata, rebin=True)
-    ax.plot(freq_f2, filters.gaussian_filter1d(spectrum_f2,1),label='Filtered data')
-    for i in range(nharm):
-        ax.plot([notch[0,0]*(i+1),notch[0,0]*(i+1)], [ymin,ymax],'m:')
-
-    ax.legend(fontsize=20)
-
-    pngname = '%s_ASIC%02i_TES%03i_powerspectrum.png' % (self.dataset_name,asic,TES)
-    fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
-
-    return
+    return self.asic(asic).plot_ASD(TES)
 

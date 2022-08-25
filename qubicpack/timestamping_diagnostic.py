@@ -401,7 +401,7 @@ def plot_timestamp_diagnostic_fig1(self,analysis=None,hk=None,zoomx=None,zoomy=N
 
     if zoomx is not None:
         ax.set_xlim(zoomx)
-        ax.set_ylim(tstamps[zoomx[0]],tstamps[zoomx[1]])
+        ax.set_ylim(analysis['tstamps'][zoomx[0]],analysis['tstamps'][zoomx[1]])
         if newplot:
             pngname = '%s_zoom.png' % png_rootname
             ax.savefig(pngname,format='png',dpi=100,bbox_inches='tight')

@@ -70,7 +70,7 @@ def fit_sine_curve(xpts,ypts,first_guess=None):
     return retval
                   
 
-def fold_data(xpts,ypts,period,nbins=100):
+def fold_data(xpts,ypts,period,nbins=100,verbosity=0):
     '''
     fold data to the given period
     '''
@@ -83,14 +83,14 @@ def fold_data(xpts,ypts,period,nbins=100):
 
     # make sure the last bin edge is bigger than the maximum
     if binedges[-1] < x_fold.max():
-        print('correcting for rounding error: %.9e < %.9e' % (binedges[-1],x_fold.max()))
+        if verbosity>0:print('correcting for rounding error: %.9e < %.9e' % (binedges[-1],x_fold.max()))
         binedges[-1] = x_fold.max() + 1e-3 # make sure it's bigger
     
     idx_bins = np.digitize(x_fold,binedges)
     unique_idxbins = np.unique(idx_bins)
 
     new_nbins = len(unique_idxbins) # this should be the same!
-    if new_nbins!=nbins:
+    if new_nbins!=nbins and verbosity>0:
         print('correcting for change of nbins! nbins=%i instead of given nbins=%i' % (new_nbins,nbins))
     x_bin = np.zeros(new_nbins,dtype=float)
     y_bin = np.zeros(new_nbins,dtype=float)
@@ -460,12 +460,12 @@ def demodulate(self,
     retval['npts per bin'] = binned_npts
 
     # fold the data and the calsource
-    folded_t_data,folded_data,folded_dataerr = fold_data(t_data-t0_data,data,period)
+    folded_t_data,folded_data,folded_dataerr = fold_data(t_data-t0_data,data,period,verbosity=self.verbosity)
     retval['folded t_data'] = folded_t_data
     retval['folded data'] = folded_data
     retval['folded data error'] = folded_dataerr
     if use_calsource:
-        folded_t_src, folded_src, folded_srcerr  = fold_data(t_src-t0_data,data_src,period)
+        folded_t_src, folded_src, folded_srcerr  = fold_data(t_src-t0_data,data_src,period,verbosity=self.verbosity)
         retval['folded t_src'] = folded_t_src
         retval['folded src'] = folded_src
         retval['folded src error'] = folded_srcerr

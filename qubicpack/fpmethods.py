@@ -211,7 +211,7 @@ def calsource_info(self):
             if val.lower()=='none':
                 info[dev][parm] = 'none'
             else:
-                info[dev][parm] = float(val)
+                info[dev][parm] = float(val.replace('%','')
             continue
             
 

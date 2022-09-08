@@ -555,6 +555,14 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
             self.obsdate = dt.datetime.strptime('2017-05-11T09:00:00','%Y-%m-%dT%H:%M:%S')
             self.endobs = self.obsdate
 
+    for asicobj in self.asic_list:
+        if asicobj is None: continue
+        if asicobj.obsdate is None:
+            asicobj.obsdate = self.obsdate
+        if asicobj.endobs is None:
+            asicobj.endobs = self.endobs
+            
+
 
     # assign temperature labels
     self.assign_temperature_labels()
@@ -721,12 +729,20 @@ def read_qubicstudio_science_fits(self,hdu):
 
     
     self.hk[extname]['NbSamplesPerSum'] = tdata['NSAMSUM_LST']
-    NbSamplesPerSum = nbsamplespersum_list[-1]
+    if len(nbsamplespersum_list)==0:
+        NbSamplesPerSum = None
+    else:
+        NbSamplesPerSum = nbsamplespersum_list[-1]
     tdata['NbSamplesPerSum'] = NbSamplesPerSum
         
     ## check if they're all the same
     difflist = np.unique(nbsamplespersum_list)
-    if len(difflist)!=1:
+    if len(difflist)==0:
+        msg = 'WARNING! nsamples per sum is not recorded!'
+        self.printmsg(msg)
+        tdata['WARNING'].append(msg)
+        
+    if len(difflist)>1:
         msg = 'WARNING! nsamples per sum changed during the measurement!'
         self.printmsg(msg)
         tdata['WARNING'].append(msg)
@@ -772,13 +788,19 @@ def read_qubicstudio_science_fits(self,hdu):
 
     if 'DATE-OBS' not in tdata.keys():
         tdata['DATE-OBS'] = dateobs
-        tdata['BEG-OBS'] = dateobs[0]
+        if len(dateobs)==0:
+            tdata['BEG-OBS'] = None
+        else:
+            tdata['BEG-OBS'] = dateobs[0]
     else:
         tdata['DATE-OBS'] += dateobs
         
     self.obsdate = tdata['BEG-OBS']
-    tdata['END-OBS'] = dateobs[-1]
-    self.endobs = dateobs[-1]
+    if len(dateobs)==0:
+        tdata['END-OBS'] = None
+    else:
+        tdata['END-OBS'] = dateobs[-1]
+    self.endobs = tdata['END-OBS']
 
     # other info in the science file
     # CN is the "chronological number" counter tag for each sample so we can see if we lost packets
@@ -1426,6 +1448,10 @@ def bias_phase(self):
 
     # convert uint to +/- float, and normalize to amplitude +/- 1
     sineraw = self.hk[hktype][sinekey]
+    if len(sineraw)==0:
+        self.printmsg('bias sine data is empty!')
+        return None
+        
     if max(sineraw)==0: return None
     sinephase = np.array(sineraw,dtype=np.float64)
     idx_neg = np.where(sineraw > 32767)

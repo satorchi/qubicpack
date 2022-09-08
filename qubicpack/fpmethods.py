@@ -299,20 +299,28 @@ def read_qubicstudio_science_fits(self,hdu):
     self.asic_list[asic_ctr].read_qubicstudio_science_fits(hdu)
 
     obsdate = self.asic_list[asic_ctr].obsdate
-    self.printmsg('ASIC%i     Observation date: %s' % (asic_no,obsdate.strftime('%Y-%m-%d %H:%M:%S.%f')))
+    if obsdate is None:
+        obsdate_str = 'None'
+    else:
+        obsdate_str = obsdate.strftime('%Y-%m-%d %H:%M:%S.%f')
+    self.printmsg('ASIC%i     Observation date: %s' % (asic_no,obsdate_str))
     if self.obsdate is None:
-        self.printmsg('DEBUG: setting obsdate which was None: %s' % obsdate.strftime('%Y-%m-%d %H:%M:%S.%f'),verbosity=3)
+        self.printmsg('DEBUG: setting obsdate which was None: %s' % obsdate_str,verbosity=3)
         self.obsdate = obsdate
-    if self.obsdate>obsdate:
+    if obsdate is not None and self.obsdate>obsdate:
         self.obsdate = obsdate
         self.printmsg('Observation date is not the same between ASIC data.  Using the earlier date',verbosity=3)
 
     endobs = self.asic_list[asic_ctr].endobs
-    self.printmsg('ASIC%i Observation end date: %s' % (asic_no,endobs.strftime('%Y-%m-%d %H:%M:%S.%f')))
+    if endobs is None:
+        endobs_str = 'None'
+    else:
+        endobs_str = endobs.strftime('%Y-%m-%d %H:%M:%S.%f')
+    self.printmsg('ASIC%i Observation end date: %s' % (asic_no,endobs_str))
     if self.endobs is None:
-        self.printmsg('DEBUG: setting endobs which was None: %s' % endobs.strftime('%Y-%m-%d %H:%M:%S.%f'),verbosity=3)
+        self.printmsg('DEBUG: setting endobs which was None: %s' % endobs_str,verbosity=3)
         self.endobs = endobs
-    if self.endobs<endobs:
+    if endobs is not None and self.endobs<endobs:
         self.endobs = endobs
         self.printmsg('End Observation is not the same between ASIC data.  Using the later date',verbosity=3)
         

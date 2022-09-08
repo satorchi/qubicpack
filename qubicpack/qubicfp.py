@@ -21,7 +21,7 @@ class qubicfp:
     __object_type__ = 'qubicfp'
 
     # maximum number of ASIC possible
-    NASIC = 2 # this will change to 16 or 32
+    NASIC = 16 # this will change to 16 or 32
 
     from .tools import\
         debugmsg,\

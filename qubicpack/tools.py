@@ -530,8 +530,31 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         for filename in files:
             chk = self.read_fits(filename)
 
-    # assign bath temperature
-    self.assign_bath_temperature()
+        
+    # check if there's an observation date.
+    if self.obsdate is None:
+    
+        # If not, get it from the first available housekeeping
+        if self.hk is not None:
+            for hktype in self.hk.keys():
+                if 'ComputerDate' in self.hk[hktype].keys():
+                    self.obsdate = dt.datetime.fromtimestamp(self.hk[hktype]['ComputerDate'][0])
+                    self.endobs = dt.datetime.fromtimestamp(self.hk[hktype]['ComputerDate'][-1])
+        else:    
+            self.printmsg('Error! No HK Data!',verbosity=1)
+
+
+    if self.obsdate is None:
+        # still unsuccessful, so try to get the date from the dataset name
+        try:
+            self.obsdate = dt.datetime.strptime(self.dataset_name.split('__')[0],'%Y-%m-%d_%H.%M.%S')
+            self.endobs = self.obsdate
+            self.printmsg('Assigning observation date from dataset name',verbosity=2)
+        except:
+            self.printmsg('Error! Could not find an observation date.',verbosity=2)
+            self.obsdate = dt.datetime.strptime('2017-05-11T09:00:00','%Y-%m-%dT%H:%M:%S')
+            self.endobs = self.obsdate
+
 
     # assign temperature labels
     self.assign_temperature_labels()
@@ -555,22 +578,9 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     else:
         self.read_filter()
 
-        
-    if self.obsdate is not None: return True
-    
-    # check if there's an observation date.  If not, get it from the first available housekeeping
-    if self.hk is None:
-        self.printmsg('Error! No Data!',verbosity=1)
-        self.obsdate = dt.datetime.strptime('2017-05-11T09:00:00','%Y-%m-%dT%H:%M:%S')
-        return False
-        
-    for hktype in self.hk.keys():
-        if 'ComputerDate' in self.hk[hktype].keys():
-            self.obsdate = dt.datetime.fromtimestamp(self.hk[hktype]['ComputerDate'][0])
-            self.endobs = dt.datetime.fromtimestamp(self.hk[hktype]['ComputerDate'][-1])
-            return True
-
-    return False
+    # assign bath temperature
+    self.assign_bath_temperature()
+    return True
 
 def read_calsource_fits(self,hdu):
     '''

@@ -440,6 +440,8 @@ def assign_bath_temperature(self):
                 temperature = 1e-3*float(tempstr)
                 testemp = np.array([temperature])
                 idxok = np.array([True])
+                utcoffset = self.obsdate.timestamp() - dt.datetime.utcfromtimestamp(self.obsdate.timestamp()).timestamp()
+                hktstamps = np.array([self.obsdate.timestamp()+utcoffset])
                 self.temperature = temperature
                 self.tdata[-1]['TES_TEMP'] = self.temperature
                 self.printmsg('Assigning TES temperature from the dataset name: %.1fmK' % (1000*self.temperature),verbosity=1)

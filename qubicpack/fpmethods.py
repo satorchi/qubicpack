@@ -596,22 +596,28 @@ def bias_phase(self,asic=0,TES=None):
     warning_msg = 'WARNING! Bias phase value not equal to that of ASIC %i at index %i: %f != %f'
     warn = False
     for asic_idx,asicobj in enumerate(self.asic_list):
-        if asicobj is not None:
-            bp = asicobj.bias_phase()
-            if bp0 is None:
-                bp0 = bp
-                compare_idx = asic_idx
-                continue
-
-            if len(bp)!=len(bp0):
-                warn = True
-                self.printmsg('WARNING! not the same number of samples between ASICs',verbosity=3)
-                continue
+        if asicobj is None: continue
+        
+        bp = asicobj.bias_phase()
+        if bp is None:
+            warn = True
+            self.printmsg('WARNING! no bias phase info.',verbosity=3)
+            continue
             
-            for idx,chk in enumerate(bp==bp0):
-                if not chk and bp[idx]!=-bp0[idx]:
-                    warn = True
-                    self.printmsg(warning_msg % (compare_idx+1,idx,bp[idx],bp0[idx]),verbosity=5)
+        if bp0 is None:
+            bp0 = bp
+            compare_idx = asic_idx
+            continue
+
+        if len(bp)!=len(bp0):
+            warn = True
+            self.printmsg('WARNING! not the same number of samples between ASICs',verbosity=3)
+            continue
+            
+        for idx,chk in enumerate(bp==bp0):
+            if not chk and bp[idx]!=-bp0[idx]:
+                warn = True
+                self.printmsg(warning_msg % (compare_idx+1,idx,bp[idx],bp0[idx]),verbosity=5)
                     
 
     if warn:

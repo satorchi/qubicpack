@@ -120,7 +120,7 @@ def calsource_oldinfo(self):
                                 '6db_high_pass',
                                 '12db_high_pass',
                                 'bandpass']
-    idx_translation['status'] = ['ON','OFF']
+    idx_translation['status'] = ['OFF','ON']
     idx_translation['coupling'] = ['GROUND','DC','AC']
 
     for dev in keytranslation.keys():
@@ -128,8 +128,8 @@ def calsource_oldinfo(self):
         info[dev] = {}
 
         for parm in keytranslation[dev].keys():
-            if parm in conf.keys():
-                confkey = keytranslation[dev][parm]
+            confkey = keytranslation[dev][parm]
+            if confkey in conf.keys():
                 confval = conf[confkey][0]
                 try:
                     confidx = int(confval)

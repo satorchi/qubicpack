@@ -82,57 +82,65 @@ def calsource_oldinfo(self):
 
     info = {}
 
-    info_tstamp = conf['timestamp'][0]
-    info_date = dt.datetime.utcfromtimestamp(info_tstamp)
-    info['date'] = info_date
+    if 'timestamp' in conf.keys():
+        info_tstamp = conf['timestamp'][0]
+        info_date = dt.datetime.utcfromtimestamp(info_tstamp)
+        info['date'] = info_date
+    else:
+        info['date'] = None
 
-    devlist = ['calsource','modulator','amplifier']
-    statuskeys = ['CalSource','Modulator','Amplifier']
-    for idx,dev in enumerate(devlist):
-        info[dev] = {}
-        statuskey = statuskeys[idx]
-        status = int(conf[statuskey][0])
-        if status==1:
-            info[dev]['status'] = 'ON'
-        elif status==0:
-            info[dev]['status'] = 'OFF'
-        else:
-            info[dev]['status'] = 'UNKNOWN'
+    keytranslation = {}
 
-    info['calsource']['frequency'] = conf['Cal_freq'][0]
-    info['calsource']['synth_freq'] = conf['Syn_freq'][0]
+            
+    keytranslation['calsource'] = {'status'    :'CalSource',
+                                   'frequency' :'Cal_freq',
+                                   'synth_freq':'Syn_freq'}
+
+    keytranslation['modulator'] = {'status'    :'Modulator',
+                                   'frequency' :'Mod_freq',
+                                   'amplitude' :'Mod_ampl',
+                                   'duty_cycle':'Mod_duty',
+                                   'offset'    :'Mod_offs',
+                                   'shape'     :'Mod_shap'}
+
+    keytranslation['amplifier'] = {'status'               :'Amplifier',
+                                   'mode'                 :'Amp_mode',
+                                   'filter low frequency' :'Amp_lfreq',
+                                   'filter high frequency':'Amp_hfreq',
+                                   'coupling'             :'Amp_coup',
+                                   'dynamic range'        :'Amp_rang',
+                                   'gain'                 :'Amp_gain'}
     
-    info['modulator']['frequency'] = conf['Mod_freq'][0]
-    info['modulator']['amplitude'] = conf['Mod_ampl'][0]
-    info['modulator']['duty_cycle'] = conf['Mod_duty'][0]
-    info['modulator']['offset'] = conf['Mod_offs'][0]
-    shape_idx = int(conf['Mod_shap'][0])
-    shapes = ['square','sine','DC']
-    info['modulator']['shape'] = shapes[shape_idx]
 
-    ampkeys =  ['Amp_mode', 'Amp_lfreq', 'Amp_hfreq', 'Amp_coup', 'Amp_rang', 'Amp_gain']
-    amp_infokeys = ['mode','filter low frequency','filter high frequency','coupling','dynamic range','gain']
-    for idx,key in enumerate(ampkeys):
-        if key in conf.keys():
-            localkey = amp_infokeys[idx]
-            info['amplifier'][localkey] = conf[key][0]
+    idx_translation = {}
+    idx_translation['shape'] = ['square','sine','DC']
+    idx_translation['mode'] = ['bypass',
+                                '6db_low_pass',
+                                '12db_low_pass',
+                                '6db_high_pass',
+                                '12db_high_pass',
+                                'bandpass']
+    idx_translation['status'] = ['ON','OFF']
+    idx_translation['coupling'] = ['GROUND','DC','AC']
 
-    # convert mode number to human understandable
-    amp_modes = ["bypass",
-                 "6db_low_pass",
-                 "12db_low_pass",
-                 "6db_high_pass",
-                 "12db_high_pass",
-                 "bandpass"]
-    if 'mode' in info['amplifier'].keys():
-        mode_idx = int(info['amplifier']['mode'])
-        info['amplifier']['mode'] = amp_modes[mode_idx]
+    for dev in keytranslation.keys():
+        
+        info[dev] = {}
 
-    # convert coupling to human understandable
-    coupling_modes = ['GROUND','DC','AC']
-    if 'coupling' in info['amplifier'].keys():
-        mode_idx = int(info['amplifier']['coupling'])
-        info['amplifier']['coupling'] = coupling_modes[mode_idx]
+        for parm in keytranslation[dev].keys():
+            if parm in conf.keys():
+                confkey = keytranslation[dev][parm]
+                confval = conf[confkey][0]
+                try:
+                    confidx = int(confval)
+                except:
+                    confidx = None
+
+                if confidx is not None and parm in idx_translation.keys():
+                    info[dev][parm] = idx_translation[parm][confidx]
+                else:
+                    info[dev][parm] = confval
+
 
     return info
 

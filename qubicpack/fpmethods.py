@@ -12,7 +12,7 @@ methods for the QUBIC focal plane class qubicfp
 '''
 import numpy as np
 import datetime as dt
-import sys,os,time
+import sys,os,time,re
 from copy import copy
 
 from qubicpack.qubicasic import qubicasic
@@ -141,6 +141,18 @@ def calsource_oldinfo(self):
                 else:
                     info[dev][parm] = confval
 
+    # for some reason, on 2019-11-12 and 2019-11-14, the modulation amplitude and frequency are given in mV and mHz
+    if info_tstamp>=1573572852 and info_tstamp<=1573750907:
+        if 'frequency' in info['modulator'].keys():
+            modfreq = info['modulator']['frequency']
+            if modfreq>100:
+                info['modulator']['frequency'] = modfreq/1000
+        if 'amplitude' in info['modulator'].keys():
+            modamp = info['modulator']['amplitude']
+            if modamp>100:
+                info['modulator']['amplitude'] = modamp/1000
+                
+
 
     return info
 
@@ -184,7 +196,7 @@ def calsource_info(self):
             continue
         
         dev = cols[0]
-        if dev=='lamp' or dev=='arduino' or dev=='synthesiser':
+        if dev=='lamp' or dev=='arduino' or dev=='synthesiser' or dev=='synthesizer':
             continue
 
         val_list = cols[1].split('=')
@@ -216,11 +228,10 @@ def calsource_info(self):
             continue
 
         if parm=='duty_cycle':
-            if val.lower()=='none':
+            val_stripped = val.strip().lower().replace('+','').replace('-','')
+            if len(val_stripped)==0 or re.search('[a-z]',val_stripped):
                 info[dev][parm] = 'none'
-            else:
-                info[dev][parm] = float(val.replace('%',''))
-            continue
+                continue
             
 
         for unit in units:

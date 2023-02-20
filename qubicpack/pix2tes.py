@@ -108,7 +108,9 @@ def assign_pix2tes(obsdate=None):
 
     return TES2PIX
 
-def tes2pix(TES,asic):
+def tes2pix(TES=None,asic=None):
+    if TES is None: return None
+    if asic is None: return None
     global TES2PIX
     if TES2PIX is None: TES2PIX = assign_pix2tes()
     TES_idx = TES_index(TES)

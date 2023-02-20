@@ -295,6 +295,7 @@ for dset in dsets:
 
     # bias is applied separately on each ASIC
     for asic in b.asic_list:
+        if asic is None: continue
 
         ASICnum = asic.asic
         ASICidx = ASICnum - 1

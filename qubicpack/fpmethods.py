@@ -170,6 +170,7 @@ def calsource_info(self):
         return self.calsource_oldinfo()
     
     info_txt = self.hk['CALSOURCE-CONF']['MsgStr'][0]
+    if type(info_txt)!=str: return self.calsource_oldinfo()
     info_rawlist = info_txt.split()
     info = {}
 

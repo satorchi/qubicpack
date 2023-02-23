@@ -1188,11 +1188,12 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
     NEP_estimate=[]
     TESlist=[]
     for res in NEPresults:
-        NEP=res['NEP']
+        if res is None: continue
+        NEP = res['NEP']
         if res['is_good']:
             NEP_estimate.append(NEP)
             TESlist.append(res['TES'])
-    nNEP=len(TESlist)
+    nNEP = len(TESlist)
     NEP_estimate=np.array(NEP_estimate)
     NEPmean=NEP_estimate.mean()
     NPIXELS = len(NEPresults)
@@ -1299,6 +1300,7 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
     h.write('\\hline\\endhead\n')
     h.write('\\hline\\endfoot\n')
     for result in NEPresults:
+        if result is None: continue
         NEP = result['NEP']
         TES = result['TES']
         asic = result['ASIC']
@@ -1321,6 +1323,7 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
         
 
     for result in NEPresults:
+        if result is None: continue
         TES = result['TES']
         asic = result['ASIC']
         h.write('\n\\clearpage')

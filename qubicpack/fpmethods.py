@@ -1071,7 +1071,8 @@ def filter_iv_all(self,
                   Vsuper=None,
                   Vnormal=None,
                   istart=None,
-                  iend=None):
+                  iend=None,
+                  flip=False):
     '''
     find which TES are good
     '''
@@ -1090,7 +1091,8 @@ def filter_iv_all(self,
                                    Vsuper=Vsuper,
                                    Vnormal=Vnormal,
                                    istart=istart,
-                                   iend=iend)
+                                   iend=iend,
+                                   flip=flip)
 
     return
     

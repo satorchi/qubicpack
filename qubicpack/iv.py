@@ -88,7 +88,7 @@ def n_masked(self):
     return n_masked
         
 
-def ADU2I(self,ADU, offset=None, R1adjust=1.0,asic=None):
+def ADU2I(self,ADU, offset=None, R1adjust=1.0,asic=None, flip=False):
     ''' 
     This is the magic formula to convert the measured output of the TES to current
     the voltage (ADU) returned by the TES is converted to a current in uA        
@@ -106,7 +106,10 @@ def ADU2I(self,ADU, offset=None, R1adjust=1.0,asic=None):
     # n_masked=self.n_masked()
     # I = 1e6 * (ADU / 2**7) * (q_ADC/G_FLL) * (self.nsamples - n_masked) * R1adjust
     I = 1e6 * (ADU / 2**7) * (q_ADC/G_FLL) * R1adjust
-    if offset is not None: return I+offset
+    if flip:
+        I = -I
+    if offset is not None:
+        I += offset
     return I
 
 def setup_plot_Vavg(self,axes=None):
@@ -410,10 +413,11 @@ def polynomial_fit_parameters(self,fit):
     determine the TES characteristics from the polynomial fit
     this is called from fit_iv()
     '''
-    TES=fit['TES']
-    TES_idx=TES_index(TES)
-    R1adjust=self.R1adjust(TES)
-    I=self.ADU2I(self.adu[TES_idx,:],R1adjust=R1adjust)
+    TES = fit['TES']
+    TES_idx = TES_index(TES)
+    R1adjust = self.R1adjust(TES)
+    flip = fit['flip']
+    I = self.ADU2I(self.adu[TES_idx,:],R1adjust=R1adjust,flip=flip)
     npts=len(I)
 
     # Vinfinity is the virtual point where we calculate the offset
@@ -789,7 +793,8 @@ def fit_iv(self,TES,
            Vnormal=None,
            istart=None,
            iend=None,
-           R1adjust=1.0):
+           R1adjust=1.0,
+           flip=False):
     '''
     fit the I-V curve to a polynomial
 
@@ -806,6 +811,7 @@ def fit_iv(self,TES,
        istart, iend: window for fitting (start and end indices)
        Vsuper:       Bias voltage below which the TES is superconducting
        Vnormal:      Bias voltage above which the TES is normal
+       flip:         invert sign of detector response
     '''
     if not self.exist_iv_data():return None
 
@@ -820,8 +826,9 @@ def fit_iv(self,TES,
     fit={}
     fit['TES']=TES
     fit['fitfunction']=fitfunction.upper()
+    fit['flip'] = flip
 
-    I=self.ADU2I(self.adu[TES_idx,:],R1adjust=R1adjust)
+    I = self.ADU2I(self.adu[TES_idx,:],R1adjust=R1adjust,flip=flip)
     npts=len(I)
 
     if self.cycle_vbias:
@@ -975,9 +982,11 @@ def adjusted_iv(self,TES):
     '''
     return the adjusted I-V curve
     '''
-    offset=self.offset(TES)
-    R1adjust=self.R1adjust(TES)
-    Iadjusted=self.ADU2I(self.adu[TES_index(TES),:],offset=offset,R1adjust=R1adjust)
+    offset = self.offset(TES)
+    R1adjust = self.R1adjust(TES)
+    finfo = self.filterinfo(TES)
+    flip = finfo['flip']
+    Iadjusted = self.ADU2I(self.adu[TES_index(TES),:],offset=offset,R1adjust=R1adjust,flip=flip)
     return Iadjusted
 
 def oplot_iv(self,TES,label=None,best=True,axis=None):
@@ -1804,7 +1813,8 @@ def filter_iv(self,TES,
               Vsuper=None,
               Vnormal=None,
               istart=None,
-              iend=None):
+              iend=None,
+              flip=False):
     '''
     determine if this is a good TES from the I-V curve
     '''
@@ -1822,16 +1832,17 @@ def filter_iv(self,TES,
     ret['is_good']=True
     ret['comment']='no comment'
     ret['ignore_turnover'] = ignore_turnover
+    ret['flip'] = flip
 
     # fit to the chosen model. The fit will be for the best measured curve if it's cycled bias
-    fit = self.fit_iv(TES,jumplimit,curve_index,fitfunction,Vsuper,Vnormal,istart,iend,R1adjust)
+    fit = self.fit_iv(TES,jumplimit,curve_index,fitfunction,Vsuper,Vnormal,istart,iend,R1adjust,flip=flip)
     ret['fit'] = fit
     residual = fit['residual']
     ret['residual'] = residual
     offset = fit['offset']
     ret['offset'] = offset
     ADU = self.adu[TES_idx,:]
-    Iadjusted = self.ADU2I(ADU,offset=offset,R1adjust=R1adjust)
+    Iadjusted = self.ADU2I(ADU,offset=offset,R1adjust=R1adjust,flip=flip)
     ret['turnover'] = fit['turnover']
     R1 = fit['R1']
     ret['R1'] = R1
@@ -1922,7 +1933,8 @@ def filter_iv_all(self,
                   Vsuper=None,
                   Vnormal=None,
                   istart=None,
-                  iend=None):
+                  iend=None,
+                  flip=False):
     '''
     find which TES are good
     '''
@@ -1958,7 +1970,8 @@ def filter_iv_all(self,
                                   Vsuper=Vsuper,
                                   Vnormal=Vnormal,
                                   istart=istart,
-                                  iend=iend)
+                                  iend=iend,
+                                  flip=flip)
         filtersummary.append(filterinfo)
         
     self.filtersummary=filtersummary
@@ -1980,18 +1993,22 @@ def read_filter(self):
     '''
     read the filter from a pickle file
     '''
-    datefmt='%Y%m%dT%H%M%SUTC'
-    datestr=self.obsdate.strftime(datefmt)
-    picklename=str('QUBIC_TES_ASIC%i_%s.filter.pickle' % (self.asic,datestr))
+    datefmt = '%Y%m%dT%H%M%SUTC'
+    datestr = self.obsdate.strftime(datefmt)
+    picklename = str('QUBIC_TES_ASIC%i_%s.filter.pickle' % (self.asic,datestr))
     if not os.path.exists(picklename):
         self.printmsg('No previously saved filter information: %s' % picklename,verbosity=1)
         return None
 
     self.printmsg('Reading previously saved filter information: %s' % picklename,verbosity=1)
-    h=open(picklename,'rb')
-    filtersummary=pickle.load(h,encoding='latin1')
+    h = open(picklename,'rb')
+    filtersummary = pickle.load(h,encoding='latin1')
     h.close()
-    self.filtersummary=filtersummary
+    # make sure all keys exist, in case the saved file pre-dates changes (for example 'flip')
+    for filterinfo in filtersummary:
+        if 'flip' not in filterinfo.keys():
+            filterinfo['flip'] = False
+    self.filtersummary = filtersummary
     return True
 
 def read_ADU_file(self,filename):

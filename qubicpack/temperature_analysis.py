@@ -833,7 +833,7 @@ def make_TES_NEP_resultslist(fplist,p0=None,verbosity=0):
             TES = 1 + idx
             if verbosity>0: print('calculating NEP for ASIC%i, TES%03i' % (asic,TES))
             res = calculate_TES_NEP(fplist,TES,asic,p0=p0,verbosity=verbosity)
-            results.append(res)
+            if res is not None: results.append(res)
             
     return results
 

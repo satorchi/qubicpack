@@ -233,7 +233,8 @@ def calsource_info(self):
             if len(val_stripped)==0 or re.search('[a-z]',val_stripped):
                 info[dev][parm] = 'none'
                 continue
-            
+            info[dev][parm] = eval(val_stripped)
+            continue
 
         for unit in units:
             if val.find(unit)>0:

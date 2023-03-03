@@ -865,6 +865,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
             d_src[idx] = dt.datetime.utcfromtimestamp(tstamp)            
         axsrc = ax.twinx()
         curvesrc = axsrc.plot(d_src,-v_src,color='red',label='calibration source')
+        axsrc.text(0.5,1.01,self.calsource_infotext(),va='bottom',ha='center',fontsize=fontsize,transform=axsrc.transAxes)
         curves += curvesrc
 
     if plot_azel:

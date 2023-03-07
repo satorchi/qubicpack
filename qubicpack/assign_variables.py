@@ -59,7 +59,8 @@ def assign_defaults(self):
     self.chunk_size=None
     self.rawmask=None
     self.timeline_conversion=None
-    self.tdata=None
+    self.tdata = [{}]
+    self.tdata[0]['WARNING'] = []
     self.pix_grid = assign_pix_grid()
     self.filtersummary=[]
     for idx in range(self.NPIXELS): self.filtersummary.append(None)

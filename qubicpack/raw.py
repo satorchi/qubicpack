@@ -117,16 +117,24 @@ def make_raw_timeline(self,TES=None,axistype='pps'):
     pixidx = (pixnum==TES)
     nsamples = self.hk['ASIC_RAW']['NSAMPLE']
 
-    tstamp_TES = np.zeros((pixidx.sum()*nsamples))
-    raw_TES = np.zeros((pixidx.sum()*nsamples))
+    ntod = pixidx.sum()
     
-    tstamps_samples = np.arange(nsamples)/2e6
+    # tstamp_TES = np.zeros((ntod*nsamples))
+    # raw_TES = np.zeros((ntod*nsamples))
+
+    tstamp_TES = np.zeros((ntod,nsamples))
+    raw_TES = np.zeros((ntod,nsamples))
+
+    # the TOD is the integral of the samples, so the time of the integration is the time of the final sample
+    tstamps_samples = -np.flip(np.arange(nsamples)/2e6)
     for idx,tstamp in enumerate(raw_tstamps[pixidx]):
         tstamp_range = tstamp + tstamps_samples
-        istart = idx*nsamples
-        iend = istart + nsamples
-        tstamp_TES[istart:iend] = tstamp_range
-        raw_TES[istart:iend] = raw[pixidx][idx][:]
+        # istart = idx*nsamples
+        # iend = istart + nsamples
+        # tstamp_TES[istart:iend] = tstamp_range
+        # raw_TES[istart:iend] = raw[pixidx][idx][:]
+        tstamp_TES[idx,:] = tstamp_range
+        raw_TES[idx,:] = raw[pixidx][idx][:]
 
 
     return (tstamp_TES,raw_TES)

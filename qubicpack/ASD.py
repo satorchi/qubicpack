@@ -285,7 +285,6 @@ def make_ASD_tex_report(self,reslist=None,timeline_index=0):
 def plot_powerspectrum_focalplane(self,xwin=True,amin=None,amax=None,nbins=None):
     '''
     plot the ASD for each TES in it's location in the focal plane
-    this is not working properly
     '''
 
     if nbins is None:nbins=1
@@ -337,7 +336,7 @@ def plot_powerspectrum_focalplane(self,xwin=True,amin=None,amax=None,nbins=None)
             args['%s x-axis' % key] = logFreq
             
 
-    #plot_fp(args)
+    plot_fp(args)
     return args
     
 def plot_powerspectrum(self,TES=None,asic=None):

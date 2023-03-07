@@ -183,19 +183,25 @@ def plot_fp(args):
                 curve = args[asic_key][TES_idx]
                 
                 if xaxis_key in args.keys() and args[xaxis_key] is not None:
-                    curve_x = args[xaxis_key][TES_idx]
+                    ndims_xaxis = len(args[xaxis_key].shape)
+                    if ndims_xaxis==2:
+                        curve_x = args[xaxis_key][TES_idx]
+                    else:
+                        curve_x = args[xaxis_key]
                 else:
                     curve_x = np.array(range(args[asic_key].shape[1]))
 
                 if xminmax_key in args.keys() and args[xminmax_key] is not None:
                     xminmax = args[xminmax_key]
                 else:
-                    xminmax = (np.nanmin(curve_x),np.nanmax(curve_x))
+                    noninf_idx = ( (curve_x!=np.inf) & (curve_x!=-np.inf) )
+                    xminmax = (np.nanmin(curve_x[noninf_idx]),np.nanmax(curve_x[noninf_idx]))
 
                 if yminmax_key in args.keys() and args[yminmax_key] is not None:
                     yminmax = args[yminmax_key]
                 else:
-                    yminmax = (np.nanmin(curve),np.nanmax(curve))
+                    noninf_idx = ( (curve!=np.inf) & (curve!=-np.inf) )
+                    yminmax = (np.nanmin(curve[noninf_idx]),np.nanmax(curve[noninf_idx]))
 
                 if azel_key in args.keys() and args[azel_key] is not None:
                     azel_extents = args[azel_key]

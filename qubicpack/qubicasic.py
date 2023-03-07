@@ -154,6 +154,11 @@ class qubicasic:
         model_timeline,\
         fit_timeline
 
+    from .raw import\
+        exist_raw_data,\
+        make_raw_timeline,\
+        read_qubicstudio_raw_fits
+
     from .ASD import\
         plot_ASD,\
         plot_ASD_all,\

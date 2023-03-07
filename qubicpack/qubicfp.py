@@ -85,6 +85,7 @@ class qubicfp:
         assign_defaults,\
         assign_temperature,\
         read_qubicstudio_science_fits,\
+        read_qubicstudio_raw_fits,\
         read_qubicstudio_asic_fits,\
         read_qubicpack_fits,\
         exist_data,\

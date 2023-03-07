@@ -25,8 +25,6 @@ def exist_timeline_data(self):
     '''
     check if we have timeline data
     '''
-    if self.tdata is None:
-        return False
     if not isinstance(self.tdata,list):
         return False
     if len(self.tdata)==0:
@@ -48,6 +46,8 @@ def ntimelines(self):
 def timeline(self,TES,timeline_index=0):
     '''
     return the timeline for a given TES and timeline index
+
+    timeline_index is leftover from the early days when there were multiple timelines per fits file (2017/18)
     '''
     if not self.exist_timeline_data():return None
     ntimelines=self.ntimelines()
@@ -264,7 +264,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
     if datatype is None: datatype = 'ASIC_SUMS'
 
     if datatype not in self.hk.keys():
-        if datatype=='ASIC_SUMS' and self.__object_type__=='qubicfp':
+        if self.__object_type__=='qubicfp':
             if asic is None:
                 args = self.args_ok(TES,asic,asic_only_required=True)
                 if args is None:
@@ -272,7 +272,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
                     return None
                 TES,asic = args
             asic_idx = asic - 1
-            return self.asic_list[asic_idx].timeline_timeaxis(axistype=axistype)
+            return self.asic_list[asic_idx].timeaxis(axistype=axistype,datatype=datatype)
 
         self.printmsg('No data for %s!' % datatype)
         return None

@@ -348,6 +348,19 @@ def read_qubicstudio_science_fits(self,hdu):
 
     return
 
+def read_qubicstudio_raw_fits(self,hdu):
+    '''
+    read the RAW data for a given ASIC
+    The HDU passed here as the argument should already have been identified as the RAW HDU
+    '''
+    asic_num = hdu.header['ASIC_NUM']
+    asic_idx = asic_num - 1
+    qubicasic.verbosity = self.verbosity
+    if self.asic_list[asic_idx] is None:
+        self.asic_list[asic_idx] = qubicasic()
+        
+    return self.asic_list[asic_idx].read_qubicstudio_raw_fits(hdu)
+
 def read_qubicstudio_asic_fits(self,hdulist):
     '''
     read the data giving the ASIC configuration

@@ -20,8 +20,6 @@ import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
 
-from satorchipy.datefunctions import tot_seconds
-
 def debugmsg(self,msg,verbosity=3):
     if verbosity<=self.verbosity:
         if self.logfile is None:
@@ -284,7 +282,11 @@ def read_fits_field(self,hdu,fieldname):
 
     if fieldname in fieldnames:
         field_idx = fieldnames.index(fieldname)
-        return hdu.data.field(field_idx)
+        units = hdu.header['TUNIT%i' % (field_idx+1)]
+        if units=='ms since 1970-01-01T00:00:00': # convert timestamp to seconds instead of milliseconds
+            return 0.001*hdu.data.field(field_idx)
+        else:
+            return hdu.data.field(field_idx)
 
     return None
 
@@ -323,7 +325,7 @@ def find_calsource(self,datadir):
     for f in files:
         basename = os.path.basename(f)
         file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.fits')
-        delta = tot_seconds(self.obsdate - file_date)
+        delta = (self.obsdate - file_date).total_seconds()
         if np.abs(delta)<file_delta:
             file_delta = np.abs(delta)
             filename = f
@@ -395,9 +397,6 @@ def assign_bath_temperature(self):
     '''
     assign the TES bath temperature from the housekeeping data
     '''
-    if self.tdata is None:self.tdata = [{}]
-    tdata = self.tdata[-1]
-
     # the bath temperature probes, in order of preference
     bath_probes = ['TES stage','MGC3_PID_0_Mes','MMR3_CH2_R']
     for probe in bath_probes:
@@ -442,8 +441,7 @@ def assign_bath_temperature(self):
                 idxok = np.array([True])
                 utcoffset = self.obsdate.timestamp() - dt.datetime.utcfromtimestamp(self.obsdate.timestamp()).timestamp()
                 hktstamps = np.array([self.obsdate.timestamp()+utcoffset])
-                self.temperature = temperature
-                self.tdata[-1]['TES_TEMP'] = self.temperature
+                self.temperature = temperature                
                 self.printmsg('Assigning TES temperature from the dataset name: %.1fmK' % (1000*self.temperature),verbosity=1)
 
     if testemp is None or idxok.sum()==0:
@@ -457,7 +455,6 @@ def assign_bath_temperature(self):
         
     self.printmsg('TES temperature varies between %.1fmK and %.1fmK during the measurement' % (1000*min_temp,1000*max_temp))
     self.printmsg('Using TES temperature %.1fmK' % (1000*temperature),verbosity=2)
-    self.tdata[-1]['TES_TEMP'] = temperature
     self.temperature = temperature
 
     # assign the bath temperature to the asic objects
@@ -487,8 +484,6 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     if datadir[-1]==os.sep: datadir = datadir[:-1]
     self.dataset_name = os.path.basename(datadir)
         
-    scidir = '%s/Sums' % datadir
-    hkdir = '%s/Hks' % datadir
     subdir = OrderedDict()
     subdir['science'] = 'Sums'
     subdir['asic'] = 'Hks'
@@ -503,9 +498,12 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     pattern = OrderedDict()
     if asic=='ALL':
         pattern['science'] = '%s/%s/science-asic*-*.fits' % (datadir,subdir['science'])
+        pattern['raw'] = '%s/%s/raw-asic*-*.fits' % (datadir,subdir['raw'])
     else:
         pattern['science'] = '%s/%s/science-asic%i-*.fits' % (datadir,subdir['science'],asic)
-    
+        pattern['raw'] = '%s/%s/raw-asic%i-*.fits' % (datadir,subdir['raw'],asic)
+
+
     pattern['asic'] = '%s/%s/conf-asics-*.fits' % (datadir,subdir['asic'])
     pattern['hkextern'] = '%s/%s/hk-extern-*.fits' % (datadir,subdir['hkextern'])
     pattern['hkintern'] = '%s/%s/hk-intern-*.fits' % (datadir,subdir['hkintern'])
@@ -629,21 +627,23 @@ def read_qubicstudio_fits(self,hdulist):
 
     self.datafiletype = extname
 
-    # dictionary for the return of timeline data
-    if self.tdata is None:self.tdata = [{}]
-    tdata = self.tdata[-1]
-    if 'WARNING' not in tdata.keys(): tdata['WARNING'] = []
-    
-    # get the timeline data from each detector
+    # read the timeline data from each detector
     if extname=='ASIC_SUMS':
         chk = self.read_qubicstudio_science_fits(hdu)
         hdulist.close()
         return chk
-        
-    if extname=='CONF_ASIC1':
+
+    # the EXTNAME of the hdulist[1] is ASIC1, but the hdulist has the config for all the ASICS
+    if extname=='CONF_ASIC1': 
         chk = self.read_qubicstudio_asic_fits(hdulist)
         hdulist.close()
         return chk
+
+    if extname=='ASIC_RAW':
+        chk = self.read_qubicstudio_raw_fits(hdu)
+        hdulist.close()
+        return chk
+        
 
     if extname=='EXTERN_HK':
         chk = self.read_qubicstudio_hkextern_fits(hdu)
@@ -668,10 +668,9 @@ def read_qubicstudio_science_fits(self,hdu):
 
     self.printmsg("existing keys for hk['%s']: %s" % (extname,self.hk[extname].keys()),verbosity=3)
 
-    if self.tdata is None:self.tdata = [{}]
+    # dictionary for timeline data.
+    # tdata is a list.  This is historical bagage from early development 2017/18
     tdata = self.tdata[-1]
-    if 'WARNING' not in tdata.keys(): tdata['WARNING'] = []
-
     
     # check which ASIC
     asic = hdu.header['ASIC_NUM']
@@ -825,14 +824,17 @@ def read_qubicstudio_asic_fits(self,hdulist):
     The HDU passed here as the argument should already have been identified as the ASIC HDU
 
     we should read the science data first, and then read the corresponding ASIC table
+
     '''
+    self.printmsg('DEBUG: call to read_qubicstudio_asic.  asic=%s' % self.asic, verbosity=3)
+    
     if self.asic is None:
         self.printmsg('ERROR! Please read the science data first (asic is unknown)')
         return None
     
-    if self.tdata is None:self.tdata = [{}]
+    # dictionary for timeline data.
+    # tdata is a list.  This is historical bagage from early development 2017/18
     tdata = self.tdata[-1]
-    if 'WARNING' not in tdata.keys(): tdata['WARNING'] = []
 
     # check which ASIC
     hdu = hdulist[self.asic]
@@ -949,6 +951,7 @@ def read_qubicstudio_hkfits(self,hdu):
     read a QubicStudio housekeeping FITS file
     '''
     hkname = hdu.header['EXTNAME'].strip()
+    self.printmsg('Reading HK fits: %s' % hkname,verbosity=3)
     self.hk[hkname] = {}
     nfields = hdu.header['TFIELDS']
     for idx in range(nfields):
@@ -1519,11 +1522,17 @@ def infotext(self,TES=None):
     return ttl
 
         
-def qubicstudio_filetype_truename(self,ftype):
+def qubicstudio_filetype_truename(self,ftype,asic=None):
     '''
     return the valid key name given a nickname for the QubicStudio
     filetype within the dataset
     '''
+
+    if self.__object_type__=='qubicasic':
+        asic = self.asic
+        
+        
+    
     self.printmsg('DEBUG: calling filetype_truename with ftype=%s' % ftype,verbosity=4)
     if ftype is None: return None
     if ftype.upper() == 'PLATFORM': return 'INTERN_HK'
@@ -1531,7 +1540,12 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper().find('AZ')==0: return 'INTERN_HK'
     if ftype.upper().find('EL')==0: return 'INTERN_HK'
     if ftype.upper().find('HWP')==0: return 'INTERN_HK'
-    if ftype.upper() == 'ASIC': return 'CONF_ASIC1'
+    if ftype.upper() == 'ASIC':
+        if asic is None:
+            print('Enter an ASIC number')
+            return None
+        else:
+            return 'CONF_ASIC%i' % asic
     if ftype.upper() == 'EXTERN': return 'EXTERN_HK'
     if ftype.upper() == 'TEMPERATURE': return 'EXTERN_HK'
     if ftype.upper() == 'CALSOURCE': return 'CALSOURCE'
@@ -1542,6 +1556,7 @@ def qubicstudio_filetype_truename(self,ftype):
     if ftype.upper().find('MGC')==0: return 'MGC_HK'
     if ftype.upper().find('TBATH')==0: return 'EXTERN_HK'
     if ftype.upper().find('SWITCH')==0: return 'INTERN_HK'
+    if ftype.upper().find('RAW')>=0: return 'ASIC_RAW'
 
     # if we give a particular HK data name, return the associated filetype
     hktruename = self.qubicstudio_hk_truename(ftype)

@@ -156,6 +156,7 @@ def demodulate(self,
                period=None,
                align_clocks=False,
                timeaxistype='pps',
+               flip=True,
                doplot=True,
                xwin=True):
     '''
@@ -177,6 +178,9 @@ def demodulate(self,
     period: fold at the given period.  Default is to get it from the calsource information
 
     align_clocks:  you can force the timestamps of the calsource and the data to start at the same time
+
+    flip: calsource is inverted compared to detector response.  Correct this with flip=True
+          after 2023-02-01, use flip=True
 
     doplot: make plots
 
@@ -224,7 +228,8 @@ def demodulate(self,
         if data is None: return retval
         t_data_orig = self.timeaxis(datatype='sci',asic=asic,axistype=timeaxistype)
 
-        
+
+    if flip: data = -data
     data_label = '%s, %s' % (ASICstr,TESstr)
     data_label_filenamestr = '%s_%s' % (ASICfilenamestr,TESfilenamestr)
     retval['data label'] = data_label
@@ -248,8 +253,12 @@ def demodulate(self,
         # shift source to oscillate around zero
         use_calsource = True
         t_src = t_src_orig.copy()
-        data_src = -v_src + v_src.mean()# source sampling inverted compared to data
-        
+        if flip:
+            # source sampling inverted compared to data
+            data_src = -v_src + v_src.mean()
+        else:
+            data_src =  v_src - v_src.mean()
+
     t0_src = t_src[0] # this will be modified after the offset is calculated below
     retval['use calsource'] = use_calsource
     

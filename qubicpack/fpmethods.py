@@ -524,7 +524,7 @@ def args_ok(self,TES=None,asic=None,allow_multiple_TES=False,asic_only_required=
     else:
         asic_idx = asic - 1
 
-    self.printmsg('DEBUG: type(asic) should be int: %s' % (type(asic)),verbosity=4)
+    self.printmsg('DEBUG: type(asic) should be int: %s' % (type(asic)),verbosity=5)
     if asic<=0:
         self.printmsg('Please give a valid asic number')
         return None
@@ -897,10 +897,9 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
 
         axel = ax.twinx()
         curves += axel.plot(d_hk,el,color='green',label='elevation')
-        axel.tick_params(axis='y',labelcolor='green')
+        axel.tick_params(axis='y',labelcolor='green',pad=80)
         axel.set_ylim(el.min(),el.max())
         axel.set_ylabel('elevation',rotation=270,ha='left',va='bottom',color='green')
-        axel.tick_params(axis='y',pad=80)
 
     if plot_Tbath:
         raw_Tbath = self.get_hk('TES Stage')

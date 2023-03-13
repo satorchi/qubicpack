@@ -20,6 +20,36 @@ import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
 
+qubicasic_hk_keys = ['Apol',
+                     'CN',
+                     'ColumnEnd',
+                     'ColumnStart',
+                     'FLL_D',
+                     'FLL_I',
+                     'FLL_P',
+                     'FLL_State',
+                     'Feedback-DAC-values',
+                     'FrequencyASICSerialLink',
+                     'NETQUIC synchro error',
+                     'NbSamplesPerSum',
+                     'Offset-DAC-values',
+                     'Raw-mask',
+                     'Relays state',
+                     'RowEnd',
+                     'RowStart',
+                     'Spol',
+                     'TES Sinus phase',
+                     'TESAmplitude',
+                     'TESFreq',
+                     'TESOffset',
+                     'TESShapeMode',
+                     'Undersampling raw mode',
+                     'Vicm',
+                     'Vocm',
+                     'nsample',
+                     'testPatternMode']
+
+
 def debugmsg(self,msg,verbosity=3):
     if verbosity<=self.verbosity:
         if self.logfile is None:
@@ -943,6 +973,13 @@ def read_qubicstudio_asic_fits(self,hdulist):
         msg = 'WARNING! Feedback Relay parameters changed during the measurement!'
         tdata['WARNING'].append(msg)
 
+    # check for synchro error
+    sync_dat = self.read_fits_field(hdu,'NETQUIC synchro error')
+    sync_err = (sync_dat==1).sum()
+    if sync_err>0:
+        msg = 'WARNING! Lost synch during the measurement!'
+        tdata['WARNING'].append(msg)
+
     # read all the stuff in the asic file as an HK file
     return self.read_qubicstudio_hkfits(hdu)
 
@@ -1325,6 +1362,9 @@ def get_hk(self,data=None,hk=None,asic=None):
         self.printmsg('Please enter a valid housekeeping type')
         return None
 
+    if hk is None:
+        hk = self.qubicstudio_filetype_truename(data,asic=asic)
+        
     if hk is None: # try to find which Housekeeping
         for key in self.hk.keys():
             if data in self.hk[key].keys():
@@ -1354,7 +1394,7 @@ def get_hk(self,data=None,hk=None,asic=None):
         return None
 
     val = HK[data]
-    if val.max() == 0:
+    if data.upper().find('ERROR')<0 and val.max() == 0:
         self.printmsg('get_hk() : Bad %s Data!' % data,verbosity=3)
     return val
 
@@ -1528,11 +1568,6 @@ def qubicstudio_filetype_truename(self,ftype,asic=None):
     filetype within the dataset
     '''
 
-    if self.__object_type__=='qubicasic':
-        asic = self.asic
-        
-        
-    
     self.printmsg('DEBUG: calling filetype_truename with ftype=%s' % ftype,verbosity=4)
     if ftype is None: return None
     if ftype.upper() == 'PLATFORM': return 'INTERN_HK'
@@ -1540,12 +1575,6 @@ def qubicstudio_filetype_truename(self,ftype,asic=None):
     if ftype.upper().find('AZ')==0: return 'INTERN_HK'
     if ftype.upper().find('EL')==0: return 'INTERN_HK'
     if ftype.upper().find('HWP')==0: return 'INTERN_HK'
-    if ftype.upper() == 'ASIC':
-        if asic is None:
-            print('Enter an ASIC number')
-            return None
-        else:
-            return 'CONF_ASIC%i' % asic
     if ftype.upper() == 'EXTERN': return 'EXTERN_HK'
     if ftype.upper() == 'TEMPERATURE': return 'EXTERN_HK'
     if ftype.upper() == 'CALSOURCE': return 'CALSOURCE'
@@ -1568,7 +1597,23 @@ def qubicstudio_filetype_truename(self,ftype,asic=None):
     if self.temperature_labels is None: return ftype.upper()        
     for key in self.temperature_labels.keys():
         if ftype.upper() == self.temperature_labels[key].upper(): return 'EXTERN_HK'
+
+
+    # if we are in the qubicasic object, and unsuccessful up to here, just return the ftype
+    if self.__object_type__=='qubicasic':
+        return ftype.upper()
         
+    # is it an ASIC specific request?
+    if asic is None:
+        if hktruename in qubicasic_hk_keys:
+            print('Please enter an ASIC number.')
+        return ftype.upper()
+
+    asic_idx = asic-1
+    if self.asic_list[asic_idx] is not None:
+        return self.asic(asic).qubicstudio_filetype_truename(ftype)
+
+    self.printmsg('DEBUG: failed filetype_truename.  Returning ftype=%s' % ftype.upper(),verbosity=4)
     return ftype.upper()
 
 def qubicstudio_hk_truename(self,hktype):
@@ -1576,20 +1621,29 @@ def qubicstudio_hk_truename(self,hktype):
     return the valid key name for a given housekeeping nickname
     '''
     self.printmsg('DEBUG: calling hk_truename with hktype=%s' % hktype,verbosity=4)
-    if hktype.upper() == 'SWITCH1': return 'RFSwitch 1 closed'
-    if hktype.upper() == 'SWITCH2': return 'RFSwitch 2 closed'
-    if hktype.upper() == 'AZ': return 'Platform-Azimut'
-    if hktype.upper() == 'EL': return 'Platform-Elevation'
-    if hktype.upper().find('AV')==0: return hktype.upper()
-    if hktype.upper() == 'CALSOURCE': return 'CALSOURCE'
-    if hktype.upper() == 'SOURCE': return 'CALSOURCE'
-    if hktype.upper() == 'TBATH': return 'AVS47_1_CH2'
-    if hktype.upper() == 'HWP': return 'HWP-Position'
+    if hktype is None: return None
+    
+    hktype_upper = hktype.upper()
+    if hktype_upper == 'SWITCH1': return 'RFSwitch 1 closed'
+    if hktype_upper == 'SWITCH2': return 'RFSwitch 2 closed'
+    if hktype_upper == 'AZ': return 'Platform-Azimut'
+    if hktype_upper == 'EL': return 'Platform-Elevation'
+    if hktype_upper.find('AV')==0: return hktype_upper
+    if hktype_upper == 'CALSOURCE': return 'CALSOURCE'
+    if hktype_upper == 'SOURCE': return 'CALSOURCE'
+    if hktype_upper == 'TBATH': return 'AVS47_1_CH2'
+    if hktype_upper == 'HWP': return 'HWP-Position'
+    if hktype_upper.find('SYNC')>=0: return 'NETQUIC synchro error'
+
+    hktype_spaces = hktype_upper.replace(' ','_')
+    if hktype_spaces.find('FLL_P')>=0: return 'FLL_P'
+    if hktype_spaces.find('FLL_I')>=0: return 'FLL_I'
+    if hktype_spaces.find('FLL_D')>=0: return 'FLL_D'
 
     if self.temperature_labels is None: return hktype
 
     for key in self.temperature_labels.keys():
-        if hktype.upper() == self.temperature_labels[key].upper(): return key
+        if hktype_upper == self.temperature_labels[key].upper(): return key
     
     return hktype
 
@@ -1643,6 +1697,7 @@ def azel_etc(self,TES=None):
         t_data = self.timeline_timeaxis(axistype='pps')
         retval['t_data'] = t_data
         retval['data'] = data
+        print(msg) # print message again to be annoying about it
         return retval
 
 
@@ -1657,5 +1712,6 @@ def azel_etc(self,TES=None):
         retval['t_data %i' % asic_no] = t_data
         retval['data %i' % asic_no] = data
 
+    print(msg) # print message again to be annoying about it
     return retval
     

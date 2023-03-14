@@ -866,6 +866,12 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
     if args is None:return
     TES,asic = args
     self.printmsg('plotting timeline for asic=%i, TES=%i' % (asic,TES),verbosity=2)
+
+
+    if ax is None:
+        newplot = True
+    else:
+        newplot = False
     ret = self.asic(asic).plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
 
     curves = ret['curves']
@@ -936,7 +942,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
     ax.legend(curves, labs, loc='upper right',facecolor='white',framealpha=0.7)
     pngname = '%s_TES%03i_ASIC%02i_timeline.png' % (self.dataset_name,TES,asic)
     ret['pngname'] = pngname
-    fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+    if newplot: fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
             
     return ret
     

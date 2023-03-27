@@ -138,3 +138,48 @@ def make_raw_timeline(self,TES=None,axistype='pps'):
 
 
     return (tstamp_TES,raw_TES)
+
+def plot_raw(self,TES=None,axistype='pps',ax=None):
+    '''
+    plot the raw time samples (usually 100 samples per TOD)
+    '''
+    retval = {}
+    
+    rawdat = self.make_raw_timeline(TES=TES,axistype=axistype)
+    if rawdat is None: return None
+    tstamps,adu = rawdat
+
+    start_tstamp = tstamps.min()
+    start_date = dt.datetime.utcfromtimestamp(start_tstamp)
+    ttl = 'QUBIC Raw Samples for TES#%3i (%s)' % (TES,start_date.strftime('%Y-%b-%d %H:%M UTC'))
+    if self.temperature is None:
+        tempstr='unknown'
+    else:
+        tempstr=str('%.0f mK' % (1000*self.temperature))
+    subttl = 'Array %s, ASIC #%i, Temperature %s' % (self.detector_name,self.asic,tempstr)
+
+    if ax is None:
+        newplot = True
+        fig = plt.figure()
+        ax = fig.add_axes((0.1,0.1,0.8,0.8))
+        fig.canvas.manager.set_window_title('plt: '+ttl)
+        fig.suptitle(ttl+'\n'+subttl)
+    else:
+        newplot = False
+
+    curves = []
+    for idx in range(tstamps.shape[0]):
+        xpts = tstamps[idx,:]
+        ypts = adu[idx,:]
+        curves += ax.plot(xpts,ypts,color='blue')
+
+    ax.set_ylabel('Raw samples / ADU')
+    ax.set_xlabel('date / seconds since 1970-01-01')
+    pngname = 'array-%s_ASIC%i_TES%03i_raws_%s.png' % (self.detector_name,TES,self.asic,start_date.strftime('%Y%m%dT%H%M%SUTC'))
+    if newplot:
+        fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
+        
+    retval['ax'] = ax
+    retval['curves'] = curves
+    retval['plotname'] = pngname
+    return retval

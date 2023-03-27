@@ -857,7 +857,8 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
                   plot_calsource=False,
                   plot_azel=False,
                   plot_Tbath=False,
-                  plot_hwp=False):
+                  plot_hwp=False,
+                  plot_raw=False):
     '''
     wrapper to plot timeline of the asic object 
     and plotted together with various possible housekeeping information
@@ -936,6 +937,11 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         axhwp.tick_params(axis='y',labelcolor='purple')
         axhwp.set_ylim(hwp.min(),hwp.max())
         axhwp.set_ylabel('HWP position',rotation=270,ha='right',va='bottom',color='purple')
+
+    if plot_raw:
+        axraw = ax.twinx()
+        rawplt = self.asic(asic).plot_raw(TES=TES,timeaxis=timeaxis,ax=axraw)
+        curves += [rawplt['curves'][0]]
     
 
     labs = [l.get_label() for l in curves]

@@ -201,7 +201,11 @@ def plot_fp(args):
                     yminmax = args[yminmax_key]
                 else:
                     noninf_idx = ( (curve!=np.inf) & (curve!=-np.inf) )
-                    yminmax = (np.nanmin(curve[noninf_idx]),np.nanmax(curve[noninf_idx]))
+                    nonnan_idx = ~np.isnan(curve)
+                    if nonnan_idx.sum()==0 or noninf_idx.sum()==0:
+                        yminmax = None
+                    else:
+                        yminmax = (np.nanmin(curve[noninf_idx]),np.nanmax(curve[noninf_idx]))
 
                 if azel_key in args.keys() and args[azel_key] is not None:
                     azel_extents = args[azel_key]
@@ -224,7 +228,7 @@ def plot_fp(args):
 
                 if ndims>2:
                     ax[row,col].imshow(curve,extent=azel_extents,vmin=yminmax[0],vmax=yminmax[1],aspect='equal')
-                else:
+                elif yminmax is not None:
                     ax[row,col].plot(curve_x,curve,color=curve_colour)
                     ax[row,col].set_xlim(xminmax)
                     ax[row,col].set_ylim(yminmax)

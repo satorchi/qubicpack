@@ -87,7 +87,7 @@ def write_iv_fits(fpobject,elog='',wikipage=''):
             
 
     if toolong:
-        prihdr['WARNING'] = ('CUTOFF','go to HDU3 for details')
+        prihdr['WARNING'] = ('CUTOFF','go to final HDU for details')
         print('Truncated information can be found in full in the last HDU')
 
     # make the primary HDU out of the header     
@@ -105,6 +105,7 @@ def write_iv_fits(fpobject,elog='',wikipage=''):
         nasics += 1
         if verbosity>0: print('ASIC %i' % nasics)
         ivcurves = asicobj.best_iv_curve() # tuple with two arrays of shape (128,npts): V,I for each TES
+        is_good = asicobj.is_good_iv() # array of shape 128, Boolean
 
         Vcolumnlist = []
         Icolumnlist = []
@@ -119,14 +120,24 @@ def write_iv_fits(fpobject,elog='',wikipage=''):
         tbhdu = fits.BinTableHDU.from_columns(cols)
         tbhdu.header['ASIC'] = asicobj.asic
         tbhdu.header['IV_AXIS'] = 'V'
+        tbhdu.header['EXTNAME'] = 'V'
         hdulist.append(tbhdu)
 
         cols  = fits.ColDefs(Icolumnlist)
         tbhdu = fits.BinTableHDU.from_columns(cols)
         tbhdu.header['ASIC'] = asicobj.asic
         tbhdu.header['IV_AXIS'] = 'I'
+        tbhdu.header['EXTNAME'] = 'I'
         hdulist.append(tbhdu)
-  
+
+        col = fits.Column(name='is_good', format='L', unit='Bool', array=is_good)
+        columnlist = [col]
+        cols = fits.ColDefs(columnlist)
+        tbhdu = fits.BinTableHDU.from_columns(cols)
+        tbhdu.header['ASIC'] = asicobj.asic
+        tbhdu.header['EXTNAME'] = 'is good'
+        hdulist.append(tbhdu)
+        
 
     # add the final HDU which is like a secondary primary with all the info which may have been cutoff
     cols  = fits.ColDefs(secondprimarylist)
@@ -139,9 +150,11 @@ def write_iv_fits(fpobject,elog='',wikipage=''):
     print('I-V curves written to file: %s' % hdrval['FILENAME'])
     return
 
-def read_iv_fits(filename,verbosity=1):
+def read_iv_fits(filename,verbosity=1,fullinfo=False):
     '''
     read a set of I-V curves from a fits file
+
+    fullinfo:  return metadata and data in a dictionary (default: False for backwards compatibility)
     '''
     if not os.path.isfile(filename):
         print('File not found! %s' % filename)
@@ -162,7 +175,13 @@ def read_iv_fits(filename,verbosity=1):
         print('This is not a QUBIC fits file')
         return None
 
-    dataset = hdr['DATASET']
+    if 'FILETYPE' not in hdr.keys() or hdr['FILETYPE']!='IV':
+        print('This is not a QUBIC I-V fits file')
+        return None
+
+    retval = {}
+    
+    dataset = hdr['DATASET']    
     obsdate = hdr['DATE-OBS']
     elog = hdr['ELOG']
     wikipage = hdr['WIKIPAGE']
@@ -184,26 +203,43 @@ def read_iv_fits(filename,verbosity=1):
         if elog: print('elog link: %s' % elog)
         if wikipage: print('wikipage: %s' % wikipage)
 
+    retval['dataset'] = dataset
+    retval['obsdate'] = obsdate    
+    retval['elog'] = elog
+    retval['wikipage'] = wikipage
     ivcurves_list = []
     for idx,hdu in enumerate(hdulist):
         if 'ASIC' not in hdu.header.keys(): continue
         asic = hdu.header['ASIC']
         npts = hdu.header['NAXIS2']
-        datkey = hdu.header['IV_AXIS']
+
+        if 'EXTNAME' not in hdu.header.keys():
+            datkey = hdu.header['IV_AXIS']
+        else:
+            datkey = hdu.header['EXTNAME']
         if datkey=='V':
             dat = np.zeros((2,128,npts),dtype=np.float64)
             datidx = 0
-        else:
+        elif datkey=='I':
             datidx = 1
+        else:
+            datidx = None
             
         if verbosity>0:
             print('reading I-V curve:  %i points %s for ASIC %i' % (npts,datkey,asic))
-            
-        for TESidx in range(128):
-            dat[datidx,TESidx,:] = hdu.data.field(TESidx)
-        if datidx==1:
-            ivcurves_list.append(dat)
 
+        if datkey=='is good':
+            is_good = hdu.data.field(0)
+            retval['ASIC%i is good' % asic] = is_good
+        else:
+            for TESidx in range(128):
+                dat[datidx,TESidx,:] = hdu.data.field(TESidx)
+            if datidx==1:
+                ivcurves_list.append(dat)
+
+            retval['ASIC%i' % asic] = dat
+
+    if fullinfo: return retval
     return ivcurves_list
 
             

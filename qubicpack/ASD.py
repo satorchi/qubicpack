@@ -52,17 +52,18 @@ def plot_ASD(self,TES=None,
     if TES is None:
         print('Please enter a valid TES number, between 1 and %i' % self.NPIXELS)
         return None
-    TES_idx=TES_index(TES)
+    TES_idx = TES_index(TES)
 
-    if nbins is None:nbins=1
+    if nbins is None:nbins = 1
     
     result={}
-    result['timeline_index']=timeline_index
-    result['TES']=TES
-    result['nbins']=nbins
-    timeline=self.timeline(TES,timeline_index)
-    obsdate=self.tdata[timeline_index]['BEG-OBS']
-    result['obsdate']=obsdate
+    result['timeline_index'] = timeline_index
+    result['TES'] = TES
+    result['nbins'] = nbins
+    timeline = self.timeline(TES,timeline_index)
+    result['timeline'] = timeline
+    obsdate = self.tdata[timeline_index]['BEG-OBS']
+    result['obsdate'] = obsdate
 
     tinteg=self.tinteg
     if 'INT-TIME' in self.tdata[timeline_index].keys():
@@ -89,6 +90,7 @@ def plot_ASD(self,TES=None,
     current=self.ADU2I(timeline) # uA
     timeline_npts=len(timeline)
     result['timeline_npts']=timeline_npts
+    result['current'] = current
 
     if indmin is None:indmin=0 #MP
     if indmax is None:indmax=timeline_npts-1 #MP
@@ -145,7 +147,7 @@ def plot_ASD(self,TES=None,
                           detrend='mean')
 
         
-    ax_timeline.cla()
+    # ax_timeline.cla() # this is for acquisition using pystudio
     ax_timeline.plot(time_axis[indmin:indmax],current[indmin:indmax])
     ax_timeline.text(txt_x,txt_y,time_label,transform=ax_timeline.transAxes)
     ax_timeline.set_xlabel('time  /  seconds')
@@ -153,10 +155,10 @@ def plot_ASD(self,TES=None,
     if imin is None:imin=min(current)
     if imax is None:imax=max(current)
     ax_timeline.set_ylim((imin,imax))
-    if xwin: plt.pause(0.01)
+    #  xwin: plt.pause(0.01) # this is for acquisition using pystudio
 
     ASD=np.sqrt(PSD) # in uA
-    ax_asd.cla()
+    # ax_asd.cla() # this is for acquisition using pystudio
     ax_asd.loglog(freqs,ASD)
     boxprops = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax_asd.text(txt_x,txt_y,full_label,transform=ax_asd.transAxes,ha='left',va='bottom',bbox=boxprops)
@@ -165,7 +167,7 @@ def plot_ASD(self,TES=None,
     if amin is None:amin=min(ASD)
     if amax is None:amax=max(ASD)
     ax_asd.set_ylim((amin,amax))
-    if xwin: plt.pause(0.01)
+    # if xwin: plt.pause(0.01) # this is for acquisition using pystudio
         
     if save:
         plt.savefig(pngname_fullpath,format='png',dpi=100,bbox_inches='tight')
@@ -339,14 +341,46 @@ def plot_powerspectrum_focalplane(self,xwin=True,amin=None,amax=None,nbins=None)
     plot_fp(args)
     return args
     
-def plot_powerspectrum(self,TES=None,asic=None):
+def plot_powerspectrum(self,
+                       TES=None,
+                       asic=None,
+                       save=True,
+                       ax_timeline=None,
+                       ax_asd=None,
+                       xwin=True,
+                       amin=None,amax=None,
+                       imin=None,imax=None,
+                       nbins=None,
+                       indmin=None,indmax=None):
     '''
     We cannot have fibtools here because of a problem with circular importing.
     so there is no sophisticated filtering before the calculation of the power spectrum
+
+    optional arguments:
+    TES: TES number (required)
+    asic: asic number
+    nbins: number of data points per bin (default: 1)
+    indmin: start index for timeline (default: 0)
+    indmax: end index for timeline (default: maximum index = npts-1)
+    ax_timeline: matplotlib axis for plot
+    ax_asd: matplotlib axis for plot
+    xwin: True/False (plot to screen)
+    amin: minimum amplitude for power spectrum plot axis
+    amax: maximum amplitude for power spectrum plot axis
+    imin: minimum current for power spectrum plot axis
+    imax: maximum current for power spectrum plot axis
     '''
     args = self.args_ok(TES,asic)
     if args is None:return
     TES,asic = args
 
-    return self.asic(asic).plot_ASD(TES)
+    return self.asic(asic).plot_ASD(TES=TES,
+                                    save=save,
+                                    ax_timeline=ax_timeline,
+                                    ax_asd=ax_asd,
+                                    xwin=xwin,
+                                    amin=amin,amax=amax,
+                                    imin=imin,imax=imax,
+                                    nbins=nbins,
+                                    indmin=indmin,indmax=indmax)
 

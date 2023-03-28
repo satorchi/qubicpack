@@ -30,7 +30,7 @@ hdr_comment['ELOG'] = 'link to the elog entry for the data'
 hdr_comment['WIKIPAGE'] = 'link to the wiki page where there is more information'
 hdr_comment['FILENAME'] = 'name of this file'
 hdr_comment['FILEDATE'] = 'UT date this file was created'
-
+hdr_comment['T_BATH'] = 'TES bath temperature in K'
 
     
 def assign_header_values(fpobject,elog='',wikipage=''):
@@ -53,6 +53,7 @@ def assign_header_values(fpobject,elog='',wikipage=''):
     hdr['WIKIPAGE'] = wikipage
     hdr['FILENAME'] = filename
     hdr['FILEDATE'] = dt.datetime.utcnow().strftime(datefmt)
+    hdr['T_BATH'] = fpobject.temperature
         
     return hdr
 
@@ -185,6 +186,10 @@ def read_iv_fits(filename,verbosity=1,fullinfo=False):
     obsdate = hdr['DATE-OBS']
     elog = hdr['ELOG']
     wikipage = hdr['WIKIPAGE']
+    if 'T_BATH' in hdr.keys():
+        Tbath = hdr['T_BATH']
+    else:
+        Tbath = None
 
     infohdu = hdulist[-1]
     for ttype_idx in range(infohdu.header['TFIELDS']):
@@ -207,6 +212,7 @@ def read_iv_fits(filename,verbosity=1,fullinfo=False):
     retval['obsdate'] = obsdate    
     retval['elog'] = elog
     retval['wikipage'] = wikipage
+    retval['Tbath'] = Tbath
     ivcurves_list = []
     for idx,hdu in enumerate(hdulist):
         if 'ASIC' not in hdu.header.keys(): continue

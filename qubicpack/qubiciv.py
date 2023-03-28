@@ -75,12 +75,21 @@ def write_iv_fits(fpobject,elog='',wikipage=''):
     for key in hdrval.keys():
         val = hdrval[key]
         comment = hdr_comment[key]
-
-        fmt = 'A%i' % max((len(val),len(comment)))
-        col = fits.Column(name=key, format=fmt, unit='text', array=[val,comment])
+        if isinstance(val,str):
+            fmt = 'A%i' % max((len(val),len(comment)))
+            col = fits.Column(name=key, format=fmt, unit='text', array=[val,comment])
+            cardlen = len(val) + len(comment)
+        elif isinstance(val,float):
+            fmt = 'E'
+            col = fits.Column(name=key, format=fmt, unit='K', array=[val])
+            cardlen = 80
+        else:
+            print('ERROR ERROR ERROR: %s is type: %s' % (val,type(val)))
+            col = fits.Column(name=key, format='A10', unit='text', array=['UNKNOWN'])
+            cardlen = 80
+                  
         secondprimarylist.append(col)
                 
-        cardlen = len(val) + len(comment)
         if cardlen>80:
             toolong = True
             comment = ''

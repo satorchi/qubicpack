@@ -160,11 +160,11 @@ def write_iv_fits(fpobject,elog='',wikipage=''):
     print('I-V curves written to file: %s' % hdrval['FILENAME'])
     return
 
-def read_iv_fits(filename,verbosity=1,fullinfo=False):
+def read_iv_fits(filename,verbosity=1,fullinfo=True):
     '''
     read a set of I-V curves from a fits file
 
-    fullinfo:  return metadata and data in a dictionary (default: False for backwards compatibility)
+    fullinfo:  return metadata and data in a dictionary (choose False for backwards compatibility)
     '''
     if not os.path.isfile(filename):
         print('File not found! %s' % filename)

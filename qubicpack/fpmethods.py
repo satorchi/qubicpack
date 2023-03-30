@@ -909,12 +909,8 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         axel.set_ylabel('elevation',rotation=270,ha='left',va='bottom',color='green')
 
     if plot_Tbath:
-        raw_Tbath = self.get_hk('TES Stage')
-        raw_t_Tbath = self.get_hk(data='RaspberryDate',hk='EXTERN_HK')
-        # filter out spikes
-        idxok = (raw_Tbath>0) & (raw_Tbath<300)
-        Tbath = raw_Tbath[idxok]
-        t_Tbath = raw_t_Tbath[idxok]
+        Tbath = self.Tbath[1]
+        t_Tbath = self.Tbath[0]
         d_Tbath = np.empty(len(t_Tbath),dtype=dt.datetime)
         for idx,tstamp in enumerate(t_Tbath):
             d_Tbath[idx] = dt.datetime.utcfromtimestamp(tstamp)            

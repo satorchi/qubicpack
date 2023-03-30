@@ -456,7 +456,7 @@ def assign_bath_temperature(self):
 
     # filter spike artefacts in the HK data
     if testemp is not None:
-        idxok = (testemp<0.5) & (testemp>0)
+        idxok = (testemp<0.5) & (testemp>0) & (hktstamps<dt.datetime.utcnow().timestamp())
         if idxok.sum()==0:
             idxok = (testemp<300) & (testemp>0)
 

@@ -166,7 +166,8 @@ class qubicasic:
     
     from .timestamping_diagnostic import\
         plot_timestamp_diagnostic,\
-        lost_packets
+        lost_packets,\
+        assign_default_gps_sample_offset
     
     def __init__(self):
         self.assign_defaults()

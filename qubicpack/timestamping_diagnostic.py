@@ -14,7 +14,13 @@ make a diagnostic plot of the derived timestamps
 '''
 from matplotlib import pyplot as plt
 import numpy as np
+import datetime as dt
 from qubicpack.utilities import figure_window_title
+
+# default for gps_sample_offset in pps2date
+# if in the future we want to change the default behaviour, we only have to change the following line
+# and not everywhere pps2date is called (see timeline.py)
+default_gps_sample_offset = 0
 
 '''
    the first version of this script was tested on the following data:
@@ -84,7 +90,7 @@ def find_pps_peaks_hkdata(pps):
     
     return retval
 
-def pps2date(pps,gps,gps_sample_offset=0,verbosity=0):
+def pps2date(pps,gps,gps_sample_offset=None,verbosity=0):
     '''
     convert the gps date to a precise date given the pps
     '''
@@ -92,6 +98,8 @@ def pps2date(pps,gps,gps_sample_offset=0,verbosity=0):
     if gps is None or gps.min()<1494486000 or gps.max()<1494486000 or len(np.unique(gps))<2:
         if verbosity>1: print('ERROR! Bad GPS data.')
         return None
+
+    if gps_sample_offset is None: gps_sample_offset = default_gps_sample_offset
     
     npts = len(pps)
     pps_separation=1  # exactly one second between pulses
@@ -116,9 +124,11 @@ def pps2date(pps,gps,gps_sample_offset=0,verbosity=0):
         if verbosity>0: print('no pps intervals!')
         return None
     
-    if verbosity>1: print('mean pps interval is %.4f second' % separations.mean())
-    if verbosity>1: print('max pps interval is  %.4f second' % separations.max())
-    if verbosity>1: print('min pps interval is  %.4f second' % separations.min())
+    if verbosity>1:
+        print('mean pps interval is %.4f second' % separations.mean())
+        print('max pps interval is  %.4f second' % separations.max())
+        print('min pps interval is  %.4f second' % separations.min())
+        print('using gps sample offset: %i' % gps_sample_offset)
             
     # find the GPS date corresponding to the PPS
     tstamp = -np.ones(npts)
@@ -144,9 +154,16 @@ def pps2date(pps,gps,gps_sample_offset=0,verbosity=0):
 
 
         ###  assuming the PPS arrives after the corresponding time given by the GPS ###################
-        tstamp[idx] = gps_at_pps
+        # tstamp[idx] = gps_at_pps
         ###############################################################################################
 
+        ## back to original algorithm, with optional offset (could be positive or negative) 2023-04-06 11:26:34
+        offset_idx = idx + gps_sample_offset
+        if offset_idx>=npts: offset_idx = npts-1
+        if offset_idx<0: offset_idx = 0
+        next_gps = gps[offset_idx]
+        tstamp[idx] = next_gps
+        ###############################################################################################
         
     # now finally do the interpolation for the time axis
     first_sample_period = None    
@@ -173,8 +190,24 @@ def pps2date(pps,gps,gps_sample_offset=0,verbosity=0):
 
     return tstamp
 
+def assign_default_gps_sample_offset(self):
+    '''
+    The timeaxis algorithm uses the GPS and PPS.
+    The date is taken from the GPS at the time of the pulse from the PPS
+    The gps_sample_offset is an offset sample number from the pulse time for assigning the date
+    
+    This could be different for the scientific data of each ASIC.
 
-def timestamp_diagnostic(self,hk=None,asic=None):
+    This should be called after reading a qubicstudio dataset
+    '''
+    self.default_gps_sample_offset = default_gps_sample_offset
+    if self.obsdate > dt.datetime.strptime('2023-02-01','%Y-%m-%d'):
+        if self.asic==2:
+            self.default_gps_sample_offset = -10
+
+    return
+
+def timestamp_diagnostic(self,hk=None,asic=None,gps_sample_offset=None):
     '''
     calculate the diagnostic of the derived timestamps
     '''
@@ -312,9 +345,12 @@ def timestamp_diagnostic(self,hk=None,asic=None):
     else:
         refclock = gps
 
-    
-    tstamps = pps2date(pps,refclock,verbosity=self.verbosity)
+    if gps_sample_offset is None:
+        if hk=='ASIC_SUMS': 
+            gps_sample_offset = self.asic(asic).default_gps_sample_offset
+    tstamps = pps2date(pps,refclock,gps_sample_offset=gps_sample_offset,verbosity=self.verbosity)
     analysis['tstamps'] = tstamps
+    analysis['gps_sample_offset'] = gps_sample_offset
     if tstamps is None:
         self.printmsg('Could not assign timestamps from reference clock',verbosity=2)
         return analysis
@@ -458,7 +494,8 @@ def plot_timestamp_diagnostic_fig1(self,analysis=None,hk=None,zoomx=None,zoomy=N
         newplot = True
         fig = plt.figure(figsize=(16,8))
         figure_window_title(fig,ttl)
-        fig.suptitle(self.infotext(),fontsize=fontsize)
+        supttl = '%s\ngps sample offset = %i' % (self.infotext(),analysis['gps_sample_offset'])
+        fig.suptitle(supttl,fontsize=fontsize)
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
         
     ax.text(0.50,1.00,ttl,ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
@@ -514,7 +551,8 @@ def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=N
     if ax is None:
         fig = plt.figure(figsize=(16,8))
         figure_window_title(fig,ttl)
-        fig.suptitle(ttl,fontsize=fontsize)
+        supttl = '%s\ngps sample offset = %i' % (self.infotext(),analysis['gps_sample_offset'])
+        fig.suptitle(supttl,fontsize=fontsize)
         ax = fig.add_axes((0.05,0.08,0.9,0.8))
 
     ax.text(0.50,1.00,ttl,ha='center',va='bottom',fontsize=fontsize,transform=ax.transAxes)
@@ -567,13 +605,13 @@ def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=N
 
     return
 
-def plot_timestamp_diagnostic(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,fontsize=12):
+def plot_timestamp_diagnostic(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,fontsize=12,gps_sample_offset=None):
     '''
     make a diagnostic plot of the derived timestamps
     '''
 
     if analysis is None:
-        analysis = self.timestamp_diagnostic(hk=hk,asic=asic)
+        analysis = self.timestamp_diagnostic(hk=hk,asic=asic,gps_sample_offset=gps_sample_offset)
     if analysis is None: return
 
     plt.ion()

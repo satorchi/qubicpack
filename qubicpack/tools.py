@@ -606,16 +606,19 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     biasphase = self.bias_phase()
 
     # read IV evaluation if it exists, and also assign the dataset name to the qubicasic objects
+    # and assign the default gps sample offset for the timestamp algorithm
     if self.__object_type__=='qubicfp':
         for asic_obj in self.asic_list:
             if asic_obj is None: continue
             asic_obj.read_filter()
             asic_obj.dataset_name = self.dataset_name
+            asic_obj.assign_default_gps_sample_offset()
     else:
         self.read_filter()
 
     # assign bath temperature
     self.assign_bath_temperature()
+    
     return True
 
 def read_calsource_fits(self,hdu):

@@ -199,7 +199,7 @@ def timeline_computertime(self,timeline_index=None):
     self.printmsg('ERROR! No Computer Time.',verbosity=2)
     return None
 
-def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
+def timeline_timeaxis(self,timeline_index=None,axistype='pps',gps_sample_offset=None):
     '''
     the timeline time axis for scientific data (TES)
     This is determined from the sample period and the number of points
@@ -208,6 +208,8 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
     self.printmsg('DEBUG: call to timeline_timeaxis with axistype=%s' % axistype,verbosity=4)
     
     if not self.exist_timeline_data():return None
+
+    if gps_sample_offset is None: gps_sample_offset = self.default_gps_sample_offset
     
     computertime = self.timeline_computertime(timeline_index)
     t0 = computertime[0]
@@ -232,7 +234,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
         if 'ASIC_SUMS' in self.hk.keys():
             pps = self.pps(hk='ASIC_SUMS')
             gps = self.gps(hk='ASIC_SUMS')
-            time_axis = pps2date(pps,gps,verbosity=self.verbosity)
+            time_axis = pps2date(pps,gps,gps_sample_offset=gps_sample_offset,verbosity=self.verbosity)
             if time_axis is None:
                 self.printmsg('ERROR! Using default based on %s' % default_descr,verbosity=2)
                 return time_axis_default
@@ -247,7 +249,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
     self.printmsg('timeline_timeaxis returning time axis based on %s.' % default_descr,verbosity=2)
     return time_axis_default
 
-def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
+def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None,gps_sample_offset=None):
     '''
     wrapper to return the time axis for data.
     the datatypes are the various hk or scientific
@@ -333,7 +335,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
         self.printmsg('GPS is zero.  Using %s instead' % t_default_str)
         return t_default
 
-    pps_time = pps2date(pps,gps,verbosity=self.verbosity)
+    pps_time = pps2date(pps,gps,gps_sample_offset=gps_sample_offset,verbosity=self.verbosity)
     if pps_time is None:
         self.printmsg('Could not get timeaxis from PPS/GPS.  Using %s instead' % t_default_str)
         return t_default

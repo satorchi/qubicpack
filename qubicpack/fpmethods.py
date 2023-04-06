@@ -873,9 +873,14 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         newplot = True
     else:
         newplot = False
-    ret = self.asic(asic).plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
 
-    curves = ret['curves']
+    if plot_raw:
+        ret = self.asic(asic).plot_raw(TES=TES,timeaxis=timeaxis,ax=ax)
+        curves = [ret['curves'][0],ret['curves'][-1]]
+    else:
+        ret = self.asic(asic).plot_timeline(TES=TES,plot_bias=plot_bias,timeaxis=timeaxis,ax=ax,fontsize=fontsize)
+        curves = ret['curves']
+        
     ax = ret['ax']
     fig = ax.get_figure()
     if plot_calsource:
@@ -934,10 +939,6 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         axhwp.set_ylim(hwp.min(),hwp.max())
         axhwp.set_ylabel('HWP position',rotation=270,ha='right',va='bottom',color='purple')
 
-    if plot_raw:
-        axraw = ax.twinx()
-        rawplt = self.asic(asic).plot_raw(TES=TES,timeaxis=timeaxis,ax=axraw)
-        curves += [rawplt['curves'][0]]
     
 
     labs = [l.get_label() for l in curves]

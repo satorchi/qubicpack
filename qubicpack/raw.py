@@ -11,6 +11,8 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 methods for dealing with the RAW data in QubicStudio datasets
 '''
 import numpy as np
+import datetime as dt
+import matplotlib.pyplot as plt
 
 def read_qubicstudio_raw_fits(self,hdu):
     '''read the raw data
@@ -98,7 +100,7 @@ def exist_raw_data(self):
     return True
     
 
-def make_raw_timeline(self,TES=None,axistype='pps'):
+def make_raw_timeline(self,TES=None,timeaxis='pps'):
     '''
     reconfigure the RAW data array as a timeline
     '''
@@ -110,9 +112,11 @@ def make_raw_timeline(self,TES=None,axistype='pps'):
         self.printmsg('Please enter a valid TES number',verbosity=0)
         return None
 
-    raw = self.hk['ASIC_RAW']['Raw']
+    # the ADU of the TOD are the sum of the samples, not the average, so we multiply the RAW by NbSamplesPerSum.
+    NbSamplesPerSum = self.hk['ASIC_SUMS']['NbSamplesPerSum'].mean()
+    raw = NbSamplesPerSum*self.hk['ASIC_RAW']['Raw']
     pixnum = self.hk['ASIC_RAW']['pixelNum']
-    raw_tstamps = self.timeaxis(datatype='Raw',axistype=axistype)
+    raw_tstamps = self.timeaxis(datatype='Raw',axistype=timeaxis)
     
     pixidx = (pixnum==TES)
     nsamples = self.hk['ASIC_RAW']['NSAMPLE']
@@ -139,13 +143,14 @@ def make_raw_timeline(self,TES=None,axistype='pps'):
 
     return (tstamp_TES,raw_TES)
 
-def plot_raw(self,TES=None,axistype='pps',ax=None):
+def plot_raw(self,TES=None,timeaxis='pps',ax=None):
     '''
     plot the raw time samples (usually 100 samples per TOD)
+    together with the TOD in ADU
     '''
     retval = {}
     
-    rawdat = self.make_raw_timeline(TES=TES,axistype=axistype)
+    rawdat = self.make_raw_timeline(TES=TES,timeaxis=timeaxis)
     if rawdat is None: return None
     tstamps,adu = rawdat
 
@@ -169,12 +174,25 @@ def plot_raw(self,TES=None,axistype='pps',ax=None):
 
     curves = []
     for idx in range(tstamps.shape[0]):
-        xpts = tstamps[idx,:]
+        xpts = []
+        for tstamp in tstamps[idx,:]:
+            xpts.append(dt.datetime.utcfromtimestamp(tstamp))
         ypts = adu[idx,:]
-        curves += ax.plot(xpts,ypts,color='blue')
+        curves += ax.plot(xpts,ypts,color='green')
+    curves[0].set_label('Raw') # label only one of the Raw plots
 
-    ax.set_ylabel('Raw samples / ADU')
-    ax.set_xlabel('date / seconds since 1970-01-01')
+    # plot the TOD in ADU
+    tod_tstamps = self.timeaxis(datatype='sci')
+    tod_date = []
+    for tstamp in tod_tstamps:
+        tod_date.append(dt.datetime.utcfromtimestamp(tstamp))
+        
+    tod_val = self.timeline(TES)
+    curves += ax.plot(tod_date,tod_val,color='blue',label='TOD')
+        
+    ax.set_ylabel('TOD and Raw samples / ADU')
+    ax.set_xlabel('date UT')
+    ax.legend(loc='lower left')
     pngname = 'array-%s_ASIC%i_TES%03i_raws_%s.png' % (self.detector_name,TES,self.asic,start_date.strftime('%Y%m%dT%H%M%SUTC'))
     if newplot:
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')

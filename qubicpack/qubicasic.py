@@ -55,7 +55,6 @@ class qubicasic:
         output_filename,\
         data_subdir,\
         get_from_keyboard,\
-        pps2date,\
         RawMask,\
         FLL_State,\
         get_hk,\
@@ -157,6 +156,7 @@ class qubicasic:
     from .raw import\
         exist_raw_data,\
         make_raw_timeline,\
+        plot_raw,\
         read_qubicstudio_raw_fits
 
     from .ASD import\

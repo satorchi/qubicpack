@@ -20,6 +20,7 @@ from scipy.optimize import curve_fit
 from qubicpack.utilities import TES_index, figure_window_title
 from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
 from qubicpack.plot_fp import plot_fp
+from qubicpack.timestamping_diagnostic import pps2date
 
 def exist_timeline_data(self):
     '''
@@ -231,7 +232,7 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps'):
         if 'ASIC_SUMS' in self.hk.keys():
             pps = self.pps(hk='ASIC_SUMS')
             gps = self.gps(hk='ASIC_SUMS')
-            time_axis = self.pps2date(pps,gps)
+            time_axis = pps2date(pps,gps,verbosity=self.verbosity)
             if time_axis is None:
                 self.printmsg('ERROR! Using default based on %s' % default_descr,verbosity=2)
                 return time_axis_default
@@ -332,7 +333,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None):
         self.printmsg('GPS is zero.  Using %s instead' % t_default_str)
         return t_default
 
-    pps_time = self.pps2date(pps,gps)
+    pps_time = pps2date(pps,gps,verbosity=self.verbosity)
     if pps_time is None:
         self.printmsg('Could not get timeaxis from PPS/GPS.  Using %s instead' % t_default_str)
         return t_default

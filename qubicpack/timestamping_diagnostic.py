@@ -84,6 +84,96 @@ def find_pps_peaks_hkdata(pps):
     
     return retval
 
+def pps2date(pps,gps,gps_sample_offset=0,verbosity=0):
+    '''
+    convert the gps date to a precise date given the pps
+    '''
+
+    if gps is None or gps.min()<1494486000 or gps.max()<1494486000 or len(np.unique(gps))<2:
+        if verbosity>1: print('ERROR! Bad GPS data.')
+        return None
+    
+    npts = len(pps)
+    pps_separation=1  # exactly one second between pulses
+    epsilon = 0.1
+
+    separations = []
+    pps_high = np.where(pps==1)[0]
+    # select the first/last PPS in each series
+    pps_indexes = []
+    prev = gps[0]
+    for idx in pps_high:
+        if (idx>0 and pps[idx-1]==0)\
+           or (idx<npts-1 and pps[idx+1]==0):
+            sep = gps[idx] - prev
+            if sep != 0: # next PPS valid only if we have a non-zero step (modif by MP)
+                pps_indexes.append(idx)    
+                separations.append(sep)
+                prev = gps[idx]
+
+    separations = np.array(separations[1:])
+    if separations.size==0:
+        if verbosity>0: print('no pps intervals!')
+        return None
+    
+    if verbosity>1: print('mean pps interval is %.4f second' % separations.mean())
+    if verbosity>1: print('max pps interval is  %.4f second' % separations.max())
+    if verbosity>1: print('min pps interval is  %.4f second' % separations.min())
+            
+    # find the GPS date corresponding to the PPS
+    tstamp = -np.ones(npts)
+    prev_gps = gps[0]
+    #offset = 50 # delay after PPS for valid GPS (this should be different for scientific and housekeeping) 
+    for idx in pps_indexes:
+        gps_at_pps = gps[idx]
+
+        ### original algorithm  replaced by the one below (MP & JCH) ##################################
+        ## we use the GPS timestamp from a bit later
+        # offset_idx = idx + offset
+        # if offset_idx>=npts:offset_idx=npts-1
+        # next_gps = gps[offset_idx]
+        # tstamp[idx] = next_gps
+        ###############################################################################################
+
+        ###  assuming the PPS arrives before the corresponding time given by the GPS ##################
+        # the pps arrives just before the corresponding gps
+        # so we simply add 1 second to current gps value (gps increments in steps of 1 second exactly)
+        # (modification by MP & JCH)
+        # tstamp[idx] = gps_at_pps + 1
+        ###############################################################################################
+
+
+        ###  assuming the PPS arrives after the corresponding time given by the GPS ###################
+        tstamp[idx] = gps_at_pps
+        ###############################################################################################
+
+        
+    # now finally do the interpolation for the time axis
+    first_sample_period = None    
+    for idx in range(len(pps_indexes)-1):
+        diff_idx = pps_indexes[idx+1] - pps_indexes[idx]
+        pps_separation = tstamp[pps_indexes[idx+1]]-tstamp[pps_indexes[idx]]
+        sample_period = pps_separation/diff_idx
+        if first_sample_period is None:
+            first_sample_period = sample_period
+        for idx_offset in range(diff_idx):
+            tstamp[pps_indexes[idx]+idx_offset] = tstamp[pps_indexes[idx]] + idx_offset*sample_period
+
+    last_sample_period = sample_period
+
+    # do the first bit before the first PPS
+    tstamp0 = tstamp[pps_indexes[0]]
+    for idx in range(pps_indexes[0]+1):
+        tstamp[pps_indexes[0] - idx] = tstamp0 - idx*first_sample_period
+
+    # do the last bit after the last PPS
+    tstampF = tstamp[pps_indexes[-1]]
+    for idx in range(npts - pps_indexes[-1]):
+        tstamp[pps_indexes[-1] + idx] = tstampF + idx*last_sample_period
+
+    return tstamp
+
+
 def timestamp_diagnostic(self,hk=None,asic=None):
     '''
     calculate the diagnostic of the derived timestamps
@@ -223,7 +313,7 @@ def timestamp_diagnostic(self,hk=None,asic=None):
         refclock = gps
 
     
-    tstamps = self.pps2date(pps,refclock)
+    tstamps = pps2date(pps,refclock,verbosity=self.verbosity)
     analysis['tstamps'] = tstamps
     if tstamps is None:
         self.printmsg('Could not assign timestamps from reference clock',verbosity=2)

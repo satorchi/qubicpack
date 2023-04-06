@@ -40,7 +40,6 @@ class qubicfp:
         data_subdir,\
         get_from_keyboard,\
         writelog,\
-        pps2date,\
         RawMask,\
         get_hk,\
         gps,\

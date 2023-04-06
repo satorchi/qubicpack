@@ -70,7 +70,7 @@ def fit_sine_curve(xpts,ypts,first_guess=None):
     return retval
                   
 
-def fold_data(xpts,ypts,period,nbins=100,verbosity=0):
+def fold_data(xpts,ypts,period,nbins=101,verbosity=0):
     '''
     fold data to the given period
     '''
@@ -91,7 +91,7 @@ def fold_data(xpts,ypts,period,nbins=100,verbosity=0):
 
     new_nbins = len(unique_idxbins) # this should be the same!
     if new_nbins!=nbins and verbosity>0:
-        print('correcting for change of nbins! nbins=%i instead of given nbins=%i' % (new_nbins,nbins))
+        print('fold_data: correcting for change of nbins! nbins=%i instead of given nbins=%i' % (new_nbins,nbins))
     x_bin = np.zeros(new_nbins,dtype=float)
     y_bin = np.zeros(new_nbins,dtype=float)
     err_bin = np.zeros(new_nbins,dtype=float)

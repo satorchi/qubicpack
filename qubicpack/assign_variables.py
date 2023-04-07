@@ -24,13 +24,11 @@ from qubicpack import __file__
 
 def assign_defaults(self):
     self.assign_constants()
-    self.AVOID_HANGUP=False # this is to avoid the hangup of communication with QubicStudio.  See acquisition.py
     self.logfile=None
     self.NPIXELS = NPIXELS
     self.assign_obsdate()
     #self.assign_datadir() # already called from assign_obsdate() above
     self.endobs=None
-    self.NPIXELS_requested=False # this is a hack to help with the hangup problem
     self.NPIXELS_sampled=None
     self.detector_name='undefined'
     self.FLL_state=None
@@ -66,8 +64,6 @@ def assign_defaults(self):
     for idx in range(self.NPIXELS): self.filtersummary.append(None)
     self.assign_lookup_table()
     self.temperature=None
-    self.oxford_assign_temperature_labels()
-    self.oxford_assign_heater_ranges()
     self.calsource_LF=None
     self.calsource_HF=None
     self.modulator=None
@@ -122,7 +118,6 @@ def assign_constants(self):
     #self.QubicStudio_ip='134.158.186.233'
     #self.QubicStudio_ip='134.158.187.21'
     self.QubicStudio_ip='192.168.2.8'
-    self.OxfordInstruments_ip='134.158.186.162'
     #self.DAC2V=2.627e-4    # email from Michel Piat 2018/02/09 17:14 CET
     self.DAC2V=9.404/2**15 # measured Tue 13 Feb 2018 15:25:11 CET
     self.kBoltzmann=1.3806485279e-23

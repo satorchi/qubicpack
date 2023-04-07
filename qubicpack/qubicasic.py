@@ -173,20 +173,6 @@ class qubicasic:
         self.assign_defaults()
         return
 
-    #### some dummy defs to be compatible with the old qubicpack
-    def oxford_assign_temperature_labels(self):
-        '''
-        we don't have the Oxford in this class, but I want to use the generic "assign_defaults"
-        '''
-        self.printmsg('DEBUG:  Call to dummy oxford_assign_temperature_labels.',verbosity=3)
-        return None
-
-    def oxford_assign_heater_ranges(self):
-        '''
-        we don't have the Oxford in this class, but I want to use the generic "assign_defaults"
-        '''
-        self.printmsg('DEBUG:  Call to dummy oxford_assign_heater_ranges.',verbosity=3)
-        return None
 
 
     

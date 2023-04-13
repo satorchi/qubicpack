@@ -27,7 +27,7 @@ default_gps_sample_offset = 0
    2019/2019-02-22/2019-02-22_16.28.01__Scan2
 '''
 
-def find_pps_peaks_scidata(pps):
+def find_pps_peaks(pps):
     '''
     find the pps peaks for scientific data
     for the scientific data, the PPS is a square wave, 1 second on, 1 second off
@@ -35,6 +35,7 @@ def find_pps_peaks_scidata(pps):
     retval = {}
         
     # when the gradient is non-zero we have a pulse rise or fall detected
+    # this method does not work if there is only one sample with the PPS (eg. platform pps data)
     ppsgrad = np.gradient(pps)
     idxhigh = np.where(ppsgrad>0)[0]
     idxlow  = np.where(ppsgrad<0)[0]
@@ -47,50 +48,41 @@ def find_pps_peaks_scidata(pps):
     
     # we do the same for the end of the pulse
     oddidx = 2*np.arange(len(idxlow)//2)
-    pps_low_idx = idxlow[oddidx]
-    retval['pps_low'] = pps_low_idx
+    pps_low = idxlow[oddidx]
+    retval['pps_low'] = pps_low
+
+    # check that we really have the correct high positions
+    pps_high_vals = pps[pps_high]
+    if min(pps_high_vals)<1:
+        # assume this is platform HK data, and not scientific data
+        pps_high = np.where(pps==1)[0]
+        retval['pps_high'] = pps_high
+        pps_low = np.where(pps==0)[0]
+        retval['pps_low'] = pps_low
+        events = pps_high
+        retval['pps type'] = 'HK'
+    else:
+        events = np.concatenate((pps_low,pps_high))
+        events.sort()
+        retval['pps type'] = 'scientific'
+    retval['pps events'] = events
 
     # the PPS is a square wave 1 second on, 1 second off
     # samples per pps is the number of samples per second
-    x1 = np.empty(len(pps_high)+1,dtype=int)
-    x2 = np.empty(len(pps_high)+1,dtype=int)
-    x1[0:len(pps_high)] = pps_high
-    x2[1:len(pps_high)+1] = pps_high
+    x1 = np.zeros(len(events)+1,dtype=int)
+    x2 = np.zeros(len(events)+1,dtype=int)
+    x1[0:len(events)] = events
+    x2[1:len(events)+1] = events
     samples_per_pps = (x1 - x2)[1:-1]
-    sample_rate = 0.5*samples_per_pps.mean()
+    sample_rate = samples_per_pps.mean()
     retval['samples_per_pps'] = samples_per_pps
     retval['mean_samples_per_second'] = sample_rate
-    retval['pps_indexes'] = pps_high
+    retval['pps_indexes'] = events
 
     return retval
 
-def find_pps_peaks_hkdata(pps):
-    '''
-    find the pps peaks for housekeeping data
-    for housekeeping data, the PPS is a pulse (single sample) followed by ~6 samples
-    '''
-    retval = {}
 
-    pps_high = np.where(pps==1)[0]
-    retval['pps_high'] = pps_high
-    retval['pps_indexes'] = pps_high
-    
-    pps_low = np.where(pps==0)[0]
-    retval['pps_low'] = pps_low
-
-    # samples per pps is the number of samples per second
-    x1 = np.empty(len(pps_high)+1,dtype=int)
-    x2 = np.empty(len(pps_high)+1,dtype=int)
-    x1[0:len(pps_high)] = pps_high
-    x2[1:len(pps_high)+1] = pps_high
-    samples_per_pps = (x1 - x2)[1:-1]
-    sample_rate = 0.5*samples_per_pps.mean()
-    retval['samples_per_pps'] = samples_per_pps
-    retval['mean_samples_per_second'] = sample_rate    
-    
-    return retval
-
-def pps2date(pps,gps,gps_sample_offset=None,verbosity=0):
+def pps2date(pps,gps,gps_sample_offset=None,algo=2,verbosity=0):
     '''
     convert the gps date to a precise date given the pps
     '''
@@ -102,9 +94,11 @@ def pps2date(pps,gps,gps_sample_offset=None,verbosity=0):
     if gps_sample_offset is None: gps_sample_offset = default_gps_sample_offset
     
     npts = len(pps)
-    pps_separation=1  # exactly one second between pulses
-    epsilon = 0.1
 
+    peakinfo = find_pps_peaks(pps)
+
+    #############################################################################################
+    ###### algo 1 ###############################################################################
     separations = []
     pps_high = np.where(pps==1)[0]
     # select the first/last PPS in each series
@@ -118,24 +112,83 @@ def pps2date(pps,gps,gps_sample_offset=None,verbosity=0):
                 pps_indexes.append(idx)    
                 separations.append(sep)
                 prev = gps[idx]
+    pps_indexes = np.array(pps_indexes)
 
     separations = np.array(separations[1:])
     if separations.size==0:
         if verbosity>0: print('no pps intervals!')
         return None
+
+    # add the optional gps sample offset
+    pps_event_indexes = pps_indexes + gps_sample_offset
+    past_indexes = pps_event_indexes < 0
+    if past_indexes.sum()>0: pps_event_indexes[past_indexes] = 0
+    future_indexes = pps_event_indexes>=npts
+    if future_indexes.sum()>0: pps_event_indexes[future_indexes] = npts - 1
+    pps_indexes_algo1 = pps_event_indexes
+    #############################################################################################
+
+    #############################################################################################
+    # new algorithm (algo==2) ##################################################################
+    npps_events = len(peakinfo['pps events'])
+    samples_per_second = peakinfo['mean_samples_per_second']
+
+    # add the optional gps sample offset
+    pps_event_indexes = peakinfo['pps events'] + gps_sample_offset
+    past_indexes = pps_event_indexes < 0
+    if past_indexes.sum()>0: pps_event_indexes[past_indexes] = 0
+    future_indexes = pps_event_indexes>=npts
+    if future_indexes.sum()>0: pps_event_indexes[future_indexes] = npts - 1
+    pps_indexes_algo2 = pps_event_indexes
     
+    gps_at_pps = gps[pps_event_indexes]
+    x1 = np.zeros(npps_events+1,dtype=int)
+    x2 = np.zeros(npps_events+1,dtype=int)
+    x1[0:npps_events] = gps_at_pps
+    x2[1:npps_events+1] = gps_at_pps
+    seconds_per_pps = (x1 - x2)[1:-1]
+    zero_separation_indexes = np.where(seconds_per_pps==0)[0]    
+    n_zero_separation = len(zero_separation_indexes)
+    #############################################################################################
+
+
     if verbosity>1:
-        print('mean pps interval is %.4f second' % separations.mean())
-        print('max pps interval is  %.4f second' % separations.max())
-        print('min pps interval is  %.4f second' % separations.min())
-        print('using gps sample offset: %i' % gps_sample_offset)
+        lines = []
+        lines.append('using gps sample offset: %i' % gps_sample_offset)
+        lines.append('PPS type is %s' % peakinfo['pps type'])
+        lines.append('\n--- Algorithm 1 ---')
+        lines.append('number of pps events is %i' % len(pps_indexes))
+        lines.append('mean pps interval is %.4f second' % separations.mean())
+        lines.append('max pps interval is  %.4f second' % separations.max())
+        lines.append('min pps interval is  %.4f second' % separations.min())
+
+        lines.append('\n--- Algorithm 2 ---')
+        lines.append('number of pps events is %i' % npps_events)
+        if len(pps_event_indexes)==len(pps_indexes):
+            lines.append('max diff old/new algo: %f' % max(pps_event_indexes - pps_indexes))
+
+        
+        lines.append('mean pps interval is %.4f second' % seconds_per_pps.mean())
+        lines.append('max pps interval is  %.4f second' % seconds_per_pps.max())
+        lines.append('min pps interval is  %.4f second' % seconds_per_pps.min())
+        if n_zero_separation>0:
+            lines.append('location of zero separation: %s' % str(zero_separation_indexes))
+
+        lines.append('\nusing algorithm: %i' % algo)
+        
+            
+        print('\n'.join(lines))
+                             
             
     # find the GPS date corresponding to the PPS
+    if algo==1:
+        pps_event_indexes = pps_indexes_algo1
+    else:
+        pps_event_indexes = pps_indexes_algo2
+        
     tstamp = -np.ones(npts)
-    prev_gps = gps[0]
-    #offset = 50 # delay after PPS for valid GPS (this should be different for scientific and housekeeping) 
-    for idx in pps_indexes:
-        gps_at_pps = gps[idx]
+    for idx in pps_event_indexes:
+        # gps_at_pps = gps[idx]
 
         ### original algorithm  replaced by the one below (MP & JCH) ##################################
         ## we use the GPS timestamp from a bit later
@@ -167,26 +220,26 @@ def pps2date(pps,gps,gps_sample_offset=None,verbosity=0):
         
     # now finally do the interpolation for the time axis
     first_sample_period = None    
-    for idx in range(len(pps_indexes)-1):
-        diff_idx = pps_indexes[idx+1] - pps_indexes[idx]
-        pps_separation = tstamp[pps_indexes[idx+1]]-tstamp[pps_indexes[idx]]
+    for idx in range(len(pps_event_indexes)-1):
+        diff_idx = pps_event_indexes[idx+1] - pps_event_indexes[idx]
+        pps_separation = tstamp[pps_event_indexes[idx+1]]-tstamp[pps_event_indexes[idx]]
         sample_period = pps_separation/diff_idx
         if first_sample_period is None:
             first_sample_period = sample_period
         for idx_offset in range(diff_idx):
-            tstamp[pps_indexes[idx]+idx_offset] = tstamp[pps_indexes[idx]] + idx_offset*sample_period
+            tstamp[pps_event_indexes[idx]+idx_offset] = tstamp[pps_event_indexes[idx]] + idx_offset*sample_period
 
     last_sample_period = sample_period
 
     # do the first bit before the first PPS
-    tstamp0 = tstamp[pps_indexes[0]]
-    for idx in range(pps_indexes[0]+1):
-        tstamp[pps_indexes[0] - idx] = tstamp0 - idx*first_sample_period
+    tstamp0 = tstamp[pps_event_indexes[0]]
+    for idx in range(pps_event_indexes[0]+1):
+        tstamp[pps_event_indexes[0] - idx] = tstamp0 - idx*first_sample_period
 
     # do the last bit after the last PPS
-    tstampF = tstamp[pps_indexes[-1]]
-    for idx in range(npts - pps_indexes[-1]):
-        tstamp[pps_indexes[-1] + idx] = tstampF + idx*last_sample_period
+    tstampF = tstamp[pps_event_indexes[-1]]
+    for idx in range(npts - pps_event_indexes[-1]):
+        tstamp[pps_event_indexes[-1] + idx] = tstampF + idx*last_sample_period
 
     return tstamp
 
@@ -203,11 +256,11 @@ def assign_default_gps_sample_offset(self):
     self.default_gps_sample_offset = default_gps_sample_offset
     if self.obsdate > dt.datetime.strptime('2023-02-01','%Y-%m-%d'):
         if self.asic==2:
-            self.default_gps_sample_offset = -10
+            self.default_gps_sample_offset = 10
 
     return
 
-def timestamp_diagnostic(self,hk=None,asic=None,gps_sample_offset=None):
+def timestamp_diagnostic(self,hk=None,asic=None,gps_sample_offset=None,algo=2):
     '''
     calculate the diagnostic of the derived timestamps
     '''
@@ -281,12 +334,8 @@ def timestamp_diagnostic(self,hk=None,asic=None,gps_sample_offset=None):
         lost_txt = '%i lost packets' % len(lost_idx)
     analysis['lost_idx'] = lost_idx
     analysis['lost_txt'] = lost_txt
-    
-    if hk=='ASIC_SUMS':
-        ans = find_pps_peaks_scidata(pps)
-    else:
-        ans = find_pps_peaks_hkdata(pps)
-        
+
+    ans = find_pps_peaks(pps)
     for key in ans.keys():
         analysis[key] = ans[key]
     pps_high = analysis['pps_high']
@@ -348,7 +397,9 @@ def timestamp_diagnostic(self,hk=None,asic=None,gps_sample_offset=None):
     if gps_sample_offset is None:
         if hk=='ASIC_SUMS': 
             gps_sample_offset = self.asic(asic).default_gps_sample_offset
-    tstamps = pps2date(pps,refclock,gps_sample_offset=gps_sample_offset,verbosity=self.verbosity)
+        else:
+            gps_sample_offset = default_gps_sample_offset
+    tstamps = pps2date(pps,refclock,gps_sample_offset=gps_sample_offset,algo=algo,verbosity=self.verbosity)
     analysis['tstamps'] = tstamps
     analysis['gps_sample_offset'] = gps_sample_offset
     if tstamps is None:

@@ -120,12 +120,11 @@ def pps2date(pps,gps,gps_sample_offset=None,algo=2,verbosity=0):
         return None
 
     # add the optional gps sample offset
-    pps_event_indexes = pps_indexes + gps_sample_offset
-    past_indexes = pps_event_indexes < 0
-    if past_indexes.sum()>0: pps_event_indexes[past_indexes] = 0
-    future_indexes = pps_event_indexes>=npts
-    if future_indexes.sum()>0: pps_event_indexes[future_indexes] = npts - 1
-    pps_indexes_algo1 = pps_event_indexes
+    pps_indexes_algo1 = pps_indexes + gps_sample_offset
+    past_indexes = pps_indexes_algo1 < 0
+    if past_indexes.sum()>0: pps_indexes_algo1[past_indexes] = 0
+    future_indexes = pps_indexes_algo1>=npts
+    if future_indexes.sum()>0: pps_indexes_algo1[future_indexes] = npts - 1
     #############################################################################################
 
     #############################################################################################
@@ -134,14 +133,13 @@ def pps2date(pps,gps,gps_sample_offset=None,algo=2,verbosity=0):
     samples_per_second = peakinfo['mean_samples_per_second']
 
     # add the optional gps sample offset
-    pps_event_indexes = peakinfo['pps events'] + gps_sample_offset
-    past_indexes = pps_event_indexes < 0
-    if past_indexes.sum()>0: pps_event_indexes[past_indexes] = 0
-    future_indexes = pps_event_indexes>=npts
-    if future_indexes.sum()>0: pps_event_indexes[future_indexes] = npts - 1
-    pps_indexes_algo2 = pps_event_indexes
+    pps_indexes_algo2 = peakinfo['pps events'] + gps_sample_offset
+    past_indexes = pps_indexes_algo2 < 0
+    if past_indexes.sum()>0: pps_indexes_algo2[past_indexes] = 0
+    future_indexes = pps_indexes_algo2>=npts
+    if future_indexes.sum()>0: pps_indexes_algo2[future_indexes] = npts - 1
     
-    gps_at_pps = gps[pps_event_indexes]
+    gps_at_pps = gps[pps_indexes_algo2]
     x1 = np.zeros(npps_events+1,dtype=int)
     x2 = np.zeros(npps_events+1,dtype=int)
     x1[0:npps_events] = gps_at_pps
@@ -164,8 +162,8 @@ def pps2date(pps,gps,gps_sample_offset=None,algo=2,verbosity=0):
 
         lines.append('\n--- Algorithm 2 ---')
         lines.append('number of pps events is %i' % npps_events)
-        if len(pps_event_indexes)==len(pps_indexes):
-            lines.append('max diff old/new algo: %f' % max(pps_event_indexes - pps_indexes))
+        if len(pps_indexes_algo2)==len(pps_indexes):
+            lines.append('max diff old/new algo: %f' % max(pps_indexes_algo2 - pps_indexes))
 
         
         lines.append('mean pps interval is %.4f second' % seconds_per_pps.mean())
@@ -338,8 +336,13 @@ def timestamp_diagnostic(self,hk=None,asic=None,gps_sample_offset=None,algo=2):
     ans = find_pps_peaks(pps)
     for key in ans.keys():
         analysis[key] = ans[key]
+    if algo==1:
+        pps_indexes = analysis['pps_high']
+    else:
+        pps_indexes = analysis['pps events']
+    analysis['pps_indexes'] = pps_indexes
+        
     pps_high = analysis['pps_high']
-    pps_indexes = analysis['pps_indexes']
     pps_low = analysis['pps_low']
     samples_per_pps = analysis['samples_per_pps']
     sample_rate = analysis['mean_samples_per_second']
@@ -537,6 +540,8 @@ def plot_timestamp_diagnostic_fig1(self,analysis=None,hk=None,zoomx=None,zoomy=N
         analysis = self.timestamp_diagnostic(hk=hk,asic=asic)
     if analysis is None: return
 
+    retval = {}
+
     ttl = analysis['tstamps_title']
     png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))
 
@@ -573,17 +578,21 @@ def plot_timestamp_diagnostic_fig1(self,analysis=None,hk=None,zoomx=None,zoomy=N
     ax.set_xlabel('sample number',fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)
     ax.legend(fontsize=fontsize,loc='upper left')
+
+    pngname = '%s_full.png' % png_rootname
     if newplot:
-        pngname = '%s_full.png' % png_rootname
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
 
     if zoomx is not None:
+        pngname = '%s_zoom.png' % png_rootname
         ax.set_xlim(zoomx)
         ax.set_ylim(analysis['tstamps'][zoomx[0]],analysis['tstamps'][zoomx[1]])
         if newplot:
-            pngname = '%s_zoom.png' % png_rootname
             fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
-    return
+
+    retval['pngname'] = pngname
+    retval['ax'] = ax
+    return retval
 
 def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,fontsize=12):
     '''
@@ -594,12 +603,15 @@ def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=N
         analysis = self.timestamp_diagnostic(hk=hk,asic=asic)
     if analysis is None: return
 
+    retval = {}
+
     
     ttl = '%s horizontal' % analysis['tstamps_title']
     png_rootname = '%s_%s' % (ttl.lower().replace(' ','_'),self.obsdate.strftime('%Y%m%d-%H%M%S'))
 
     newplot = False
     if ax is None:
+        newplot = True
         fig = plt.figure(figsize=(16,8))
         figure_window_title(fig,ttl)
         supttl = '%s\ngps sample offset = %i' % (self.infotext(),analysis['gps_sample_offset'])
@@ -639,8 +651,8 @@ def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=N
         ax.plot((idx,idx),yminmax,color='red',ls='dashed')
     ax.legend(fontsize=fontsize,loc='upper right')
 
+    pngname = '%s_full.png' % png_rootname
     if newplot:
-        pngname = '%s_full.png' % png_rootname
         fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
 
     if zoomx is not None:
@@ -650,13 +662,15 @@ def plot_timestamp_diagnostic_fig2(self,analysis=None,hk=None,zoomx=None,zoomy=N
         ax.set_ylim(zoomy)
 
     if zoomx is not None or zoomy is not None:
+        pngname = '%s_zoom.png' % png_rootname
         if newplot:
-            pngname = '%s_zoom.png' % png_rootname
             fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
 
-    return
+    retval['pngname'] = pngname
+    retval['ax'] = ax
+    return retval
 
-def plot_timestamp_diagnostic(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,ax=None,fontsize=12,gps_sample_offset=None):
+def plot_timestamp_diagnostic(self,analysis=None,hk=None,zoomx=None,zoomy=None,asic=None,gps_sample_offset=None):
     '''
     make a diagnostic plot of the derived timestamps
     '''

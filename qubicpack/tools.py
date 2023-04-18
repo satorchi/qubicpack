@@ -1528,10 +1528,13 @@ def qubicstudio_filetype_truename(self,ftype,asic=None):
 
     self.printmsg('DEBUG: calling filetype_truename with ftype=%s' % ftype,verbosity=4)
     if ftype is None: return None
-    if ftype.upper() == 'PLATFORM': return 'INTERN_HK'
+    if ftype.upper() == 'PLATFORM' or ftype.upper().find('AZ')==0 or ftype.upper().find('EL')==0:
+        if self.obsdate < obsmount_implemented:
+            return 'INTERN_HK'
+        else:
+            return 'EXTERN_HK'
+        
     if ftype.upper() == 'HK': return 'INTERN_HK'
-    if ftype.upper().find('AZ')==0: return 'INTERN_HK'
-    if ftype.upper().find('EL')==0: return 'INTERN_HK'
     if ftype.upper().find('HWP')==0: return 'INTERN_HK'
     if ftype.upper() == 'EXTERN': return 'EXTERN_HK'
     if ftype.upper() == 'TEMPERATURE': return 'EXTERN_HK'
@@ -1584,8 +1587,18 @@ def qubicstudio_hk_truename(self,hktype):
     hktype_upper = hktype.upper()
     if hktype_upper == 'SWITCH1': return 'RFSwitch 1 closed'
     if hktype_upper == 'SWITCH2': return 'RFSwitch 2 closed'
-    if hktype_upper == 'AZ': return 'Platform-Azimut'
-    if hktype_upper == 'EL': return 'Platform-Elevation'
+    if hktype_upper == 'AZ':
+        if self.obsdate < obsmount_implemented:
+            return 'Platform-Azimut'
+        else:
+            return 'Pressure_6'
+        
+    if hktype_upper == 'EL':
+        if self.obsdate < obsmount_implemented:
+            return 'Platform-Elevation'
+        else:
+            return 'Pressure_7'
+        
     if hktype_upper.find('AV')==0: return hktype_upper
     if hktype_upper == 'CALSOURCE': return 'CALSOURCE'
     if hktype_upper == 'SOURCE': return 'CALSOURCE'

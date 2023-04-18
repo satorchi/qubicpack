@@ -19,7 +19,7 @@ from glob import glob
 import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
-from qubicpack.utitlities import obsmount_implemented
+from qubicpack.utilities import obsmount_implemented
 
 qubicasic_hk_keys = ['Apol',
                      'CN',

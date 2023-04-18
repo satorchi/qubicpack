@@ -23,8 +23,8 @@ asic_reversal_date = dt.datetime.strptime('2018-02-06 18:00','%Y-%m-%d %H:%M')
 # on 27 Feb 2020, qubic-central was finally changed to UTC
 qc_utc_date = dt.datetime.strptime('2020-02-27 10:23:33','%Y-%m-%d %H:%M:%S')
 
-# on Tue 18 Apr 2023 10:39:17 CEST, we implemented the observation mount used at Alto Chorillos
-obsmount_implemented = dt.datetime.strptime('2023-04-18 09:39:17','%Y-%m-%d %H:%M:%S')
+# on 18 apr 208, we implemented the observation mount used at Alto Chorillos
+obsmount_implemented = dt.datetime.strptime('2023-04-18 08:17:10','%Y-%m-%d %H:%M:%S')
 
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128

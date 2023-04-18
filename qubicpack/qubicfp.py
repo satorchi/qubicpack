@@ -44,6 +44,8 @@ class qubicfp:
         get_hk,\
         gps,\
         pps,\
+        azimuth_redmount,\
+        elevation_redmount,\
         azimuth,\
         elevation,\
         hwp_position,\

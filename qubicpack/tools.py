@@ -19,6 +19,7 @@ from glob import glob
 import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
+from qubicpack.utitlities import obsmount_implemented
 
 qubicasic_hk_keys = ['Apol',
                      'CN',
@@ -1332,9 +1333,9 @@ def gps(self,hk=None,asic=None):
     # if delta > 1799: return gps-delta
     return gps
 
-def azimuth(self):
+def azimuth_redmount(self):
     '''
-    return the Azimuth data timeline
+    return the Azimuth data timeline from the Red Mount (a.k.a. Calibration Mount)
     '''
     hktype = 'INTERN_HK'
     if hktype not in self.hk.keys():
@@ -1350,9 +1351,29 @@ def azimuth(self):
     az = (azRaw.astype(np.int) - 2**15) * 360.0/2**16
     return az
 
-def elevation(self):
+def azimuth(self):
     '''
-    return the Elevation data timeline
+    return the Azimuth data
+    '''
+    if self.obsdate < obsmount_implemented:
+        return self.azimuth_redmount()
+
+    hktype = 'EXTERN_HK'
+    if hktype not in self.hk.keys():
+        self.printmsg('No platform data!')
+        return None
+
+    azkey = 'Pressure_6' # a bit of trickery here while waiting for QS to be upgraded
+    if azkey not in self.hk[hktype].keys():
+        self.printmsg('No Azimuth data!')
+        return None
+
+    az = self.hk[hktype][azkey]
+    return az
+
+def elevation_redmount(self):
+    '''
+    return the Elevation data timeline from the Red Mount (a.k.a. Calibration Mount)
     '''
     hktype = 'INTERN_HK'
     if hktype not in self.hk.keys():
@@ -1369,6 +1390,28 @@ def elevation(self):
     offset = 10131.591
     el = (elRaw.astype(np.int) - offset) * 360.0/2**16
     return el
+
+def elevation(self):
+    '''
+    return the Elevation data
+    '''
+
+    if self.obsdate < obsmount_implemented:
+        return self.elevation_redmount()
+    
+    hktype = 'EXTERN_HK'
+    if hktype not in self.hk.keys():
+        self.printmsg('No platform data!')
+        return None
+
+    azkey = 'Pressure_7' # a bit of trickery here while waiting for QS to be upgraded
+    if azkey not in self.hk[hktype].keys():
+        self.printmsg('No Elevation data!')
+        return None
+
+    el = self.hk[hktype][azkey]
+    return el
+    
 
 def hwp_position(self):
     '''

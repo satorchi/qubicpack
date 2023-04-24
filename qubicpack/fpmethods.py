@@ -171,19 +171,27 @@ def calsource_info(self):
     
     info_txt = self.hk['CALSOURCE-CONF']['MsgStr'][0]
     if type(info_txt)!=str: return self.calsource_oldinfo()
+
+    # device_list = ['amplifier','modulator','calsource','cf']
+    
     info_rawlist = info_txt.split()
+    device_list = []
+    for item in info_rawlist:
+        if item.find(':')<0: continue
+        dev = item.split(':')[0]
+        if dev not in device_list: device_list.append(dev)
+            
     info = {}
 
     info_tstamp = float(info_rawlist[0])
     info_date = dt.datetime.utcfromtimestamp(info_tstamp)
     info['date'] = info_date
 
-    info['amplifier'] = {}
-    info['modulator'] = {}
-    info['calsource'] = {}
+    for dev in device_list:
+        info[dev] = {}
 
     if info_txt.find('busy')>0:
-        for dev in ['amplifier','modulator','calsource']:
+        for dev in device_list:
             info[dev]['status'] = 'busy'
         return info
 

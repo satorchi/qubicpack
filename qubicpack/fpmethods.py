@@ -796,7 +796,7 @@ def nsamples4interpolation(nsamples,epsilon=0.01,verbosity=0):
     solution['attempted'] = np.array(attempted_nsamples)
     return solution
 
-def tod(self):
+def tod(self,axistype='pps'):
     '''
     return a tuple containing the time axis, and the array of all TES timelines
     this is the timeaxis for all ASIC interpolated to the first ASIC
@@ -810,7 +810,7 @@ def tod(self):
         if asicobj is None: continue
         asic_ctr += 1
         
-        tstamps = asicobj.timeaxis(datatype='sci')
+        tstamps = asicobj.timeaxis(datatype='sci',axistype=axistype)
         timeaxis_list.append(tstamps)
         nsamples_list.append(tstamps.size)
         t0_list.append(tstamps[0])

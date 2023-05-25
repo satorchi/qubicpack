@@ -198,6 +198,10 @@ def calsource_info(self):
     munits = ['mHz','mVpp','mVdc']
     units = ['GHz','HZ','Hz','hz','Vpp','Vdc','V','%']
     for item in info_rawlist[2:]:
+        if item.find(':')<0:
+            info[item] = 'incomplete'
+            continue
+        
         cols = item.split(':')
 
         if len(cols)==1:

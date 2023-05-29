@@ -1348,7 +1348,7 @@ def azimuth_redmount(self):
         return None
 
     azRaw = self.hk[hktype][azkey]
-    az = (azRaw.astype(np.int) - 2**15) * 360.0/2**16
+    az = (azRaw.astype(int) - 2**15) * 360.0/2**16
     return az
 
 def azimuth(self):
@@ -1388,7 +1388,7 @@ def elevation_redmount(self):
     elRaw = self.hk[hktype][elkey]
     # offset is deduced from beam synthesis mapping on 2019-04-06
     offset = 10131.591
-    el = (elRaw.astype(np.int) - offset) * 360.0/2**16
+    el = (elRaw.astype(int) - offset) * 360.0/2**16
     return el
 
 def elevation(self):

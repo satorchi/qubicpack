@@ -122,7 +122,7 @@ def assign_hwp_chunkinfo(self,TES=None,asic=None):
                               (183674,192582),
                               (193207,201958)
                               ])
-        positions = np.empty((intervals.shape[0]),dtype=np.int)
+        positions = np.empty((intervals.shape[0]),dtype=int)
         posidx = 1
         for idx in range(intervals.shape[0]):
             positions[idx] = posidx
@@ -163,7 +163,7 @@ def assign_hwp_chunkinfo(self,TES=None,asic=None):
                               (540358,567708),
                               (568650,582561)
                               ])
-        positions = np.empty((intervals.shape[0]),dtype=np.int)
+        positions = np.empty((intervals.shape[0]),dtype=int)
         posidx = 1
         for idx in range(intervals.shape[0]):
             positions[idx] = posidx
@@ -192,7 +192,7 @@ def assign_hwp_chunkinfo(self,TES=None,asic=None):
                               (48978,57888),
                               (58354,67104)
                               ])
-        positions = np.empty((intervals.shape[0]),dtype=np.int)
+        positions = np.empty((intervals.shape[0]),dtype=int)
         posidx = 1
         for idx in range(intervals.shape[0]):
             positions[idx] = posidx
@@ -230,8 +230,8 @@ def assign_hwp_chunkinfo(self,TES=None,asic=None):
                                  1577447857.9210281,
                                  1577447917.1985645])
 
-        intervals = np.empty((len(interval_start),2),dtype=np.int)
-        positions = np.empty((intervals.shape[0]),dtype=np.int)
+        intervals = np.empty((len(interval_start),2),dtype=int)
+        positions = np.empty((intervals.shape[0]),dtype=int)
         posidx = 1
         timeaxis = self.timeaxis(datatype='sci',asic=asic)
         timeline = self.timeline(asic=1,TES=TES)

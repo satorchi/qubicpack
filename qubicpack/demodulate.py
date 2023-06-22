@@ -69,6 +69,38 @@ def fit_sine_curve(xpts,ypts,first_guess=None):
     retval['pcov'] = pcov
     return retval
                   
+def baseline_by_period(xpts,ypts,period,verbosity=0):
+    '''
+    subtract a baseline which is calculated by binning on the expected period
+    '''
+    
+    binsize = period
+    binstart = xpts.min() + binsize
+    nbins = (xpts.max() - xpts.min())/binsize
+    nbins = int(nbins)+1
+    binedges = binstart + np.arange(nbins)*binsize
+    
+    idx_bins = np.digitize(xpts,binedges)
+    unique_idxbins = np.unique(idx_bins)
+    nbins = len(unique_idxbins)
+
+    baseline = np.empty(ypts.shape,dtype=float)
+
+    ndims = len(ypts.shape)
+    if ndims==1: # for a single TES
+        for idx in range(nbins):
+            idxrange = (idx_bins==idx)
+            bin_mean = ypts[idxrange].mean()
+            baseline[idxrange] = bin_mean
+    else: # for a set of TES
+        nTES = ypts.shape[0]
+        for idx in range(nbins):
+            idxrange = (idx_bins==idx)
+            bin_mean = ypts[:,idxrange].mean(axis=1)
+            for TESidx in range(nTES): # there must be a more pythonic way to do this
+                baseline[TESidx,idxrange] = bin_mean[TESidx]
+            
+    return baseline
 
 def fold_data(xpts,ypts,period,nbins=101,verbosity=0):
     '''
@@ -142,7 +174,11 @@ def plot_folded(info,ax=None):
 
     if savefig:
         date_str = dt.datetime.utcfromtimestamp(t0_data).strftime('%Y%m%d-%H%M%S')
-        fname = 'folded_%s_%s.png' % (info['data label'].replace(', ','_').replace(' ','-'),date_str)
+        if info['baselined']:
+            baseline_str = '_baselined'
+        else:
+            baseline_str = ''
+        fname = 'folded%s_%s_%s.png' % (baseline_str,info['data label'].replace(', ','_').replace(' ','-'),date_str)
         fig.savefig(fname,format='png',dpi=100,bbox_inches='tight')
         
     return    
@@ -156,6 +192,7 @@ def demodulate(self,
                period=None,
                align_clocks=False,
                timeaxistype='pps',
+               remove_baseline=True,
                flip=True,
                doplot=True,
                xwin=True):
@@ -322,6 +359,15 @@ def demodulate(self,
     t_src = t_src[idxsrc_start:idxsrc_end]
     data_src = data_src[idxsrc_start:idxsrc_end]
     
+    # remove slow baseline if requested
+    retval['baselined'] = remove_baseline
+    if remove_baseline:
+        baseline = baseline_by_period(t_data,data,period,verbosity=self.verbosity)
+        data -= baseline
+        baseline_str = '_baseline_removed'
+    else:
+        baseline_str = ''
+
     
     # fit data to sine curve
     amplitude = 0.5*(data.max() - data.min())
@@ -559,7 +605,7 @@ def demodulate(self,
     axes[-1].set_ylabel('number of points per bin')
 
     
-    pngname = 'demodulation_diagnostic_%s_%s.png' % (data_label_filenamestr,t0_filenamestr)    
+    pngname = 'demodulation_diagnostic%s_%s_%s.png' % (baseline_str,data_label_filenamestr,t0_filenamestr)    
     fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     retval['pngname'] = pngname
         

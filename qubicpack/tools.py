@@ -429,7 +429,7 @@ def assign_bath_temperature(self):
     assign the TES bath temperature from the housekeeping data
     '''
     # the bath temperature probes, in order of preference
-    bath_probes = ['TES stage','MGC3_PID_0_Mes','MMR3_CH2_R']
+    bath_probes = ['MMR3_CH2_R','MGC3_PID_0_Mes','TES stage']
     for probe in bath_probes:
         testemp = None
         hkdat = self.get_hk(probe)

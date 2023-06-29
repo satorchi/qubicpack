@@ -505,7 +505,7 @@ def demodulate(self,
         idxrange = period_index == p_index
         binned_t[idx] = np.mean(t_data[idxrange] - t_data[0])
         binned_demodulated[idx] = np.mean(demodulated[idxrange])
-        binned_stdev[idx] = np.std(demodulated[idxrange]) # / np.sqrt(idxrange.sum()) really?
+        binned_stdev[idx] = np.std(demodulated[idxrange])/ np.sqrt(idxrange.sum()) # really?
         binned_npts[idx] = idxrange.sum()
     retval['binned t'] = binned_t
     retval['binned demodulated'] = binned_demodulated

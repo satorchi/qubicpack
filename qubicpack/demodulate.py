@@ -102,13 +102,14 @@ def baseline_by_period(xpts,ypts,period,verbosity=0):
             
     return baseline
 
-def fold_data(xpts,ypts,period,nbins=101,verbosity=0):
+def fold_data(xpts,ypts,period,nbins=None,verbosity=0):
     '''
     fold data to the given period
     '''
     x_fold = xpts % period
 
     # now rebin
+    if nbins is None: nbins = 101
     binsize = (x_fold.max() - x_fold.min())/nbins
     binstart = x_fold.min() + binsize
     binedges = binstart + np.arange(nbins)*binsize
@@ -190,6 +191,7 @@ def demodulate(self,
                interval=None,
                calsource=True,
                period=None,
+               nbins=None,
                align_clocks=False,
                timeaxistype='pps',
                remove_baseline=True,
@@ -515,12 +517,12 @@ def demodulate(self,
     retval['npts per bin'] = binned_npts
 
     # fold the data and the calsource
-    folded_t_data,folded_data,folded_dataerr = fold_data(t_data-t0_data,data,period,verbosity=self.verbosity)
+    folded_t_data,folded_data,folded_dataerr = fold_data(t_data-t0_data,data,period,nbins=nbins,verbosity=self.verbosity)
     retval['folded t_data'] = folded_t_data
     retval['folded data'] = folded_data
     retval['folded data error'] = folded_dataerr
     if use_calsource:
-        folded_t_src, folded_src, folded_srcerr  = fold_data(t_src-t0_data,data_src,period,verbosity=self.verbosity)
+        folded_t_src, folded_src, folded_srcerr  = fold_data(t_src-t0_data,data_src,period,nbins=nbins,verbosity=self.verbosity)
         retval['folded t_src'] = folded_t_src
         retval['folded src'] = folded_src
         retval['folded src error'] = folded_srcerr

@@ -296,7 +296,10 @@ def plot_powerspectrum_focalplane(self,xwin=True,amin=None,amax=None,nbins=None)
     pngname = '%s_powerspectrum_focalplane.png' % self.dataset_name
 
     ttl='%s Power spectrum' % self.dataset_name
-    subttl='\nT$_\mathrm{bath}$=%.1f mK' % (1000*Tbath)
+    if Tbath is not None:
+        subttl = '\nT$_\mathrm{bath}$=%.1f mK' % (1000*Tbath)
+    else:
+        subttl = ''
 
     args = {}
     args['title'] = ttl

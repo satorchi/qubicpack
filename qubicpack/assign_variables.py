@@ -204,12 +204,14 @@ def assign_ip(self,ip):
 
 
 def assign_temperature(self,temp):
+    '''
+    assign the bath temperature to the asic object
+    '''
     try:
         temperature = float(temp)
     except:
         self.printmsg('ERROR! Temperature should be a number in Kelvin (not milliKelvin)')
-        self.temperature = None
-        return None
+        temperature = None
     
     self.temperature = temperature
     if self.tdata is None: self.tdata = [{}]

@@ -478,6 +478,8 @@ def assign_bath_temperature(self):
     if testemp is None or idxok.sum()==0:
         # that's it.  give up.  the temperature is unknown.
         self.printmsg('WARNING!  Bath temperature is unknown!',verbosity=1)
+        self.Tbath = (None,None)
+        self.assign_temperature(None)
         return
         
     min_temp = testemp[idxok].min()

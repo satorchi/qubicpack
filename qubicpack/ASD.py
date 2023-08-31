@@ -108,7 +108,11 @@ def plot_ASD(self,TES=None,
     time_axis=sample_period*np.arange(timeline_npts)
     
     ttl='Timeline and Amplitude Spectral Density'
-    subttl='\nQUBIC Array %s, ASIC %i, TES #%i, T$_\mathrm{bath}$=%.1f mK' % (self.detector_name,self.asic,TES,1000*Tbath)
+    if Tbath is None:
+        Tbath_str = 'T$_\mathrm{bath}$=unknown'
+    else:
+        Tbath_str = 'T$_\mathrm{bath}$=%.1f mK' % (1000*Tbath)
+    subttl = '\nQUBIC Array %s, ASIC %i, TES #%i, %s' % (self.detector_name,self.asic,TES,Tbath_str)
     pngname='QUBIC_Array-%s_ASIC%i_TES%03i_timeline%03i_AmplitudeSpectralDensity_%s.png'\
              % (self.detector_name,self.asic,TES,timeline_index,obsdate.strftime('%Y%m%dT%H%M%SUTC'))
 
@@ -133,9 +137,9 @@ def plot_ASD(self,TES=None,
     txt_y=0.02
 
     time_txt=obsdate.strftime('%Y-%m-%d %H:%M:%S UTC')
-    time_label='%s Tbath=%.1fmK' % (time_txt,Tbath*1000)
-    full_label='%s\nTbath=%.1fmK\nsample period=%.3fmsec\nintegration time=%.1fsec\nnbins=%i\nmin bias=%.2fV\nmax bias=%.2fV\nNpix sampled=%i'\
-                % (time_txt,1000*Tbath,1000*sample_period,tinteg,nbins,min_bias,max_bias,npixsampled)
+    time_label='%s %s' % (time_txt,Tbath_str)
+    full_label='%s\n%s\nsample period=%.3fmsec\nintegration time=%.1fsec\nnbins=%i\nmin bias=%.2fV\nmax bias=%.2fV\nNpix sampled=%i'\
+                % (time_txt,Tbath_str,1000*sample_period,tinteg,nbins,min_bias,max_bias,npixsampled)
     
     # sampling frequency
     fs = 1.0/self.sample_period()
@@ -264,15 +268,15 @@ def make_ASD_tex_report(self,reslist=None,timeline_index=0):
     h.write('\\item Plot of all the ASD curves.\n')
     h.write('\\end{itemize}\n\\clearpage\n')
 
-    png=str('QUBIC_Array-%s_ASIC%i_timeline_%s.png' % (self.detector_name,self.asic,obsdate.strftime('%Y%m%dT%H%M%SUTC')))
-    png_fullpath=self.output_filename(png)
-    h.write('\n\\noindent\\includegraphics[width=0.8\\linewidth,clip]{%s}\\\\' % png)
+    # png=str('QUBIC_Array-%s_ASIC%i_timeline_%s.png' % (self.detector_name,self.asic,obsdate.strftime('%Y%m%dT%H%M%SUTC')))
+    # png_fullpath=self.output_filename(png)
+    # h.write('\n\\noindent\\includegraphics[width=0.8\\linewidth,clip]{%s}\\\\' % png)
 
-    png=str('QUBIC_Array-%s_ASIC%i_ASD_%s.png' % (self.detector_name,self.asic,obsdate.strftime('%Y%m%dT%H%M%SUTC')))
-    png_fullpath=self.output_filename(png)
-    h.write('\n\\noindent\\includegraphics[width=0.8\\linewidth,clip]{%s}\n' % png)
+    # png=str('QUBIC_Array-%s_ASIC%i_ASD_%s.png' % (self.detector_name,self.asic,obsdate.strftime('%Y%m%dT%H%M%SUTC')))
+    # png_fullpath=self.output_filename(png)
+    # h.write('\n\\noindent\\includegraphics[width=0.8\\linewidth,clip]{%s}\n' % png)
 
-    h.write('\\clearpage\n')
+    # h.write('\\clearpage\n')
     
     for idx,result in enumerate(reslist):
         png=result['pngname']

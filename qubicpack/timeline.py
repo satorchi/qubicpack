@@ -488,7 +488,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         
     ttl=str('QUBIC Timeline curve for TES#%3i (%s)' % (TES,timeline_start.strftime('%Y-%b-%d %H:%M UTC')))
 
-    if 'TES_TEMP' in keys:
+    if 'TES_TEMP' in keys and tdata['TES_TEMP'] is not None:
         tempstr='%.0f mK' % (1000*tdata['TES_TEMP'])
     else:
         if self.temperature is None:

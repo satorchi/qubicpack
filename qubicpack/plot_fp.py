@@ -24,7 +24,7 @@ def mylut(v,vmin=3.0,vmax=9.0):
         print('LUT error: v is %s' % v)
         return 'white'
 
-    colourmap = plt.cm.get_cmap('Spectral_r')
+    colourmap = plt.colormaps.get_cmap('Spectral_r')
     rgb=colourmap(vfractional)
     return rgb
 

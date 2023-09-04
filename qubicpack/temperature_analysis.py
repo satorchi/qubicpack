@@ -23,6 +23,7 @@ import datetime as dt
 from qubicpack.qubicfp import qubicfp
 from qubicpack.pix2tes import tes2pix
 from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index, figure_window_title, fmt4latex
+from qubicpack.plot_fp import mylut
 NASIC = qubicfp.NASIC
 
 # some constants and values required
@@ -336,7 +337,7 @@ def plot_TES_turnover_temperature(fplist,TES,asic,xwin=True):
     return pngname
 
 
-def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
+def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True,lutmin=0.32,lutmax=0.42):
     '''
     plot the I-V, P-V, R-P curves for each temperature
     '''
@@ -390,6 +391,7 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
         if go is None: continue
         
         lbl = '%.0f mK' % (1000*go.temperature)
+        colour = mylut(go.temperature,lutmin,lutmax)
 
         startend = go.selected_iv_curve(TES)
         if startend is None:
@@ -416,13 +418,13 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True):
                 Pbias=go.Pbias(TES)
                 lbl+=', P$_\mathrm{bias}=$%.2f pW' % Pbias                
                 #plt.plot(Ptes,Rn_ratio,label=lbl)
-                plt.plot(bias,Rn_ratio,label=lbl)
+                plt.plot(bias,Rn_ratio,label=lbl,color=colour)
         elif plot_type=='P':
             # plot power vs bias
-            plt.plot(bias,Ptes,label=lbl)
+            plt.plot(bias,Ptes,label=lbl,color=colour)
         else:
             # plot current vs bias
-            plt.plot(bias,I,label=lbl)
+            plt.plot(bias,I,label=lbl,color=colour)
 
         if min(bias)<min_bias:min_bias=min(bias)
         if max(bias)>max_bias:max_bias=max(bias)        

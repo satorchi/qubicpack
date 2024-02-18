@@ -179,8 +179,8 @@ def plot_fp(args):
 
             if asic_key in args.keys() and args[asic_key] is not None:
                 data_array = args[asic_key]
-                ndims = len(data_array.shape)
                 curve = args[asic_key][TES_idx]
+                ndims = 1 + len(curve.shape)
                 
                 if xaxis_key in args.keys() and args[xaxis_key] is not None:
                     ndims_xaxis = len(args[xaxis_key].shape)
@@ -189,7 +189,7 @@ def plot_fp(args):
                     else:
                         curve_x = args[xaxis_key]
                 else:
-                    curve_x = np.array(range(args[asic_key].shape[1]))
+                    curve_x = np.array(range(curve.shape[0]))
 
                 if xminmax_key in args.keys() and args[xminmax_key] is not None:
                     xminmax = args[xminmax_key]

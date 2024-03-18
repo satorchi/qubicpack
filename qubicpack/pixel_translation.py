@@ -19,7 +19,7 @@ from astropy.io import fits
 from qubicpack.pix2tes import assign_tes_grid, tes2pix
 from qubicpack.utilities import figure_window_title
 quadrant_colour = ['blue','red','green','purple']
-asic_colour = ['blue','darkblue','red','#cc0000','green','#00cc00','purple','#7210a7']
+asic_colour = ['green','#00cc00','purple','#7210a7','blue','darkblue','red','#cc0000']
 FPidentity = None
 
 
@@ -38,7 +38,7 @@ def plot_square(x,y,colour='black',label='null',labelcolour='white',ax=None,font
     return
 
 
-def plot_id_focalplane(figsize=(30,30)):
+def plot_id_focalplane(figsize=(20,20)):
     '''
     plot all the different identity names of each pixel in the focal plane
 
@@ -49,7 +49,8 @@ def plot_id_focalplane(figsize=(30,30)):
 
     scale_factor = figsize[0]
     title_fontsize = 0.67*scale_factor
-    label_fontsize = 0.2*scale_factor
+    label_fontsize = 0.1*scale_factor
+    if label_fontsize<6: label_fontsize=6
 
     fig = plt.figure(figsize=figsize)
     figure_window_title(fig,'QUBIC Focal Plane ID Matrix')
@@ -69,14 +70,17 @@ def plot_id_focalplane(figsize=(30,30)):
         col = FPidentity[fp_idx].col
         if FPidentity[fp_idx].TES==0:
             colour = 'black'
-            txt += '\nFP%4i' % FPidentity[fp_idx].index
+            txt += '\n%4i' % FPidentity[fp_idx].index
         else:
-            txt += ' %s\nFP%4i\nPIX%03i\nASIC%i\nTES%03i'\
+            txt += ' %s\n%4i\nFP%04i\nPIX%03i\nASIC%i\nTES%03i\nQP%03i\nQS%03i'\
                 % (FPidentity[fp_idx].matrix.decode('UTF-8'),
                    FPidentity[fp_idx].index,
+                   FPidentity[fp_idx].FPindex,
                    FPidentity[fp_idx].PIX,
                    FPidentity[fp_idx].ASIC,
-                   FPidentity[fp_idx].TES)
+                   FPidentity[fp_idx].TES,
+                   FPidentity[fp_idx].QPindex,
+                   FPidentity[fp_idx].QSindex)
         plot_square(col,row,colour=colour,labelcolour='white',label=txt,fontsize=label_fontsize)
     return
 
@@ -88,11 +92,15 @@ def make_id_focalplane():
     tes_grid = assign_tes_grid()
 
     # initialize the matrix
-    names = 'index,row,col,quadrant,matrix,TES,PIX,ASIC'
-    fmts = 'int,int,int,int,a4,int,int,int'
+    names = 'index,row,col,quadrant,matrix,TES,PIX,ASIC,FPindex,QSindex,QPindex'
+    fmts = 'int,int,int,int,a4,int,int,int,int,int,int'
     FPidentity = np.recarray(names=names,formats=fmts,shape=(34*34))
 
-    fp_idx = 0
+    fp_idx = 0 # fp_idx counts by rows/columns of the full focal plane: 34x30
+               # FPindex counts by rows/columns __per quadrant__ 17x17
+    det_idx = 0
+    quadrant_pix_counter = [0,0,0,0]
+    ndet_quadrant = 248
     for j in range(34):
         row = 33 - j
         for i in range(34):
@@ -120,10 +128,15 @@ def make_id_focalplane():
                     tes_x = 33 - col
                     tes_y = row - 17
                     
-                
+
+            quadrant_idx = quadrant - 1
             asic_no = tes_grid[tes_x,tes_y].ASIC
             TES_no = tes_grid[tes_x,tes_y].TES
-            PIX = tes2pix(TES_no,asic_no)
+            PIX = tes2pix(TES_no,asic_no)                
+            QPindex = TES_no-1+(asic_no-1)*128
+            FPindex = tes_grid[tes_x,tes_y].FPindex + (quadrant-1)*17*17
+            #h.write('Q%i: counter=%3i\n' % (quadrant,quadrant_pix_counter[quadrant_idx]))
+
             rotated_asic = 2*(quadrant-3) + asic_no
             if rotated_asic < 1:
                 rotated_asic += 8
@@ -137,6 +150,16 @@ def make_id_focalplane():
             FPidentity[fp_idx].ASIC =  rotated_asic
             FPidentity[fp_idx].row = row
             FPidentity[fp_idx].col = col
+            FPidentity[fp_idx].QPindex = QPindex
+            FPidentity[fp_idx].FPindex = FPindex
+
+            if TES_no>0:
+                QSindex = quadrant_pix_counter[quadrant_idx] + quadrant_idx*ndet_quadrant
+                quadrant_pix_counter[quadrant_idx] += 1
+            else:
+                QSindex = -1
+            FPidentity[fp_idx].QSindex = QSindex
+
             fp_idx += 1
             
     return FPidentity
@@ -172,25 +195,30 @@ def plot_fits_layout(filename):
     '''
     plot the QUBIC focal plane detector layout as found in the CalQubic_DetArray_...fits file
     '''
+    global FPidentity
     basename = os.path.basename(filename)
     ttl = 'FITS Layout for %s' % basename
     
     hdulist = fits.open(filename)
+    if len(hdulist)<6:
+        print('This is not a valid "DetArray" fits file.  Too old?')
+        return hdulist
     
-    hdu_centre = hdulist[1]
-    hdu_vertices = hdulist[2]
-    hdu_removed = hdulist[3]
-    hdu_index = hdulist[4]
-    hdu_quadrant = hdulist[5]
+    
+    hdu_centre = hdulist[1].data
+    hdu_vertices = hdulist[2].data
+    hdu_removed = hdulist[3].data
+    hdu_index = hdulist[4].data
+    hdu_quadrant = hdulist[5].data
 
-    xmax = np.nanmax(hdu_vertices.data[:,:,:,0])
-    xmin = np.nanmin(hdu_vertices.data[:,:,:,0])
+    xmax = np.nanmax(hdu_vertices[:,:,:,0])
+    xmin = np.nanmin(hdu_vertices[:,:,:,0])
     xspan = xmax - xmin
     plt_xmin = xmin - 0.1*xspan
     plt_xmax = xmax + 0.1*xspan
     
-    ymax = np.nanmax(hdu_vertices.data[:,:,:,1])
-    ymin = np.nanmin(hdu_vertices.data[:,:,:,1])
+    ymax = np.nanmax(hdu_vertices[:,:,:,1])
+    ymin = np.nanmin(hdu_vertices[:,:,:,1])
     yspan = ymax - ymin
     plt_ymin = ymin - 0.1*yspan
     plt_ymax = ymax + 0.1*yspan
@@ -203,32 +231,38 @@ def plot_fits_layout(filename):
     ax.set_ylim([plt_ymin,plt_ymax])
     ax.text(0.5,1.0,ttl,va='top',ha='center',fontsize=20,transform=ax.transAxes)
 
-    fp_idx = -1
-    for i in range(34):
-        for j in range(34):
-            #fp_idx += 1
-            fp_idx = 34*i + j
-            quadrant_idx = hdu_quadrant.data[i,j]
-            if quadrant_idx > 3: continue
-            removed = hdu_removed.data[i,j]
-            if removed==1: continue
-            
-            quadrant = quadrant_idx + 1
+    # translate the FPindex to QSindex
+    fpmask = hdu_removed==0
+    ndet = fpmask.sum()
 
-            fpindex = hdu_index.data[i,j]
+    for quadrant_idx in range(4):
+        quadrant = quadrant_idx + 1
+        quadrant_mask = hdu_quadrant[fpmask]==quadrant
+        if quadrant_mask.sum()==0: continue
+
+        fpindexes = hdu_index[fpmask][quadrant_mask]
+        ndet_quadrant = fpindexes.size
+
+        sorted_index = sorted(range(len(fpindexes)), key=lambda i: fpindexes[i])
+
+        for idx,fpidx in enumerate(fpindexes[sorted_index]):
+
+            ijmask = hdu_index==fpidx
             
-            x = hdu_centre.data[i,j,0]
-            y = hdu_centre.data[i,j,1]
+            
+            x = hdu_centre[ijmask][0][0]
+            y = hdu_centre[ijmask][0][1]
 
             
-            xpts = np.append(hdu_vertices.data[i,j,:,0],hdu_vertices.data[i,j,0,0])
-            ypts = np.append(hdu_vertices.data[i,j,:,1],hdu_vertices.data[i,j,0,1])
+            xpts = np.append(hdu_vertices[ijmask][0][:,0],hdu_vertices[ijmask][0][0,0])
+            ypts = np.append(hdu_vertices[ijmask][0][:,1],hdu_vertices[ijmask][0][0,1])
             plt.fill(xpts,ypts,color=quadrant_colour[quadrant_idx])
 
-            lbl = 'Q%i\n%04i\n%04i' % (quadrant,fpindex,fp_idx)
-            ax.text(x,y,lbl,fontsize=6,color='white',ha='center',va='center')
-            #ax.plot(x,y,ls='none',marker='s',markersize=10,color='black',fillstyle='none')
-
+            
+            qsidx = idx + quadrant_idx*ndet_quadrant
+            lbl = 'Q%i\nFP%04i\nQS%04i' % (quadrant,fpidx,qsidx)
+            ax.text(x,y,lbl,fontsize=8,color='white',ha='center',va='center')
+            FPidentity.QSindex[fpidx] = qsidx
 
     return hdulist
 
@@ -240,7 +274,7 @@ def plot_instrument_layout(q):
     '''
     basename = os.path.basename(q.calibration.detarray)
     config = q.config
-    ttl = 'Layout for %s Instrument' % config
+    ttl = 'Layout for %s Instrument using %s' % (config,basename)
     
     fig = plt.figure(figsize=(20,20))
     figure_window_title(fig,ttl)
@@ -248,10 +282,11 @@ def plot_instrument_layout(q):
     ax.set_aspect('equal')
     q.plot()
     for idx,pos in enumerate(q.detector.center[:,0:2]):
-        quadrant_idx = q.detector.quadrant[idx]
-        quadrant = quadrant_idx + 1
+        quadrant = q.detector.quadrant[idx]
+        quadrant_idx = quadrant - 1
         fpindex = q.detector.index[idx]
-        lbl = 'Q%i\n%i' % (quadrant,fpindex)
+#        lbl = 'Q%i\nFP%i\n%i' % (quadrant,fpindex,idx)
+        lbl = 'Q%i\n%i' % (quadrant,idx)
         plt.text(pos[0],pos[1],lbl,va='center',ha='center',fontsize=12,color=quadrant_colour[quadrant_idx])
 
     ax.text(0.5,0.99,ttl,va='top',ha='center',fontsize=20,transform=ax.transAxes)

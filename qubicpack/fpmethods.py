@@ -18,6 +18,7 @@ from copy import copy
 from qubicpack.qubicasic import qubicasic
 from qubicpack.plot_fp import plot_fp
 from qubicpack.utilities import NPIXELS,TES_index
+from qubicpack.pixel_translation import make_id_focalplane
 
 def assign_defaults(self):
     '''default values for object variables
@@ -800,25 +801,45 @@ def nsamples4interpolation(nsamples,epsilon=0.01,verbosity=0):
     solution['attempted'] = np.array(attempted_nsamples)
     return solution
 
-def tod(self,axistype='pps'):
+def tod(self,axistype='pps',indextype='TES'):
     '''
     return a tuple containing the time axis, and the array of all TES timelines
     this is the timeaxis for all ASIC interpolated to the first ASIC
+
+    with indextype=='TES' (default), the TOD array indexes are in the order of TES
+    with indextype=='QS', the TOD array indexes are in the order compatible with qubicsoft simulations
+    see for more info: http://qubic.in2p3.fr/wiki/pmwiki.php/TD/TEStranslation
     '''
+    FPidentity = make_id_focalplane()
+    
     timeaxis_list = []
     nsamples_list = []
     t0_list = []
     tfinal_list = []
     asic_ctr = 0
+    qsidx_minlist = []
     for asic_idx,asicobj in enumerate(self.asic_list):
         if asicobj is None: continue
         asic_ctr += 1
+        asic = asicobj.asic
         
         tstamps = asicobj.timeaxis(datatype='sci',axistype=axistype)
         timeaxis_list.append(tstamps)
         nsamples_list.append(tstamps.size)
         t0_list.append(tstamps[0])
         tfinal_list.append(tstamps[-1])
+
+        # if we are using the indextype='QS' option
+        # we have to adjust the QSindex so it starts at 0 regardless of the location of the detector array in the focal plane
+        # for example, for the TD, it's in Quadrant-3, and the QSindex begins at 496
+        mask = (FPidentity.ASIC==asic) & (FPidentity.TES>0)
+        qsidx_minlist.append(FPidentity.QSindex[mask].min())
+
+    # this won't work for scattered ASICs.
+    # Hopefully, we only ever have to deal with the TD (2 asics in quadrant-3) or the Full Instrument
+    QSoffset = min(qsidx_minlist)
+    self.printmsg('tod(): QSoffset=%i' % QSoffset,verbosity=3)
+        
 
     # choose number of samples for interpolation
     nsample_finder = nsamples4interpolation(max(nsamples_list),verbosity=self.verbosity)
@@ -832,7 +853,11 @@ def tod(self,axistype='pps'):
 
     # prepare the numpy array
     n_asics = copy(asic_ctr)
-    todarray = np.empty((n_asics*NPIXELS,nsamples),dtype=float)
+    if indextype.upper().find('QS')==0:
+        ndets = n_asics*124
+    else:
+        ndets = n_asics*NPIXELS
+    todarray = np.empty((ndets,nsamples),dtype=float)
     todarray[:] = np.nan
 
     self.printmsg('number of ASICs with data: %i' % asic_ctr,verbosity=3)
@@ -843,14 +868,26 @@ def tod(self,axistype='pps'):
         if asicobj is None: continue
         asic_ctr += 1
         
-        self.printmsg('asic index = %i, asic counter = %i' % (asic_idx,asic_ctr),verbosity=3)
-        asic = asic_idx + 1
+        asic = asicobj.asic
+        self.printmsg('asic index = %i, asic counter = %i, asic = %i' % (asic_idx,asic_ctr,asic),verbosity=3)
         tline_array = self.asic(asic).timeline_array()
         
         tstamps = timeaxis_list[asic_ctr-1]
-        for TESidx in range(NPIXELS):            
+        for TESidx in range(NPIXELS):
+            TESnum = TESidx + 1
             tline_interp = np.interp(t_tod, tstamps, tline_array[TESidx,:])
-            todarray[(asic_ctr-1)*NPIXELS+TESidx,:] = tline_interp            
+            if indextype.upper().find('QS')==0:
+                mask = (FPidentity.ASIC==asic) & (FPidentity.TES==TESnum)
+                if mask.sum()!=1:
+                    self.printmsg('ERROR! Dark pixel? Could not find the index for ASIC%02i TES%03i' % (asic,TESnum),verbosity=3)
+                    continue
+                QSindex = FPidentity.QSindex[mask][0]
+                self.printmsg('tod(): QSindex=%i' % QSindex,verbosity=3)
+                tod_index = QSindex - QSoffset
+            else:
+                tod_index = (asic_ctr-1)*NPIXELS+TESidx
+            self.printmsg('tod(): tod_index = %03i' % tod_index,verbosity=3)
+            todarray[tod_index,:] = tline_interp            
 
     return (t_tod,todarray)
 

@@ -46,16 +46,18 @@ def assign_tes_grid(obsdate=None):
     '''
     pix_grid = assign_pix_grid()
     TES2PIX = assign_pix2tes(obsdate)
-    tes_grid = np.recarray(names='PIX,TES,ASIC',formats='int,int,int',shape=pix_grid.shape)    
+    tes_grid = np.recarray(names='PIX,TES,ASIC,FPindex',formats='int,int,int,int',shape=pix_grid.shape)    
 
     nrows = pix_grid.shape[0]
     ncols = pix_grid.shape[1]
-    
-    for row in range(nrows):
-        for col in range(ncols):
+
+    fpidx = 0
+    for col in range(ncols):
+        for row in range(nrows):
             tes_grid[row,col].PIX = 0
             tes_grid[row,col].TES = 0
             tes_grid[row,col].ASIC = 0
+            tes_grid[row,col].FPindex = ncols*nrows - 1 - fpidx
             
             # the pixel identity associated with its physical location in the array
             physpix=pix_grid[row,col]
@@ -71,6 +73,7 @@ def assign_tes_grid(obsdate=None):
                         TES_idx = TES - 1
                         tes_grid[row,col].ASIC = asic
                         tes_grid[row,col].TES = TES
+            fpidx += 1
     return tes_grid                        
 
 def assign_pix2tes(obsdate=None):

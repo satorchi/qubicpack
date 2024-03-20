@@ -44,8 +44,7 @@ def plot_id_focalplane(figsize=(20,20)):
 
     FPidentity is a recarray of shape 34*34
     '''
-    global FPidentity
-    if FPidentity is None: FPidentity = make_id_focalplane()
+    FPidentity = make_id_focalplane()
 
     scale_factor = figsize[0]
     title_fontsize = 0.67*scale_factor
@@ -70,7 +69,7 @@ def plot_id_focalplane(figsize=(20,20)):
         col = FPidentity[fp_idx].col
         if FPidentity[fp_idx].TES==0:
             colour = 'black'
-            txt += '\n%4i' % FPidentity[fp_idx].index
+            txt += '\n%4i\n%FP%02i' % (FPidentity[fp_idx].index,FPidentity[fp_idx].FPindex)
         else:
             txt += ' %s\n%4i\nFP%04i\nPIX%03i\nASIC%i\nTES%03i\nQP%03i\nQS%03i'\
                 % (FPidentity[fp_idx].matrix.decode('UTF-8'),
@@ -88,7 +87,6 @@ def make_id_focalplane():
     '''
     make the matrix which has all the translation info for pixel identities
     '''
-    global FPidentity
     tes_grid = assign_tes_grid()
 
     # initialize the matrix
@@ -169,8 +167,7 @@ def tes2index(TES,ASIC):
     '''
     get the unique Focal Plane identifier for a given TES
     '''
-    global FPidentity
-    if FPidentity is None: FPidentity = make_id_focalplane()
+    FPidentity = make_id_focalplane()
 
     idx_range = np.where(FPidentity.TES==TES)
     TES_locations = FPidentity[idx_range]
@@ -195,7 +192,6 @@ def plot_fits_layout(filename):
     '''
     plot the QUBIC focal plane detector layout as found in the CalQubic_DetArray_...fits file
     '''
-    global FPidentity
     basename = os.path.basename(filename)
     ttl = 'FITS Layout for %s' % basename
     
@@ -241,7 +237,7 @@ def plot_fits_layout(filename):
         if quadrant_mask.sum()==0: continue
 
         fpindexes = hdu_index[fpmask][quadrant_mask]
-        ndet_quadrant = fpindexes.size
+        ndet_quadrant = quadrant_mask.sum()
 
         sorted_index = sorted(range(len(fpindexes)), key=lambda i: fpindexes[i])
 
@@ -262,7 +258,6 @@ def plot_fits_layout(filename):
             qsidx = idx + quadrant_idx*ndet_quadrant
             lbl = 'Q%i\nFP%04i\nQS%04i' % (quadrant,fpidx,qsidx)
             ax.text(x,y,lbl,fontsize=8,color='white',ha='center',va='center')
-            FPidentity.QSindex[fpidx] = qsidx
 
     return hdulist
 
@@ -300,8 +295,7 @@ def make_qubicsoft_detarray_fits(config='TD',detector=None,fp=None):
     make the file CalQubic_DetArray_TD.fits which is used in qubicsoft simulations
     fp is a qubicfp object which has a list of is_good based on I-V measurements
     '''
-    global FPidentity
-    if FPidentity is None: FPidentity = make_id_focalplane()
+    FPidentity = make_id_focalplane()
 
     
     

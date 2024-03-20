@@ -90,8 +90,8 @@ def make_id_focalplane():
     tes_grid = assign_tes_grid()
 
     # initialize the matrix
-    names = 'index,row,col,quadrant,matrix,TES,PIX,ASIC,FPindex,QSindex,QPindex'
-    fmts = 'int,int,int,int,a4,int,int,int,int,int,int'
+    names = 'index,row,col,x,y,quadrant,matrix,TES,PIX,ASIC,FPindex,QSindex,QPindex'
+    fmts = 'int,int,int,float,float,int,a4,int,int,int,int,int,int'
     FPidentity = np.recarray(names=names,formats=fmts,shape=(34*34))
 
     fp_idx = 0 # fp_idx counts by rows/columns of the full focal plane: 34x30
@@ -99,10 +99,22 @@ def make_id_focalplane():
     det_idx = 0
     quadrant_pix_counter = [0,0,0,0]
     ndet_quadrant = 248
+
+    # the physical location of each grid point in the focal plane, in millimetres
+    xsep = 0.003
+    xgap = 0.0048 - xsep
+    xstart = -(16*xsep+0.5*xgap)
+    ysep = 0.003
+    ygap = 0.0048 - ysep
+    ystart = (16*xsep+0.5*xgap)
     for j in range(34):
         row = 33 - j
+        y = ystart - j*ysep
+        if j>16: y -= ygap
         for i in range(34):
             col = i
+            x = xstart + i*xsep
+            if i>16: x += xgap
             if row < 17:
                 if col < 17:
                     quadrant = 3
@@ -148,6 +160,8 @@ def make_id_focalplane():
             FPidentity[fp_idx].ASIC =  rotated_asic
             FPidentity[fp_idx].row = row
             FPidentity[fp_idx].col = col
+            FPidentity[fp_idx].x = x
+            FPidentity[fp_idx].y = y
             FPidentity[fp_idx].QPindex = QPindex
             FPidentity[fp_idx].FPindex = FPindex
 

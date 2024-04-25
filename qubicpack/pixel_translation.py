@@ -69,7 +69,7 @@ def plot_id_focalplane(figsize=(20,20)):
         col = FPidentity[fp_idx].col
         if FPidentity[fp_idx].TES==0:
             colour = 'black'
-            txt += '\n%4i\n%FP%02i' % (FPidentity[fp_idx].index,FPidentity[fp_idx].FPindex)
+            txt += '\n%4i\nFP%02i' % (FPidentity[fp_idx].index,FPidentity[fp_idx].FPindex)
         else:
             txt += ' %s\n%4i\nFP%04i\nPIX%03i\nASIC%i\nTES%03i\nQP%03i\nQS%03i'\
                 % (FPidentity[fp_idx].matrix.decode('UTF-8'),

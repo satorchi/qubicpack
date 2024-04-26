@@ -38,13 +38,13 @@ def plot_square(x,y,colour='black',label='null',labelcolour='white',ax=None,font
     return
 
 
-def plot_id_focalplane(figsize=(20,20)):
+def plot_id_focalplane(figsize=(20,20),FPidentity=None):
     '''
     plot all the different identity names of each pixel in the focal plane
 
     FPidentity is a recarray of shape 34*34
     '''
-    FPidentity = make_id_focalplane()
+    if FPidentity is None: FPidentity = make_id_focalplane()
 
     scale_factor = figsize[0]
     title_fontsize = 0.67*scale_factor
@@ -90,11 +90,11 @@ def make_id_focalplane():
     tes_grid = assign_tes_grid()
 
     # initialize the matrix
-    names = 'index,row,col,x,y,quadrant,matrix,TES,PIX,ASIC,FPindex,QSindex,QPindex'
-    fmts = 'int,int,int,float,float,int,a4,int,int,int,int,int,int'
+    names = 'index,row,col,x,y,quadrant,matrix,TES,PIX,ASIC,FPindex,QSindex,QPindex,TES_x,TES_y'
+    fmts = 'int,int,int,float,float,int,a4,int,int,int,int,int,int,int,int'
     FPidentity = np.recarray(names=names,formats=fmts,shape=(34*34))
 
-    fp_idx = 0 # fp_idx counts by rows/columns of the full focal plane: 34x30
+    fp_idx = 0 # fp_idx counts by rows/columns of the full focal plane: 34x34
                # FPindex counts by rows/columns __per quadrant__ 17x17
     det_idx = 0
     quadrant_pix_counter = [0,0,0,0]
@@ -164,15 +164,34 @@ def make_id_focalplane():
             FPidentity[fp_idx].y = y
             FPidentity[fp_idx].QPindex = QPindex
             FPidentity[fp_idx].FPindex = FPindex
+            FPidentity[fp_idx].TES_x = tes_x
+            FPidentity[fp_idx].TES_y = tes_y
 
             if TES_no>0:
-                QSindex = quadrant_pix_counter[quadrant_idx] + quadrant_idx*ndet_quadrant
+                if quadrant_idx==1 or quadrant_idx==2:
+                    QSindex = PIX - 1 + quadrant_idx*ndet_quadrant
+                elif quadrant_idx==0:
+                    QSindex = quadrant_pix_counter[quadrant_idx] + quadrant_idx*ndet_quadrant
+                else: # quadrant 4 will be done outside the loop
+                    QSindex = 0xFFFF
                 quadrant_pix_counter[quadrant_idx] += 1
+                
             else:
                 QSindex = -1
             FPidentity[fp_idx].QSindex = QSindex
 
             fp_idx += 1
+
+    # now do quadrant-4
+    quadrant_idx = 3
+    mask = (FPidentity.quadrant==4) & (FPidentity.TES>0)
+    FPidx_list = list(FPidentity[mask].FPindex)
+    FPidx_list.sort() # the QSindex is in the same order as the FPindex
+    for qs_idx,fp_idx in enumerate(FPidx_list):
+        fpmask = (FPidentity.FPindex==fp_idx)
+        idx = FPidentity[fpmask].index[0]
+        FPidentity[idx].QSindex = qs_idx + quadrant_idx*ndet_quadrant
+            
             
     return FPidentity
 

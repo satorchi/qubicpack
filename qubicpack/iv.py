@@ -323,9 +323,11 @@ def draw_tangent(self,TES):
     
     return I0
 
-def fitted_iv_curve(self,TES):
+def fitted_iv_curve(self,TES, Vbias=None):
     '''
     make a curve from the fit parameters
+    default behaviour: return a curve over the range of Vbias
+    if Vbias is given, compute the model at that point
     '''
     filterinfo=self.filterinfo(TES)
     if filterinfo is None:return None
@@ -335,18 +337,21 @@ def fitted_iv_curve(self,TES):
     fit=filterinfo['fit']
     self.TES=TES # this is required for the "mixed" and "combined" models
 
-    istart,iend=self.selected_iv_curve(TES)
-    bias=self.bias_factor*self.vbias[istart:iend]
+    if Vbias is None:
+        istart,iend = self.selected_iv_curve(TES)
+        bias = self.bias_factor*self.vbias[istart:iend]
+    else:
+        bias = Vbias
 
     # polynomial fit
     if 'fitfunction' not in fit.keys() or fit['fitfunction'].upper()=='POLYNOMIAL':
-        func=np.poly1d(fit['fitinfo'][0]) + offset
-        f=func(bias)
+        func = np.poly1d(fit['fitinfo'][0]) + offset
+        f = func(bias)
         return bias,f
 
     # combined polynomial fit
-    Vsuper,Vnormal,a0,a1,b0,b1,b2,b3,c0,c1=fit['fitinfo'][0]
-    f=self.model_iv_combined(bias,Vsuper,Vnormal,a0,a1,b0,b1,b2,b3,c0,c1) + offset
+    Vsuper,Vnormal,a0,a1,b0,b1,b2,b3,c0,c1 = fit['fitinfo'][0]
+    f = self.model_iv_combined(bias,Vsuper,Vnormal,a0,a1,b0,b1,b2,b3,c0,c1) + offset
     return bias,f
 
 def filter_jumps(self,I,jumplimit=2.0):
@@ -781,7 +786,7 @@ def model_iv_combined(self,V,Vsuper,Vnormal,a0,a1,b0,b1,b2,b3,c0,c1):
     if V<Vsuper:
         return self.model_iv_super(V,a0,a1)
     if V<Vnormal:
-        return self.model_iv_mixed(v,b0,b1,b2,b3)
+        return self.model_iv_mixed(V,b0,b1,b2,b3)
     
     return self.model_iv_normal(V,c0,c1)
 

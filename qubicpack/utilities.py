@@ -161,3 +161,82 @@ def fmt4latex(num,nsigfigs):
 
     return num_str
 
+fmt_translation={}
+fmt_translation['uint8']   = 'B' 
+fmt_translation['int8']    = 'b'
+fmt_translation['int16']   = 'h'
+fmt_translation['int32']   = 'i'
+fmt_translation['int64']   = 'q'
+fmt_translation['float32'] = 'f'
+fmt_translation['float64'] = 'd'
+
+fmt_reverse_translation = {}
+for key in fmt_translation.keys():
+    reverse_key = fmt_translation[key]
+    fmt_reverse_translation[reverse_key] = key
+    
+
+def read_bindat(filename,names=None,fmt=None,STX=0xAA,verbosity=0):
+    '''
+    read the binary data saved to disk
+    '''
+    if not os.path.isfile(filename):
+        print('ERROR!  File not found: %s' % filename)
+        return None
+
+    if names is None:
+        print('Please give the names of the data record (comma separated list)')
+        return None
+
+    if fmt is None:
+        print('Please give the format string (single character per item)')
+        return None
+
+    # determine the number of bytes per record entry
+    fmt_list = []
+    for idx in range(len(fmt)-1):
+        fmt_list.append(fmt_reverse_translation[fmt[idx+1]])
+    fmt_str = ','.join(fmt_list)    
+    rec = np.recarray(names=names,formats=fmt_str,shape=(1))
+    nbytes = rec.nbytes
+
+    
+    # read the data
+    h = open(filename,'rb')
+    bindat = h.read()
+    h.close()
+
+    # interpret the binary data
+    names_list = names.split(',')
+    data = {}
+    for name in names_list:
+        data[name] = []    
+
+    idx = 0
+    while idx+nbytes<len(bindat):
+        packet = bindat[idx:idx+nbytes]
+        dat_list = struct.unpack(fmt,packet)
+
+        if len(dat_list)!=len(names_list):
+            print('ERROR:  Incompatible data at byte %i' % idx)
+            if verbosity>1: input('enter to continue ')
+            idx += 1
+            continue
+
+        if dat_list[0]!=STX:
+            print('ERROR: Incorrect data at byte %i' % idx)
+            if verbosity>1: input('enter to continue ')
+            idx += 1
+            continue
+            
+
+        for datidx,name in enumerate(names_list):
+            data[name].append(dat_list[datidx])
+            if verbosity>0: print(dat_list)
+
+        idx += nbytes
+
+    for name in data.keys():
+        data[name] = np.array(data[name])
+        
+    return data

@@ -240,3 +240,19 @@ def read_bindat(filename,names=None,fmt=None,STX=0xAA,verbosity=0):
         data[name] = np.array(data[name])
         
     return data
+
+def read_obsmount_bindat(filename,verbosity=0):
+    '''
+    read the binary data acquired from the observation mount and saved to disk
+    '''
+    rec_fmt = '<Bdd'
+    rec_names = 'STX,TIMESTAMP,VALUE'
+    return read_bindat(filename,names=rec_names,fmt=rec_fmt,STX=0xAA,verbosity=verbosity)
+
+def read_gps_bindat(filename,verbosity=0):
+    '''
+    read the binary data acquired from the SimpleRTK GPS system
+    '''
+    rec_fmt = '<Bdiiiiiiifi'
+    rec_names = "STX,timestamp,rpN,rpE,rpD,roll,yaw,pitchIMU,rollIMU,temperature,checksum"
+    return read_bindat(filename,names=rec_names,fmt=rec_fmt,STX=0xAA,verbosity=verbosity)

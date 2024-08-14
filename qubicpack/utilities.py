@@ -11,7 +11,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 common utilities used in the qubicpack classes
 (see also pix2tes.py)
 '''
-import sys,os
+import sys,os,struct
 import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt

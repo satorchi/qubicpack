@@ -374,7 +374,7 @@ for ASICidx in range(n_asics):
             # squid flux for each squid bias index, on one plot for each TES
             fig = plt.figure()
             for squid_index in range(n_indexes):
-                lbl = 'I$_\mathrm{squid}=%.2f\mu$A' % I[squid_index]
+                lbl = 'I$_\\mathrm{squid}=%.2f\\mu$A' % I[squid_index]
 
                 # should be a better way to do this
                 plot_range = np.zeros(lmt,dtype=bool)
@@ -395,7 +395,7 @@ for ASICidx in range(n_asics):
             
             plt.grid()
             plt.xlabel('Flux (in quantum of flux)')
-            plt.ylabel('Voltage ($\mu$V)')
+            plt.ylabel('Voltage ($\\mu$V)')
             plt.title('%s ASIC%i, SQUID number %i' % (day_str,ASICnum,TESnum))
             plt.legend(loc='upper right')
             figname = '%s_ASIC%02i_TES%03i_flux.png' % (plotname_prefix,ASICnum,TESnum)
@@ -410,8 +410,8 @@ for ASICidx in range(n_asics):
             plt.plot(I,Vmoy2[:,TESidx,ASICidx], label= "mean Value")
 
             plt.grid()
-            plt.xlabel('Intensity ($\mu$A)')
-            plt.ylabel('Voltage ($\mu$V)')
+            plt.xlabel('Intensity ($\\mu$A)')
+            plt.ylabel('Voltage ($\\mu$V)')
             plt.title('%s ASIC%i SQUID number %i' % (day_str,ASICnum,TESnum)) 
             plt.legend(loc='upper right', bbox_to_anchor=(0.25,1 ))
             figname = '%s_ASIC%02i_TES%03i_IV.png' % (plotname_prefix,ASICnum,TESnum)
@@ -422,7 +422,7 @@ for ASICidx in range(n_asics):
 
     fig = plt.figure()
     for threshold_idx in range(n_thresholds):
-        lbl = '%% SQUIDS with V>%.1f$\mu$V' % (good_threshold*(threshold_idx+1))
+        lbl = '%% SQUIDS with V>%.1f$\\mu$V' % (good_threshold*(threshold_idx+1))
         plt.plot(np.arange(n_indexes),percent_good[:,ASICidx,threshold_idx],label=lbl)
     plt.grid()
     plt.ylabel("Percentage working SQUID")
@@ -456,7 +456,7 @@ for ASICidx in range(n_asics):
     max_per_squid = np.argmax(data[:,:,ASICidx], axis=1)
     best_index = int(max_per_squid.mean())
     fig = plt.figure()
-    lbl = 'best index: [%02i] I$_\mathrm{squid}=%.1f\mu$A' % (best_index,I[best_index])
+    lbl = 'best index: [%02i] I$_\\mathrm{squid}=%.1f\\mu$A' % (best_index,I[best_index])
     plt.hist(max_per_squid, range=[0,n_indexes], bins=n_indexes,label=lbl)
     plt.grid()
     plt.ylabel("Number of SQUIDs")
@@ -469,11 +469,11 @@ for ASICidx in range(n_asics):
     fig = plt.figure()
     colour = ['red','blue','green']
     for idx,squid_index in enumerate(range(best_index-1,best_index+2)):
-        lbl = "[%02i] I$_\mathrm{squid} = %.1f \mu$A" % (squid_index,I[squid_index])
+        lbl = "[%02i] I$_\\mathrm{squid} = %.1f \\mu$A" % (squid_index,I[squid_index])
         plt.hist(data[:,squid_index,ASICidx],range=[0,30], bins=30, color=colour[idx], alpha = 0.5,label=lbl)
     plt.legend()
     plt.grid()
-    plt.xlabel("Voltage ($\mu$V)")
+    plt.xlabel("Voltage ($\\mu$V)")
     plt.xlim(0,25)
     plt.ylabel('Number of SQUID')
     plt.title("%s ASIC %i histogram" % (day_str,ASICnum))

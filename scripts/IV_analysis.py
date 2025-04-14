@@ -144,7 +144,7 @@ if data_dir is None:  quit()
 print('searching for data in: %s' % data_dir)
 
 # search for datasets
-pattern = '%s/%s__*' % (data_dir,start_time.strftime('%Y-%d-%m_%H.%M.??'))
+pattern = '%s/%s__*' % (data_dir,start_time.strftime('%Y-%m-%d_%H.%M.??'))
 dsets = glob(pattern)
 if len(dsets)<1:
     print('No datasets found for pattern: %s' % pattern)

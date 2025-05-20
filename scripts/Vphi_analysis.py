@@ -32,6 +32,38 @@ from matplotlib import pyplot as plt
 plt.ioff()
 plt.rcParams['figure.figsize'] = [24,12]
 
+### some parameters ###
+mutual_inductance = 1./10.4E-6 # Mutual inductance
+gain = 70.*100
+n_indexes = 16 # number of possible bias values
+n_squids = 128 # number of squid per ASIC
+n_asics = 2
+
+# The value of the SQUID bias for each index in uA
+I = np.zeros(n_indexes,dtype=float)
+I[0] = 0
+I[1] = 5.1
+I[2] = 7.65
+I[3] = 10.20
+I[4] = 12.75
+I[5] = 15.30
+I[6] = 17.85
+I[7] = 20.41
+I[8] = 22.96
+I[9] = 25.51
+I[10] = 28.06
+I[11] = 30.61
+I[12] = 33.16
+I[13] = 35.71
+I[14] = 38.26
+I[15] = 40.81
+
+
+# maximum length of a timeline
+# this create the limit of the array, if not issues with some file of 4849 variable instead of 4950
+lmt = 8000 
+
+
 def help():
     '''
     a help message
@@ -119,7 +151,7 @@ def parseargs(argv):
             else:
                 keyword = squid_selection_strlist[0]
                 if keyword.lower()=='all':
-                    squid_selection = np.arange(n_squids)
+                    squid_selection = list(range(n_squids))
                 else:
                     squid_selection = [int(keyword)]
 
@@ -220,39 +252,6 @@ if squid_selection is not None:
 
 
 
-### some parameters ###
-mutual_inductance = 1./10.4E-6 # Mutual inductance
-gain = 70.*100
-n_indexes = 16 # number of possible bias values
-n_squids = 128 # number of squid per ASIC
-n_asics = 2
-
-plotname_prefix = 'SQUID_%s' % day_str
-
-
-# The value of the SQUID bias for each index in uA
-I = np.zeros(n_indexes,dtype=float)
-I[0] = 0
-I[1] = 5.1
-I[2] = 7.65
-I[3] = 10.20
-I[4] = 12.75
-I[5] = 15.30
-I[6] = 17.85
-I[7] = 20.41
-I[8] = 22.96
-I[9] = 25.51
-I[10] = 28.06
-I[11] = 30.61
-I[12] = 33.16
-I[13] = 35.71
-I[14] = 38.26
-I[15] = 40.81
-
-
-# maximum length of a timeline
-# this create the limit of the array, if not issues with some file of 4849 variable instead of 4950
-lmt = 8000 
 
 # Creation of empty array, fill with NaN
 Vsquid = np.empty((n_indexes,n_squids,lmt,n_asics))
@@ -361,6 +360,7 @@ Vmax2 = (V0 - Vmax)*62.5/gain
 
 
 # plots
+plotname_prefix = 'SQUID_%s' % day_str
 for ASICidx in range(n_asics):
     ASICnum = ASICidx + 1
 

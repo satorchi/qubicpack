@@ -519,7 +519,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         newplot = False
         
     ax.set_xlabel('date UT',fontsize=fontsize)
-    ax.set_ylabel('Current  /  $\mu$A',fontsize=fontsize)
+    ax.set_ylabel('Current  /  $\\mu$A',fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)
     if warning_str:
         boxprops = {}
@@ -563,7 +563,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         if biasphase is not None:
             self.printmsg('DEBUG: taking ysine from QubicStudio FITS file',verbosity=4)
             ysine = self.timeline_vbias
-            sinelabel = 'V$_\mathrm{bias}$ from QubicStudio FITS file'
+            sinelabel = 'V$_\\mathrm{bias}$ from QubicStudio FITS file'
         elif fitparms is None:
             self.printmsg('DEBUG: taking ysine from peak to peak',verbosity=4)
             bias_period=peak1-peak0
@@ -578,7 +578,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
             offset=fitparms['offset']
             shift=fitparms['phaseshift']
             if bias_period is not None and amplitude is not None:
-                sinelabel='best fit sine curve: period=%.2f seconds, amplitude=%.2f $\mu$A' % (bias_period,amplitude)
+                sinelabel='best fit sine curve: period=%.2f seconds, amplitude=%.2f $\\mu$A' % (bias_period,amplitude)
                 ysine=self.model_timeline(time_axis,bias_period,shift,offset,amplitude)
     if ysine is None: plot_bias = False
         
@@ -702,7 +702,7 @@ def plot_timeline_physical_layout(self,
             tempstr='unknown'
         else:
             tempstr=str('%.0f mK' % (1000*self.temperature))
-    subttl=str('Array %s, ASIC #%i, T$_\mathrm{bath}$=%s' % (self.detector_name,self.asic,tempstr))
+    subttl=str('Array %s, ASIC #%i, T$_\\mathrm{bath}$=%s' % (self.detector_name,self.asic,tempstr))
 
     # use the plot_fp algorithm to plot the focal plane
     asic_key = 'ASIC%i' % self.asic

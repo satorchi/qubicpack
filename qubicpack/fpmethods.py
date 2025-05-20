@@ -67,7 +67,7 @@ def infotext(self):
 
     txt = self.dataset_name
     if self.temperature is not None:
-        txt += ' T$_\mathrm{bath}$=%.1fmK' % (1000*self.temperature)
+        txt += ' T$_\\mathrm{bath}$=%.1fmK' % (1000*self.temperature)
 
     return txt
 
@@ -970,10 +970,10 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
             d_Tbath[idx] = dt.datetime.utcfromtimestamp(tstamp)            
         
         axbath = ax.twinx()
-        curves += axbath.plot(d_Tbath,Tbath,color='magenta',label='T$_\mathrm{bath}$')
+        curves += axbath.plot(d_Tbath,Tbath,color='magenta',label='T$_\\mathrm{bath}$')
         axbath.tick_params(axis='y',labelcolor='magenta')
         axbath.set_ylim(Tbath.min(),Tbath.max())
-        axbath.set_ylabel('T$_\mathrm{bath}$ / K',rotation=270,ha='right',va='bottom',color='magenta')
+        axbath.set_ylabel('T$_\\mathrm{bath}$ / K',rotation=270,ha='right',va='bottom',color='magenta')
     
     if plot_hwp:
         hwp = self.hwp_position()

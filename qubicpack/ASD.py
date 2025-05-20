@@ -109,9 +109,9 @@ def plot_ASD(self,TES=None,
     
     ttl='Timeline and Amplitude Spectral Density'
     if Tbath is None:
-        Tbath_str = 'T$_\mathrm{bath}$=unknown'
+        Tbath_str = 'T$_\\mathrm{bath}$=unknown'
     else:
-        Tbath_str = 'T$_\mathrm{bath}$=%.1f mK' % (1000*Tbath)
+        Tbath_str = 'T$_\\mathrm{bath}$=%.1f mK' % (1000*Tbath)
     subttl = '\nQUBIC Array %s, ASIC %i, TES #%i, %s' % (self.detector_name,self.asic,TES,Tbath_str)
     pngname='QUBIC_Array-%s_ASIC%i_TES%03i_timeline%03i_AmplitudeSpectralDensity_%s.png'\
              % (self.detector_name,self.asic,TES,timeline_index,obsdate.strftime('%Y%m%dT%H%M%SUTC'))
@@ -301,7 +301,7 @@ def plot_powerspectrum_focalplane(self,xwin=True,amin=None,amax=None,nbins=None)
 
     ttl='%s Power spectrum' % self.dataset_name
     if Tbath is not None:
-        subttl = '\nT$_\mathrm{bath}$=%.1f mK' % (1000*Tbath)
+        subttl = '\nT$_\\mathrm{bath}$=%.1f mK' % (1000*Tbath)
     else:
         subttl = ''
 

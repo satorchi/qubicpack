@@ -1513,7 +1513,7 @@ def infotext(self,TES=None):
     if TES is not None:
         ttl += ' TES#%03i' % TES
 
-    ttl += ' T$_\mathrm{bath}$='
+    ttl += ' T$_\\mathrm{bath}$='
     if self.temperature is None or self.temperature<0:
         ttl += 'unknown'
     else:

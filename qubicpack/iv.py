@@ -120,7 +120,7 @@ def setup_plot_Vavg(self,axes=None):
     fig.suptitle(ttl,fontsize=16)
     if isinstance(axes,list) or isinstance(axes,np.ndarray): plt.axis(axes)
     plt.xlabel('TES number')
-    plt.ylabel('I  /  $\mu$A')
+    plt.ylabel('I  /  $\\mu$A')
     return fig
 
 def plot_Vavg(self,Vavg,Vbias,offset=None,axes=None):
@@ -130,7 +130,7 @@ def plot_Vavg(self,Vavg,Vbias,offset=None,axes=None):
     plt.cla()
     if isinstance(axes,list) or isinstance(axes,np.ndarray): plt.axis(axes)
     plt.xlabel('TES number')
-    plt.ylabel('I  /  $\mu$A')
+    plt.ylabel('I  /  $\\mu$A')
     # plot markers with no lines
     plt.plot(Iavg,marker='D',drawstyle='steps-mid',linestyle='none',color='green',label=lbl)
     # plot bars up to the markers
@@ -158,7 +158,7 @@ def plot_iv_all(self,selection=None,xwin=True):
     if xwin: figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
     plt.xlabel('Bias Voltage  /  V')
-    plt.ylabel('Current  /  $\mu$A')
+    plt.ylabel('Current  /  $\\mu$A')
 
     nbias=self.adu.shape[1]
     
@@ -198,7 +198,7 @@ def setup_plot_iv_multi(self,nrows=16,ncols=8,xwin=True):
     if xwin: figure_window_title(fig,ttl)
     fig.suptitle(ttl,fontsize=16)
     plt.xlabel('Bias Voltage  /  V')
-    plt.ylabel('Current  /  $\mu$A')
+    plt.ylabel('Current  /  $\\mu$A')
     return fig,axes
 
 def plot_iv_multi(self, xwin=True):
@@ -943,7 +943,7 @@ def draw_iv(self,I,bias=None,colour='blue',axis=None,label=None):
                 tempstr = 'unknown'
             else:
                 tempstr = '%0.2f mK' % (1000*self.temperature)            
-            tempstr = 'T$_\mathrm{bath}$=%s' % tempstr
+            tempstr = 'T$_\\mathrm{bath}$=%s' % tempstr
             axis.text(0.05,0.95,tempstr,va='top',ha='left',fontsize=12,transform=axis.transAxes)
             plt.pause(0.01)
             return
@@ -976,7 +976,7 @@ def setup_plot_iv(self,TES,xwin=True):
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
     ax=plt.gca()
     ax.set_xlabel('Bias Voltage  /  V')
-    ax.set_ylabel('Current  /  $\mu$A')
+    ax.set_ylabel('Current  /  $\\mu$A')
     bias_range=self.bias_factor*(self.max_bias-self.min_bias)
     bias_plot_window=[self.bias_factor*self.min_bias - 0.1*bias_range,self.bias_factor*self.max_bias + 0.1*bias_range]
     ax.set_xlim(bias_plot_window)
@@ -1097,7 +1097,7 @@ def plot_iv(self,TES=None,multi=False,xwin=True,best=True):
             Iturnover=fit['Iturnover']
         else:
             Iturnover=Ibot
-        txt+=str('\nI$_\mathrm{turnover}$=%.2f $\mu$A' % Iturnover)
+        txt+=str('\nI$_\\mathrm{turnover}$=%.2f $\\mu$A' % Iturnover)
         
 
     # add room temp results, if loaded
@@ -1148,7 +1148,7 @@ def plot_pv(self,TES,xwin=True):
     figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
     ax.set_xlabel('Bias Voltage  /  V')
-    ax.set_ylabel('P$_\mathrm{TES}$  /  $p$A')
+    ax.set_ylabel('P$_\\mathrm{TES}$  /  $p$A')
     ax.set_xlim([self.bias_factor*self.min_bias,self.bias_factor*self.max_bias])
 
     istart,iend=self.selected_iv_curve(TES)
@@ -1173,7 +1173,7 @@ def plot_rp(self,TES,xwin=True):
     Rn_ratio=self.Rn_ratio(TES)[istart:iend]
     Ptes=self.Ptes(TES)[istart:iend]
     Pbias=self.Pbias(TES)
-    lbl='P$_\mathrm{bias}=$%.2f pW' % Pbias
+    lbl='P$_\\mathrm{bias}=$%.2f pW' % Pbias
 
     Rmin=min(Rn_ratio)
     Rmax=max(Rn_ratio)
@@ -1198,8 +1198,8 @@ def plot_rp(self,TES,xwin=True):
     fig,ax=plt.subplots(1,1)
     figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
-    ax.set_xlabel('P$_\mathrm{TES}$  /  pW')
-    ax.set_ylabel('$\\frac{R_\mathrm{TES}}{R_\mathrm{normal}}$ / %')
+    ax.set_xlabel('P$_\\mathrm{TES}$  /  pW')
+    ax.set_ylabel('$\\frac{R_\\mathrm{TES}}{R_\\mathrm{normal}}$ / %')
 
     ax.plot(Ptes,Rn_ratio)
     ax.plot([Pbias,Pbias],[0,90],linestyle='dashed',color='green')
@@ -1576,11 +1576,11 @@ def plot_fom(self,response=None,fom='responsivity',
     fig,ax=plt.subplots(1,1)
     figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
-    ax.set_xlabel('TES Voltage  /  $\mu$V')
+    ax.set_xlabel('TES Voltage  /  $\\mu$V')
     if fom=='responsivity':
-        lbl = 'S$_\mathrm{i}$  /  A$\cdot\mathrm{W}^{-1}$'
+        lbl = 'S$_\\mathrm{i}$  /  A$\\cdot\\mathrm{W}^{-1}$'
     elif fom=='ETF':
-        lbl = 'L$_\mathrm{i}$'
+        lbl = 'L$_\\mathrm{i}$'
     elif fom=='P':
         lbl = 'P / W'
     elif fom=='G0':
@@ -1623,12 +1623,12 @@ def plot_fom(self,response=None,fom='responsivity',
 
 
     if fom=='responsivity':
-        ax.plot(Vbias,0.5/Vtes,label='$\dfrac{1}{2\mathrm{V}_\mathrm{TES}}$',color='red')
+        ax.plot(Vbias,0.5/Vtes,label='$\dfrac{1}{2\\mathrm{V}_\\mathrm{TES}}$',color='red')
 
     # draw a vertical line at the turnover
     if not Vturnover_TES is None:
         Vturnover=1e6*Vturnover_TES
-        turnover_label='V$_\mathrm{turnover}$=%.3f $\mu$V' % Vturnover
+        turnover_label='V$_\\mathrm{turnover}$=%.3f $\\mu$V' % Vturnover
         ax.plot([Vturnover,Vturnover],[bot,top],linestyle='dashed',color='blue',label=turnover_label)
 
     ax.legend()
@@ -1716,15 +1716,15 @@ def plot_ip(self,TES,xwin=True):
     fig,ax=plt.subplots(1,1)
     figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
-    ax.set_xlabel('P$_\mathrm{TES}$  /  pW')
-    ax.set_ylabel('I$_\mathrm{TES}$  /  $\mu$A')
+    ax.set_xlabel('P$_\\mathrm{TES}$  /  pW')
+    ax.set_ylabel('I$_\\mathrm{TES}$  /  $\\mu$A')
 
     ax.plot(Ptes,Ites,label='data')
     ax.plot(Pmodel,Imodel,label='model')
 
     # show turnover
     if not Pturnover is None:
-        turnover_label='I$_\mathrm{turnover}$=%.3f$\mu$A, P$_\mathrm{turnover}$=%.3fpW' % (Iturnover,Pturnover)
+        turnover_label='I$_\\mathrm{turnover}$=%.3f$\\mu$A, P$_\\mathrm{turnover}$=%.3fpW' % (Iturnover,Pturnover)
         ax.plot([Pturnover,Pturnover],[plot_Imin,Iturnover],linestyle='dashed',color='red',label=turnover_label)
         ax.plot([plot_Pmin,Pturnover],[Iturnover,Iturnover],linestyle='dashed',color='red')
 

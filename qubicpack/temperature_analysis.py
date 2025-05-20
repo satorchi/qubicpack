@@ -355,7 +355,7 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True,lutmin=0.32,l
         pngname='QUBIC_Array-%s_TES%03i_ASIC%i_R-V_Temperatures_%s.png' % (detector_name,TES,asic,fname_datestr)
         #xlabel='P$_{TES}$ / $p$W'
         xlabel='V$_{bias}$ / V'
-        ylabel='$\\frac{R_\mathrm{TES}}{R_\mathrm{normal}}$ / %'
+        ylabel='$\\frac{R_\\mathrm{TES}}{R_\\mathrm{normal}}$ / %'
     elif plot.upper()[0]=='P':
         plot_type='P'
         pngname='QUBIC_Array-%s_TES%03i_ASIC%i_P-V_Temperatures_%s.png' % (detector_name,TES,asic,fname_datestr)
@@ -416,7 +416,7 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True,lutmin=0.32,l
                 if min(Rn_ratio)<min_Rn_ratio:min_Rn_ratio=min(Rn_ratio)
                 if max(Rn_ratio)>max_Rn_ratio:max_Rn_ratio=max(Rn_ratio)
                 Pbias=go.Pbias(TES)
-                lbl+=', P$_\mathrm{bias}=$%.2f pW' % Pbias                
+                lbl+=', P$_\\mathrm{bias}=$%.2f pW' % Pbias                
                 #plt.plot(Ptes,Rn_ratio,label=lbl)
                 plt.plot(bias,Rn_ratio,label=lbl,color=colour)
         elif plot_type=='P':
@@ -906,7 +906,7 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
         txt += '\nn=%.3f' % n
         txt += '\nG=%s W/K' % fmt4latex(G,2)
         txt += '\nNEP=%s at T$_{bath}$=350mK' % fmt4latex(NEP,2)
-        txt += '\nN$_\mathrm{fit\,\,points}$ = %i' % npts
+        txt += '\nN$_\\mathrm{fit\,\,points}$ = %i' % npts
         txt += '\n%s' % result['fit points']
         txt += '\n$\chi^2 = $%s' % fmt4latex(result['Chi square'],2)
         if result['is_good']:
@@ -958,7 +958,7 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
     ax.set_xlim(plot_T_min,plot_T_max)
     ax.set_ylim(1e12*plot_P_min,1e12*plot_P_max)
     plt.title(ttl)
-    ax.set_xlabel('T$_\mathrm{bath}$ / K')
+    ax.set_xlabel('T$_\\mathrm{bath}$ / K')
     ax.set_ylabel('Power / pWatt')
     if result['fit points'].find('full range')>0:
         ax.plot(all_T,1e12*all_P,ls='none',marker='D')
@@ -1062,10 +1062,10 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
         datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%Y-%m-%d %H:%M'))
         fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%Y%m%dT%H%M%S'))
     
-    txt = 'NEP$_\mathrm{mean}=%.4f \\times 10^{-17}\mathrm{W}/\sqrt{\mathrm{Hz}}$' % (1e17*NEPmean)
-    txt += '\nG$_\mathrm{mean}=%.4f \\times 10^{-10}\mathrm{W}/{\mathrm{K}}$' % (1e10*retval['G'].mean())
-    txt += '\nn$_\mathrm{mean}=%.4f$' % (retval['n'].mean())
-    txt += '\nT$_\mathrm{0\,mean}=%.4f$ mK' % (1e3*retval['T0'].mean())
+    txt = 'NEP$_\\mathrm{mean}=%.4f \\times 10^{-17}\\mathrm{W}/\sqrt{\\mathrm{Hz}}$' % (1e17*NEPmean)
+    txt += '\nG$_\\mathrm{mean}=%.4f \\times 10^{-10}\\mathrm{W}/{\\mathrm{K}}$' % (1e10*retval['G'].mean())
+    txt += '\nn$_\\mathrm{mean}=%.4f$' % (retval['n'].mean())
+    txt += '\nT$_\\mathrm{0\,mean}=%.4f$ mK' % (1e3*retval['T0'].mean())
     txt += '\n%i good TES out of %i. yield=%.1f%%' % (nNEP,len(NEPresults),100*nNEP/len(NEPresults))
     #txt += '\nT$_0$ limit = %.1f mK' % (1000*T0_limit)
 
@@ -1291,7 +1291,7 @@ def make_TES_NEP_tex_report(fplist,NEPresults=None,refresh=True):
     h.write('\\noindent\\begin{longtable}{%s}\n' % colfmt)
     h.write('\\caption{Summary Table for TES\\\\\n')
     for asic in go300.keys():
-        h.write('V$_\\mathrm{turnover}$ and R$_1$ taken from measurement at T$_\mathrm{bath}$=%.1fmK for ASIC %i\\\\'\
+        h.write('V$_\\mathrm{turnover}$ and R$_1$ taken from measurement at T$_\\mathrm{bath}$=%.1fmK for ASIC %i\\\\'\
                 % (1000*go300[asic].temperature,asic))
     if show_extra_columns:
         h.write(cfibre_ack)
@@ -1432,8 +1432,8 @@ def plot_rt_analysis(reslist,xwin=True):
     ax = plt.gca()
     plt.title(ttl)
     ax.plot(Tsorted,1e6*Rsorted,ls='none',marker='D',color='blue')
-    ax.set_xlabel('T$_\mathrm{bath}$ / mK')
-    ax.set_ylabel('R$_\mathrm{TES}$ / $m\Omega$')
+    ax.set_xlabel('T$_\\mathrm{bath}$ / mK')
+    ax.set_ylabel('R$_\\mathrm{TES}$ / $m\\Omega$')
 
     ax.text(0.98,0.02,date_txt,va='bottom',ha='right',fontsize=plt.rcParams['legend.fontsize'],transform=ax.transAxes,bbox=boxprops)
 

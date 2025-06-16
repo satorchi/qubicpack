@@ -172,6 +172,7 @@ for asicobj in a.asic_list:
 # now look at selected TES: plot timeline and I-V
 if TES_selection is not None:
     for asicobj in a.asic_list:
+        if asicobj is None: continue
         for TESnum in TES_selection:
             res = asicobj.plot_timeline(TES=TESnum,xwin=False)
             fig = asicobj.plot_iv(TES=TESnum,xwin=False)
@@ -180,7 +181,9 @@ if TES_selection is not None:
 
 
 # and save the I-V fitting parameters for next time, so we don't have to re-run the processing
-for asicobj in a.asic_list: asicobj.save_filter()
+for asicobj in a.asic_list:
+    if asicobj is None: continue
+    asicobj.save_filter()
 
 # now plot all the I-V curves
 res = a.plot_iv_focalplane(xwin=False)

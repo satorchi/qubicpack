@@ -910,6 +910,16 @@ def read_qubicstudio_asic_fits(self,hdulist):
     self.printmsg('ASIC%i: There are %i housekeeping measurements in the period %s to %s'\
                   % (asic,npts,dateobs[0].strftime(datefmt),dateobs[-1].strftime(datefmt)),verbosity=2)
     
+    # get the number of samples
+    nsamples_list = self.read_fits_field(hdu,'nsample')
+    tdata['NSAM_LST'] = nsamples_list
+    tdata['NSAMPLES'] = nsamples_list[-1]
+    self.nsamples = tdata['NSAMPLES']
+    difflist = np.unique(nsamples_list)
+    if len(difflist)!=1:
+        msg = 'WARNING! nsample changed during the measurement!'
+        tdata['WARNING'].append(msg)
+        
     # get the Raw Mask
     rawmask_lst = self.read_fits_field(hdu,'Raw-mask')
     tdata['RAW-MASK'] = self.interpret_rawmask(rawmask_lst[0])
@@ -945,16 +955,6 @@ def read_qubicstudio_asic_fits(self,hdulist):
         tdata['WARNING'].append(msg)
     tdata['BIAS_MAX'] = np.nanmax(bias_max)
     self.max_bias = tdata['BIAS_MAX']
-
-    # get the number of samples
-    nsamples_list = self.read_fits_field(hdu,'nsample')
-    tdata['NSAM_LST'] = nsamples_list
-    tdata['NSAMPLES'] = nsamples_list[-1]
-    self.nsamples = tdata['NSAMPLES']
-    difflist = np.unique(nsamples_list)
-    if len(difflist)!=1:
-        msg = 'WARNING! nsample changed during the measurement!'
-        tdata['WARNING'].append(msg)
 
     # Relay feedback resistance (bit0: heater on/off and bit1: 10kOhm/100kOhm)
     onoff_list = []
@@ -1244,7 +1244,7 @@ def interpret_rawmask(self,rawmask_hk):
     this is an qubicasic method
     '''
     
-    mask = np.zeros(self.nsamples,dtype=int)
+    mask = np.zeros(self.nsamples,dtype=bool)
     for maskidx,bits in enumerate(rawmask_hk):
 
         if bits==0: continue

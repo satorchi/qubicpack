@@ -35,7 +35,7 @@ def help():
     msg = 'Analysis of I-V curves for QUBIC' 
     msg += '\nusage: %s [options]' % sys.argv[0]
     msg += '\nOPTIONS:'
-    msg += '\n --start-time=YYYY-MMM-DDTHH:MM:SS'
+    msg += '\n --start-time=YYYY-MM-DDTHH:MM:SS'
     msg += '\n       give the start time of the dataset you want to analyse'
     msg += '\n --datadir=/path/to/toplevel/data/directory'
     msg += '\n --TES-selection=<comma separated list of TES numbers for plotting, or "ALL">'
@@ -164,6 +164,7 @@ res = a.plot_timeline_focalplane(xwin=False)
 # We run the filter which fits a model to each TES I-V curve
 # This will take a few minutes
 for asicobj in a.asic_list:
+    if asicobj is None: continue
     read_saved_filter = asicobj.read_filter()
     if not read_saved_filter:
         f = asicobj.filter_iv_all(bias_margin=-3)

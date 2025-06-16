@@ -912,7 +912,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     
     # get the Raw Mask
     rawmask_lst = self.read_fits_field(hdu,'Raw-mask')
-    tdata['RAW-MASK'] = rawmask_lst[0]
+    tdata['RAW-MASK'] = self.interpret_rawmask(rawmask_lst[0])
     self.rawmask = tdata['RAW-MASK']
     for idx in range(rawmask_lst.shape[0]):
         if not np.array_equal(self.rawmask,rawmask_lst[idx]):
@@ -1238,6 +1238,25 @@ def writelog(self,msg):
 ########################################################################
 ###### convenient wrappers for returning data ##########################
 ########################################################################
+def interpret_rawmask(self,rawmask_hk):
+    '''
+    interpret the RawMask bit values to sample numbers for the ASIC setting
+    this is an qubicasic method
+    '''
+    
+    mask = np.zeros(self.nsamples,dtype=int)
+    for maskidx,bits in enumerate(rawmask_hk):
+
+        if bits==0: continue
+        for vector_idx in range(8):
+            bitidx = 7 - vector_idx
+            bitmask = 2**bitidx
+            bitval = (bitmask & bits) >> bitidx
+            
+            mask[maskidx*8+vector_idx] = bitval
+            # print('[%03i] bitmask=%s, bits=%s, bitval=%i' % ((maskidx*8+bitidx),f'{bitmask:08b}',f'{bits:08b}',bitval))
+    # nmasked = mask.sum()
+    return mask
 
 def RawMask(self,asic=None):
     '''
@@ -1253,10 +1272,14 @@ def RawMask(self,asic=None):
     hktype = 'CONF_ASIC%i' % asic
 
     if self.__object_type__=='qubicfp':
-        HK = self.asic_list[asic-1].hk
+        asicobj = self.asic_list[asic-1]
+        if asicobj is None:
+            self.printmsg('No data in ASIC %i' % asic)
+            return None
     else:
-        HK = self.hk
+        asicobj = self
         
+    HK = asicobj.hk
     if hktype not in HK.keys():
         self.printmsg('No ASIC housekeeping data!')
         return None
@@ -1266,7 +1289,8 @@ def RawMask(self,asic=None):
         self.printmsg('No Raw Mask data!')
         return None
     
-    rawmask = HK[hktype][keyname]
+    rawmask_hk = HK[hktype][keyname]
+    rawmask = asicobj.interpret_rawmask(rawmask_hk)
     return rawmask
 
 def get_hk(self,data=None,hk=None,asic=None):

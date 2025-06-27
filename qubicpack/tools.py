@@ -925,7 +925,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     tdata['RAW-MASK'] = self.interpret_rawmask(rawmask_lst[0])
     self.rawmask = tdata['RAW-MASK']
     for idx in range(rawmask_lst.shape[0]):
-        if not np.array_equal(self.rawmask,rawmask_lst[idx]):
+        if not np.array_equal(self.rawmask,self.interpret_rawmask(rawmask_lst[idx])):
             msg = 'WARNING! Raw-mask varies during the measurement!'
             self.printmsg(msg)
             tdata['WARNING'].append(msg)

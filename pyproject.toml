@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qubicpack"
+version = "1.0.0"
+authors = [
+  { name="Steve Torchinsky", email="satorchi@apc.in2p3.fr" },
+]
+description = "Data visualization and analysis for QUBIC"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+]
+license = "GPL-3.0-or-later"
+
+[project.urls]
+Homepage = "https://github.com/satorchi/qubicpack"
+
+[project.scripts]
+"quicklook.py" = "scripts:quicklook.py"
+"Vphi_analysis.py" = "scripts:Vphi_analysis.py"
+"IV_analysis.py" = "scripts:IV_analysis.py"
+

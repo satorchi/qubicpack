@@ -21,7 +21,7 @@ license = "GPL-3.0-or-later"
 Homepage = "https://github.com/satorchi/qubicpack"
 
 [project.scripts]
-"quicklook.py" = "scripts:quicklook.py"
-"Vphi_analysis.py" = "scripts:Vphi_analysis.py"
-"IV_analysis.py" = "scripts:IV_analysis.py"
+"quicklook" = "qubicpack.scripts:quicklook.py"
+"Vphi_analysis" = "qubicpack.scripts:Vphi_analysis.py"
+"IV_analysis" = "qubicpack.scripts:IV_analysis.py"
 

@@ -19,7 +19,7 @@ from glob import glob
 import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
-from qubicpack.utilities import obsmount_implemented
+from qubicpack.utilities import obsmount_implemented, interpret_rawmask
 
 qubicasic_hk_keys = ['Apol',
                      'CN',
@@ -922,10 +922,10 @@ def read_qubicstudio_asic_fits(self,hdulist):
         
     # get the Raw Mask
     rawmask_lst = self.read_fits_field(hdu,'Raw-mask')
-    tdata['RAW-MASK'] = self.interpret_rawmask(rawmask_lst[0])
+    tdata['RAW-MASK'] = interpret_rawmask(rawmask_lst[0],self.nsamples)
     self.rawmask = tdata['RAW-MASK']
     for idx in range(rawmask_lst.shape[0]):
-        if not np.array_equal(self.rawmask,self.interpret_rawmask(rawmask_lst[idx])):
+        if not np.array_equal(self.rawmask,interpret_rawmask(rawmask_lst[idx]),self.nsamples):
             msg = 'WARNING! Raw-mask varies during the measurement!'
             self.printmsg(msg)
             tdata['WARNING'].append(msg)
@@ -1238,26 +1238,6 @@ def writelog(self,msg):
 ########################################################################
 ###### convenient wrappers for returning data ##########################
 ########################################################################
-def interpret_rawmask(self,rawmask_hk):
-    '''
-    interpret the RawMask bit values to sample numbers for the ASIC setting
-    this is an qubicasic method
-    '''
-    
-    mask = np.zeros(self.nsamples,dtype=bool)
-    for maskidx,bits in enumerate(rawmask_hk):
-
-        if bits==0: continue
-        for vector_idx in range(8):
-            bitidx = 7 - vector_idx
-            bitmask = 2**bitidx
-            bitval = (bitmask & bits) >> bitidx
-            
-            mask[maskidx*8+vector_idx] = bitval
-            # print('[%03i] bitmask=%s, bits=%s, bitval=%i' % ((maskidx*8+bitidx),f'{bitmask:08b}',f'{bits:08b}',bitval))
-    # nmasked = mask.sum()
-    return mask
-
 def RawMask(self,asic=None):
     '''
     return the Raw Mask from the Housekeeping data

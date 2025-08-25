@@ -55,7 +55,6 @@ class qubicasic:
         output_filename,\
         data_subdir,\
         get_from_keyboard,\
-        interpret_rawmask,\
         RawMask,\
         FLL_State,\
         get_hk,\

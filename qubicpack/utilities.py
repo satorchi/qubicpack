@@ -256,3 +256,21 @@ def read_gps_bindat(filename,verbosity=0):
     rec_fmt = '<Bdiiiiiiifi'
     rec_names = "STX,timestamp,rpN,rpE,rpD,roll,yaw,pitchIMU,rollIMU,temperature,checksum"
     return read_bindat(filename,names=rec_names,fmt=rec_fmt,STX=0xAA,verbosity=verbosity)
+
+def interpret_rawmask(rawmask,nsamples):
+    '''
+    interpret the RawMask bit values to sample numbers for the ASIC setting
+    '''
+    mask = np.zeros(nsamples,dtype=bool)
+    for maskidx,bits in enumerate(rawmask):
+
+        if bits==0: continue
+        for vector_idx in range(8):
+            bitidx = 7 - vector_idx
+            bitmask = 2**bitidx
+            bitval = (bitmask & bits) >> bitidx
+            
+            mask[maskidx*8+vector_idx] = bitval
+            # print('[%03i] bitmask=%s, bits=%s, bitval=%i' % ((maskidx*8+bitidx),f'{bitmask:08b}',f'{bits:08b}',bitval))
+    # nmasked = mask.sum()
+    return mask

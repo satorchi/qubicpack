@@ -925,7 +925,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
     tdata['RAW-MASK'] = interpret_rawmask(rawmask_lst[0],self.nsamples)
     self.rawmask = tdata['RAW-MASK']
     for idx in range(rawmask_lst.shape[0]):
-        if not np.array_equal(self.rawmask,interpret_rawmask(rawmask_lst[idx]),self.nsamples):
+        if not np.array_equal( self.rawmask, interpret_rawmask(rawmask_lst[idx],self.nsamples) ):
             msg = 'WARNING! Raw-mask varies during the measurement!'
             self.printmsg(msg)
             tdata['WARNING'].append(msg)
@@ -1269,8 +1269,9 @@ def RawMask(self,asic=None):
         self.printmsg('No Raw Mask data!')
         return None
     
-    rawmask_hk = HK[hktype][keyname]
-    rawmask = asicobj.interpret_rawmask(rawmask_hk)
+    rawmask_hk_list = HK[hktype][keyname]
+    rawmask_hk = rawmask_hk_list[0] # we should already have had a warning if raw mask changed during the acquisition
+    rawmask = interpret_rawmask(rawmask_hk,asicobj.nsamples)
     return rawmask
 
 def get_hk(self,data=None,hk=None,asic=None):

@@ -142,7 +142,9 @@ def plot_Vavg(self,Vavg,Vbias,offset=None,axes=None):
 
 def plot_iv_all(self,selection=None,xwin=True):
     if not isinstance(self.vbias,np.ndarray):
-        self.vbias=make_Vbias()
+        print('Vbias not properly defined')
+        return None
+    
     ttl=str('QUBIC I-V curves (%s)' % (self.obsdate.strftime('%Y-%b-%d %H:%M UTC')))
     if isinstance(selection,list):
         nselection=0
@@ -184,7 +186,10 @@ def plot_iv_all(self,selection=None,xwin=True):
     return fig
 
 def setup_plot_iv_multi(self,nrows=16,ncols=8,xwin=True):
-    if not isinstance(self.vbias,np.ndarray): self.vbias=make_Vbias()
+    if not isinstance(self.vbias,np.ndarray):
+        print('vbias not properly defined')
+        return None
+    
     ttl=str('QUBIC I-V curves (%s)' % (self.obsdate.strftime('%Y-%b-%d %H:%M UTC')))
 
     nbad=0
@@ -1746,63 +1751,6 @@ def plot_ip(self,TES,xwin=True):
     if xwin: plt.show()
     else: plt.close('all')
     return fig,ax
-
-                
-def make_Vbias(self,cycle=True,ncycles=2,vmin=0.5,vmax=3.0,dv=0.002,lowhigh=True):
-    '''
-    the bias voltage values used during the I-V curve measurement
-    '''
-
-    if vmax<0.0:
-        vmax=np.abs(vmax)
-        print('No negative values for bias! Setting max bias to %.2f V' % vmax)
-
-    if vmax>self.max_permitted_bias:
-        print('It is dangerous to set the bias voltage greater than %.2f V.' % self.max_permitted_bias)
-        print('Setting maximum bias to %.2f V' % self.max_permitted_bias)
-        vmax=self.max_permitted_bias
-
-    max_offset=self.DAC2V * 2**15
-    if vmax>max_offset:
-        print('WARNING! Cannot set bias offset greater than %.3f V.' % max_offset)
-        print('Setting maximum bias to %.2f V' % max_offset)
-        vmax=max_offset
-
-    if vmin<0.0:
-        print('No negative values! Setting minimum bias to 0 V')
-        vmin=0.0
-
-    if ncycles<1:
-        print('You need at least one cycle! Setting ncycles=1')
-        ncycles=1
-    
-    going_up=np.arange(vmin,vmax+dv,dv)
-    going_dn=np.flip(going_up,0)
-
-    if cycle:
-        if lowhigh:
-            onecycle=np.concatenate((going_up,going_dn),0)
-        else:
-            onecycle=np.concatenate((going_dn,going_up),0)
-    else:
-        if lowhigh:
-            onecycle=going_up
-        else:
-            onecycle=going_dn
-
-    self.cycle_vbias=cycle
-    self.nbiascycles=ncycles
-
-    vbias=onecycle
-    for n in range(ncycles-1):
-        vbias=np.concatenate((vbias,onecycle),0)
-    
-    self.vbias=vbias
-    self.min_bias=min(self.vbias)
-    self.max_bias=max(self.vbias)
-    self.max_bias_position=np.argmax(self.vbias)
-    return vbias
-
 
 def filter_iv(self,TES,
               R1adjust=1.0,

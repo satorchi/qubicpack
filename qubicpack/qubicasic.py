@@ -105,7 +105,6 @@ class qubicasic:
         plot_ip,\
         plot_pv,\
         plot_rp,\
-        make_Vbias,\
         filter_iv,\
         filter_iv_all,\
         read_filter,\

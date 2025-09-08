@@ -801,7 +801,7 @@ def nsamples4interpolation(nsamples,epsilon=0.01,verbosity=0):
     solution['attempted'] = np.array(attempted_nsamples)
     return solution
 
-def tod(self,axistype='pps',indextype='TES'):
+def tod(self,axistype='pps',indextype='TES',units='ADU'):
     '''
     return a tuple containing the time axis, and the array of all TES timelines
     this is the timeaxis for all ASIC interpolated to the first ASIC
@@ -809,7 +809,17 @@ def tod(self,axistype='pps',indextype='TES'):
     with indextype=='TES' (default), the TOD array indexes are in the order of TES
     with indextype=='QS', the TOD array indexes are in the order compatible with qubicsoft simulations
     see for more info: http://qubic.in2p3.fr/wiki/pmwiki.php/TD/TEStranslation
+
+    units can be:  ADU, Watts, Amps
     '''
+    if units.upper().find('AM')==0:
+        unit_type = 'Amp'
+    elif units.upper().find('W')==0:
+        unit_type = 'Watt'
+    else:
+        unit_type = 'ADU'
+    
+    
     FPidentity = make_id_focalplane()
     
     timeaxis_list = []
@@ -870,7 +880,14 @@ def tod(self,axistype='pps',indextype='TES'):
         
         asic = asicobj.asic
         self.printmsg('asic index = %i, asic counter = %i, asic = %i' % (asic_idx,asic_ctr,asic),verbosity=3)
-        tline_array = self.asic(asic).timeline_array()
+
+        if unit_type=='Watt':
+            tline_array = self.asic(asic).timeline_Ptes
+        elif unit_type=='Amp':
+            tline_array = self.asic(asic).timeline_Ites
+        else:            
+            tline_array = self.asic(asic).timeline_array()
+            
         
         tstamps = timeaxis_list[asic_ctr-1]
         for TESidx in range(NPIXELS):

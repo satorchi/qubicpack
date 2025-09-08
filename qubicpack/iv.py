@@ -141,9 +141,10 @@ def plot_Vavg(self,Vavg,Vbias,offset=None,axes=None):
     return
 
 def plot_iv_all(self,selection=None,xwin=True):
-    if not isinstance(self.vbias,np.ndarray):
-        print('Vbias not properly defined')
-        return None
+    if isinstance(self.vbias,np.ndarray):
+        vbias = self.vbias
+    else:
+        vbias = self.timeline_vbias
     
     ttl=str('QUBIC I-V curves (%s)' % (self.obsdate.strftime('%Y-%b-%d %H:%M UTC')))
     if isinstance(selection,list):
@@ -162,8 +163,6 @@ def plot_iv_all(self,selection=None,xwin=True):
     plt.xlabel('Bias Voltage  /  V')
     plt.ylabel('Current  /  $\\mu$A')
 
-    nbias=self.adu.shape[1]
-    
     offset=[]
     colour_idx=0
     ncolours=len(self.colours)
@@ -171,12 +170,12 @@ def plot_iv_all(self,selection=None,xwin=True):
         TES=TES_idx+1
 
         if (not isinstance(selection,list)) or (selection[TES_idx]):
-            istart,iend=self.selected_iv_curve(TES)
-            Iadjusted=self.adjusted_iv(TES)[istart:iend]
-            bias=self.vbias[istart:iend]
-            if colour_idx >= ncolours:colour_idx=0
+            istart,iend = self.selected_iv_curve(TES)
+            Iadjusted = self.adjusted_iv(TES)[istart:iend]
+            bias = vbias[istart:iend]
+            if colour_idx >= ncolours:colour_idx = 0
             plt.plot(bias,Iadjusted,color=self.colours[colour_idx])
-            colour_idx+=1
+            colour_idx += 1
 
     pngname=str('TES_IV_array-%s_ASIC%i_all_%s.png' % (self.detector_name,self.asic,self.obsdate.strftime('%Y%m%dT%H%M%SUTC')))
     pngname_fullpath=self.output_filename(pngname)
@@ -186,20 +185,16 @@ def plot_iv_all(self,selection=None,xwin=True):
     return fig
 
 def setup_plot_iv_multi(self,nrows=16,ncols=8,xwin=True):
-    if not isinstance(self.vbias,np.ndarray):
-        print('vbias not properly defined')
-        return None
-    
-    ttl=str('QUBIC I-V curves (%s)' % (self.obsdate.strftime('%Y-%b-%d %H:%M UTC')))
+    ttl = str('QUBIC I-V curves (%s)' % (self.obsdate.strftime('%Y-%b-%d %H:%M UTC')))
 
-    nbad=0
+    nbad = 0
     for val in self.is_good_iv():
-        if not val:nbad+=1
-    ttl+=str('\n%i flagged as bad pixels' % nbad)
+        if not val: nbad += 1
+    ttl += str('\n%i flagged as bad pixels' % nbad)
     
     if xwin: plt.ion()
     else: plt.ioff()
-    fig,axes=plt.subplots(nrows,ncols,sharex=True,sharey=False)
+    fig,axes = plt.subplots(nrows,ncols,sharex=True,sharey=False)
     if xwin: figure_window_title(fig,ttl)
     fig.suptitle(ttl,fontsize=16)
     plt.xlabel('Bias Voltage  /  V')
@@ -1173,37 +1168,37 @@ def plot_rp(self,TES,xwin=True):
         print('No normal resistance estimate.')
         return None
 
-    istart,iend=self.selected_iv_curve(TES)
+    istart,iend = self.selected_iv_curve(TES)
     
-    Rn_ratio=self.Rn_ratio(TES)[istart:iend]
-    Ptes=self.Ptes(TES)[istart:iend]
-    Pbias=self.Pbias(TES)
-    lbl='P$_\\mathrm{bias}=$%.2f pW' % Pbias
+    Rn_ratio = self.Rn_ratio(TES)[istart:iend]
+    Ptes = self.Ptes(TES)[istart:iend]
+    Pbias = self.Pbias(TES)
+    lbl = 'P$_\\mathrm{bias}=$%.2f $p$W' % Pbias
 
-    Rmin=min(Rn_ratio)
-    Rmax=max(Rn_ratio)
-    Rspan=Rmax-Rmin
-    plot_Rmin=Rmin-0.2*Rspan
-    plot_Rmax=100.
+    Rmin = min(Rn_ratio)
+    Rmax = max(Rn_ratio)
+    Rspan = Rmax-Rmin
+    plot_Rmin = Rmin-0.2*Rspan
+    plot_Rmax = 100.
     
-    Pmin=min(Ptes)
-    Pmax=max(Ptes)
-    Pspan=Pmax-Pmin
-    plot_Pmin=Pmin-0.05*Pspan
-    plot_Pmax=Pmax+0.2*Pspan
+    Pmin = min(Ptes)
+    Pmax = max(Ptes)
+    Pspan = Pmax-Pmin
+    plot_Pmin = Pmin-0.05*Pspan
+    plot_Pmax = Pmax+0.2*Pspan
     
-    ttl=str('QUBIC R-P curve for TES#%3i (%s)' % (TES,self.obsdate.strftime('%Y-%b-%d %H:%M UTC')))
+    ttl = str('QUBIC R-P curve for TES#%3i (%s)' % (TES,self.obsdate.strftime('%Y-%b-%d %H:%M UTC')))
     if self.temperature is None:
-        tempstr='unknown'
+        tempstr = 'unknown'
     else:
-        tempstr=str('%.0f mK' % (1000*self.temperature))
-    subttl=str('Array %s, ASIC #%i, Pixel #%i, Temperature %s' % (self.detector_name,self.asic,tes2pix(TES,self.asic),tempstr))
+        tempstr = str('%.0f mK' % (1000*self.temperature))
+    subttl = str('Array %s, ASIC #%i, Pixel #%i, Temperature %s' % (self.detector_name,self.asic,tes2pix(TES,self.asic),tempstr))
     if xwin: plt.ion()
     else: plt.ioff()
-    fig,ax=plt.subplots(1,1)
+    fig,ax = plt.subplots(1,1)
     figure_window_title(fig,ttl)
     fig.suptitle(ttl+'\n'+subttl,fontsize=16)
-    ax.set_xlabel('P$_\\mathrm{TES}$  /  pW')
+    ax.set_xlabel('P$_\\mathrm{TES}$  /  $p$W')
     ax.set_ylabel('$\\frac{R_\\mathrm{TES}}{R_\\mathrm{normal}}$ / %')
 
     ax.plot(Ptes,Rn_ratio)
@@ -1217,8 +1212,8 @@ def plot_rp(self,TES,xwin=True):
     boxprops = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     ax.text(text_x,text_y,lbl,va='bottom',ha='right',fontsize=10,transform = ax.transAxes,bbox=boxprops)
     
-    pngname=str('TES%03i_RP_array-%s_ASIC%i_%s.png' % (TES,self.detector_name,self.asic,self.obsdate.strftime('%Y%m%dT%H%M%SUTC')))
-    pngname_fullpath=self.output_filename(pngname)
+    pngname = str('TES%03i_RP_array-%s_ASIC%i_%s.png' % (TES,self.detector_name,self.asic,self.obsdate.strftime('%Y%m%dT%H%M%SUTC')))
+    pngname_fullpath = self.output_filename(pngname)
     if isinstance(pngname_fullpath,str): plt.savefig(pngname_fullpath,format='png',dpi=100,bbox_inches='tight')
     if xwin: plt.show()
     else: plt.close('all')
@@ -1230,7 +1225,7 @@ def Vbias2Vtes(self,V,Ites):
     return the Vtes for a given bias voltage.
     the current must also be given
     '''
-    Vtes=self.Rshunt*(V/self.Rbias-Ites)
+    Vtes = self.Rshunt*(V/self.Rbias-Ites)
     return Vtes
 
 def responsivity_func(self,Vtes,I,f_prime):

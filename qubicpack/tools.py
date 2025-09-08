@@ -1467,12 +1467,22 @@ def bias_phase(self):
     norm = max(abs(sinephase.max()),abs(sinephase.min()))
     sinephase = sinephase/norm
 
-    # assign the vbias for the timeline (vbias for the I-V curve will be a subset)
+    # assign the vbias, Ites, Vtes, and Ptes for the timeline
+    # For historical reasons, we prefix these with "timeline_"
+    # so as not to confuse with vbias etc used in the I-V analysis
+    # e.g. vbias for the I-V curve is a subset of the full timeline
+    # The history is that the I-V stuff was done first
     if self.max_bias is not None and self.min_bias is not None:
         amplitude = 0.5*(self.max_bias - self.min_bias)
         offset = self.min_bias + amplitude
         self.printmsg('DEBUG: bias_phase() : scaling vbias to max/min bias',verbosity=4)
         self.timeline_vbias = amplitude*sinephase + offset
+
+
+        ADU = self.timeline_array()
+        self.timeline_Ites = self.ADU2I(ADU, flip=False)
+        self.timeline_Vtes = self.Vbias2Vtes(self.timeline_vbias,self.timeline_Ites)
+        self.timeline_Ptes = self.timeline_Ites*self.timeline_Vtes
     
     return sinephase
 

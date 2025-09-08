@@ -41,6 +41,9 @@ def assign_defaults(self):
     self.adu=None
     self.vbias=None
     self.timeline_vbias=None
+    self.timeline_Ites = None
+    self.timeline_Vtes = None
+    self.timeline_Ptes = None
     self.cycle_vbias=True
     self.nbiascycles=None
     self.bias_frequency=None

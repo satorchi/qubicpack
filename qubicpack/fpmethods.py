@@ -892,7 +892,6 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
         tstamps = timeaxis_list[asic_ctr-1]
         for TESidx in range(NPIXELS):
             TESnum = TESidx + 1
-            tline_interp = np.interp(t_tod, tstamps, tline_array[TESidx,:])
             if indextype.upper().find('QS')==0:
                 mask = (FPidentity.ASIC==asic) & (FPidentity.TES==TESnum)
                 if mask.sum()!=1:
@@ -904,6 +903,7 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
             else:
                 tod_index = (asic_ctr-1)*NPIXELS+TESidx
             self.printmsg('tod(): tod_index = %03i' % tod_index,verbosity=3)
+            tline_interp = np.interp(t_tod, tstamps, tline_array[TESidx,:])
             todarray[tod_index,:] = tline_interp            
 
     return (t_tod,todarray)

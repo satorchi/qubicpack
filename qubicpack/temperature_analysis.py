@@ -365,7 +365,7 @@ def plot_TES_temperature_curves(fplist,TES,asic,plot='I',xwin=True,lutmin=0.32,l
         plot_type='I'
         pngname='QUBIC_Array-%s_TES%03i_ASIC%i_I-V_Temperatures_%s.png' % (detector_name,TES,asic,fname_datestr)
         xlabel='V$_{bias}$ / V'
-        ylabel='I$_{TES}$ / $\mu$A'
+        ylabel='I$_{TES}$ / $\\mu$A'
         
     ttl='QUBIC Array %s ASIC %i TES%03i at Different Temperatures\nmeasurements from %s' % (detector_name,asic,TES,datadate_str)
     if xwin:plt.ion()
@@ -901,14 +901,14 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
         plot_P_min = np.nanmin(fit_P)-0.5*P_span
         plot_P_max = np.nanmax(fit_P)+0.5*P_span
         
-        txt = '$\kappa=$%s W/K$^n$' % fmt4latex(K,2)
+        txt = '$\\kappa=$%s W/K$^n$' % fmt4latex(K,2)
         txt += '\nT$_c$=%.1f mK' % (1000*T0)
         txt += '\nn=%.3f' % n
         txt += '\nG=%s W/K' % fmt4latex(G,2)
         txt += '\nNEP=%s at T$_{bath}$=350mK' % fmt4latex(NEP,2)
-        txt += '\nN$_\\mathrm{fit\,\,points}$ = %i' % npts
+        txt += '\nN$_\\mathrm{fit\\,\\,points}$ = %i' % npts
         txt += '\n%s' % result['fit points']
-        txt += '\n$\chi^2 = $%s' % fmt4latex(result['Chi square'],2)
+        txt += '\n$\\chi^2 = $%s' % fmt4latex(result['Chi square'],2)
         if result['is_good']:
             txt += '\ndetector is GOOD'
         else:
@@ -1062,10 +1062,10 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
         datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%Y-%m-%d %H:%M'))
         fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%Y%m%dT%H%M%S'))
     
-    txt = 'NEP$_\\mathrm{mean}=%.4f \\times 10^{-17}\\mathrm{W}/\sqrt{\\mathrm{Hz}}$' % (1e17*NEPmean)
+    txt = 'NEP$_\\mathrm{mean}=%.4f \\times 10^{-17}\\mathrm{W}/\\sqrt{\\mathrm{Hz}}$' % (1e17*NEPmean)
     txt += '\nG$_\\mathrm{mean}=%.4f \\times 10^{-10}\\mathrm{W}/{\\mathrm{K}}$' % (1e10*retval['G'].mean())
     txt += '\nn$_\\mathrm{mean}=%.4f$' % (retval['n'].mean())
-    txt += '\nT$_\\mathrm{0\,mean}=%.4f$ mK' % (1e3*retval['T0'].mean())
+    txt += '\nT$_\\mathrm{0\\,mean}=%.4f$ mK' % (1e3*retval['T0'].mean())
     txt += '\n%i good TES out of %i. yield=%.1f%%' % (nNEP,len(NEPresults),100*nNEP/len(NEPresults))
     #txt += '\nT$_0$ limit = %.1f mK' % (1000*T0_limit)
 
@@ -1085,12 +1085,12 @@ def plot_NEP_histogram(NEPresults,xwin=True,nbins=10):
 
 
     xlabel = {}
-    xlabel['NEP'] = 'NEP  /  ${W}/\sqrt{Hz}$'
+    xlabel['NEP'] = 'NEP  /  ${W}/\\sqrt{Hz}$'
     xlabel['K'] = 'K / $W/K^{n}$'
     xlabel['G'] = 'G / $W/K$'
     xlabel['T0'] = 'T$_0$ / mK'
     xlabel['n'] = '$n$'
-    xlabel['Chi square'] = '$\chi^2$'
+    xlabel['Chi square'] = '$\\chi^2$'
     for keyval in xlabel.keys():        
         retval['pngname %s' % keyval] = pngname.replace('KEYVAL',keyval).replace(' ','_')
         figttl = ttl.replace('KEYVAL',keyval)

@@ -12,6 +12,9 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 check data for flux jumps, assign flag, or make correction and assign the "corrected" flag
 
 code adapted from Jupyter notebook "Automatic_flux_jump_versions" by Belen Costanza
+
+this should be updated using "jumps_soft.py" in branch bcostanza-dev of qubicsoft
+see:  qubic/scripts/Calibration/Flux_jumps/2025-data/jumps_soft.py
 '''
 from scipy.signal import argrelextrema, find_peaks, find_peaks_cwt, savgol_filter 
 import bottleneck as bn

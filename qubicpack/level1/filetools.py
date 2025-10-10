@@ -14,32 +14,53 @@ import os
 import numpy as np
 from astropy.io import fits
 
-from qubic.level1.flags import flag_definition
+from satorchipy.datefunctions import utcnow
+from qubicpack.level1.flags import flag_definition
 
 hdr_comment = {}
 hdr_comment['TELESCOP'] ='Telescope used for the observation'
 hdr_comment['FILETYPE'] = 'File identification'
-hdr_comment['DATASET'] = 'QubicStudio dataset name'
+hdr_comment['DATASET']  = 'QubicStudio dataset name'
+hdr_comment['UNITS']    = 'physical units:  ADU, Watt, or Amp'
 hdr_comment['FILENAME'] = 'name of this file'
 hdr_comment['FILEDATE'] = 'UT date this file was created'
+hdr_comment['INDXTYPE'] = 'index ordering: QUBICSOFT or TES'
+hdr_comment['INFOINDX'] = 'link to more details about index ordering'
+hdr_comment['INFO_FMT'] = 'link to more details about QUBIC Level1 data format'
+hdr_comment['INFODSET'] = 'link to more details about this dataset'
+
 hdr_keys = hdr_comment.keys()
 
-def write_level1(fpobject,todarray,flagarray):
+def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic.in2p3.fr/wiki/TD/DatasetDetails'):
     '''
     write a fits file with Level-1 data
     '''
     
     # initialize
     filename_suffix = '_level1.fits'
-    filename = fpobject.dataset_name
+    filename = self.dataset_name
     hdr = {}
     for key in hdr_keys:
         hdr[key] = None
     hdr['TELESCOP'] = 'QUBIC'
     hdr['FILETYPE'] = 'LEVEL1'
-    hdr['FILEDATE'] = dt.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
-    hdr['DATASET'] = fpobject.dataset_name    
+    hdr['FILEDATE'] = utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+    hdr['DATASET'] = self.dataset_name
+    hdr['UNITS'] = units
     hdr['FILENAME'] = filename+filename_suffix
+    if indextype.upper().find('Q')>=0:
+        hdr['INDXTYPE'] = 'QUBICSOFT'
+    else:
+        hdr['INDXTYPE'] = 'TES'
+    hdr['INFOINDX'] = 'https://qubic.in2p3.fr/wiki/TD/TEStranslation'
+    hdr['INFO_FMT'] = 'https://qubic.in2p3.fr/wiki/TD/ProcessedDataFormat'
+    hdr['INFODSET'] = infolink
+
+    for flagbit in flag_definition.keys():
+        if flag_definition[flagbit]=='available': continue
+        flag_key = 'FLAG_%03i' % flagbit
+        hdr[flag_key] = flag_definition[flagbit]
+    
 
     # Primary header
     prihdr = fits.Header()
@@ -65,9 +86,12 @@ def write_level1(fpobject,todarray,flagarray):
 
     # HDU with the level-1 array and the flagarray
     # formats defined at https://docs.astropy.org/en/stable/io/fits/usage/table.html
-    col1 = fits.Column(name='TODarray', format='D', unit='ADU', array=todarray)
-    col2 = fits.Column(name='flags', format='K', unit='UINT', array=flagarray)
-    cols  = fits.ColDefs([col1,col2])
+    t_tod,todarray = self.tod(indextype=indextype,units=units)
+    flagarray = np.zeros(todarray.shape,dtype=int)
+    col1 = fits.Column(name='TODarray', format='D', unit=units, array=todarray)
+    col2 = fits.Column(name='timestamps',format='D',units='sec',array=t_tod)
+    col3 = fits.Column(name='flags', format='K', unit='UINT', array=flagarray)
+    cols  = fits.ColDefs([col1,col2,col3])
     tbhdu = fits.BinTableHDU.from_columns(cols)
     hdulist.append(tbhdu)
 

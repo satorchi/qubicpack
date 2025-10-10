@@ -11,7 +11,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 check data for saturation and assign flag
 '''
 import numpy as np
-from qubic.level1.flags import flag_bit, set_flag
+from .flags import flag_bit, set_flag
 
 # This is the value where data flattens out.  See for example: 2019-12-23_19.00.20__HWP_Scanning_Vtes_2TimePerPos_60
 saturation_value = 2**22 - 2**7

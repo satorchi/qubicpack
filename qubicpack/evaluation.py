@@ -30,16 +30,8 @@ import numpy as np
 from astropy.io import fits
 
 from satorchipy.datefunctions import utcnow
-from qubicpack.utilities import Qubic_DataDir
+from .utilities import Qubic_DataDir
 
-
-try:
-    import qubic
-except:
-    qubic_pkg_dir = None
-else:
-    qubic_pkg_dir = os.path.dirname(qubic.__file__)
-    
 
 hdr_comment = {}
 hdr_comment["TELESCOP"] = "Telescope used for the observation"
@@ -237,10 +229,6 @@ def read_goodbad(filename, verbosity=1):
     # if not found, try to read from the default location
     if filename_fullpath is None:
         basename = os.path.basename(filename)
-        if qubic_pkg_dir is not None:
-            goodbad_dir = os.sep.join([qubic_pkg_dir,'TES'])
-        else:
-            goodbad_dir = None
         filename_fullpath = Qubic_DataDir(datadir=goodbad_dir,datafile=basename)
         if filename_fullpath is None:
             print("File not found: %s" % filename_fullpath)
@@ -313,6 +301,7 @@ def list_goodbad():
         localfiles.sort()
         files += localfiles
 
+    qubic_pkg_dir = Qubic_DataDir(datafile='TES')
     if qubic_pkg_dir is not None:
         goodbad_dir = os.sep.join([qubic_pkg_dir,'TES'])
         pkgpattern = os.sep.join([goodbad_dir, "TES", pattern])

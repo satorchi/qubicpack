@@ -95,6 +95,12 @@ def Qubic_DataDir(datadir=None,datafile=None):
     # data on cc-in2p3
     toplevel_dirs.append('/sps/qubic/Data/Calib-TD')
 
+    # qubic package directory for dicts, data, TES, calfiles
+    for pkg_dir in sys.path:
+        qubic_pkg_dir = os.sep.join([pkg_dir,'qubic'])
+        if not os.path.isdir(qubic_pkg_dir): continue
+        toplevel_dirs.append(qubic_pkg_dir)
+
     # add the current working directory
     toplevel_dirs.append(cwd)
 

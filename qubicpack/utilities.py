@@ -23,8 +23,12 @@ asic_reversal_date = dt.datetime.strptime('2018-02-06 18:00','%Y-%m-%d %H:%M')
 # on 27 Feb 2020, qubic-central was finally changed to UTC
 qc_utc_date = dt.datetime.strptime('2020-02-27 10:23:33','%Y-%m-%d %H:%M:%S')
 
-# on 18 apr 208, we implemented the observation mount used at Alto Chorillos
+# on 18 apr 2023, we implemented the observation mount used at Alto Chorillos
 obsmount_implemented = dt.datetime.strptime('2023-04-18 08:17:10','%Y-%m-%d %H:%M:%S')
+
+# on, or about, 23 Nov 2022, the FPGA electronics were updated (photo of Fabrice and Damien R.)
+# there is a 180 degree phase difference between the PPS in ASIC-1 and ASIC-2
+fpga_pps_180phase_date = dt.datetime.strptime('2022-11-23 14:56:52','%Y-%m-%d %H:%M:%S')
 
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128
@@ -167,6 +171,26 @@ def fmt4latex(num,nsigfigs):
 
     return num_str
 
+def interpret_rawmask(rawmask_hk,nsamples):
+    '''
+    interpret the RawMask bit values to sample numbers for the ASIC setting
+    '''
+    mask = np.zeros(nsamples,dtype=bool)
+    for maskidx,bits in enumerate(rawmask_hk):
+
+        if bits==0: continue
+        for vector_idx in range(8):
+            bitidx = 7 - vector_idx
+            bitmask = 2**bitidx
+            bitval = (bitmask & bits) >> bitidx
+            
+            mask[maskidx*8+vector_idx] = bitval
+            # print('[%03i] bitmask=%s, bits=%s, bitval=%i' % ((maskidx*8+bitidx),f'{bitmask:08b}',f'{bits:08b}',bitval))
+    # nmasked = mask.sum()
+    return mask
+
+
+############ file tools for housekeeping data ###################
 fmt_translation={}
 fmt_translation['uint8']   = 'B' 
 fmt_translation['int8']    = 'b'
@@ -263,20 +287,3 @@ def read_gps_bindat(filename,verbosity=0):
     rec_names = "STX,timestamp,rpN,rpE,rpD,roll,yaw,pitchIMU,rollIMU,temperature,checksum"
     return read_bindat(filename,names=rec_names,fmt=rec_fmt,STX=0xAA,verbosity=verbosity)
 
-def interpret_rawmask(rawmask_hk,nsamples):
-    '''
-    interpret the RawMask bit values to sample numbers for the ASIC setting
-    '''
-    mask = np.zeros(nsamples,dtype=bool)
-    for maskidx,bits in enumerate(rawmask_hk):
-
-        if bits==0: continue
-        for vector_idx in range(8):
-            bitidx = 7 - vector_idx
-            bitmask = 2**bitidx
-            bitval = (bitmask & bits) >> bitidx
-            
-            mask[maskidx*8+vector_idx] = bitval
-            # print('[%03i] bitmask=%s, bits=%s, bitval=%i' % ((maskidx*8+bitidx),f'{bitmask:08b}',f'{bits:08b}',bitval))
-    # nmasked = mask.sum()
-    return mask

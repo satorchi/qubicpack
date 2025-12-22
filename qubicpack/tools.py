@@ -1325,7 +1325,9 @@ def pps(self,hk=None,asic=None):
     '''
     return PPS data for a given HK
     '''
-    return self.get_hk('PPS',hk,asic)
+    raw_pps = self.get_hk('PPS',hk,asic)
+    # in case there is a correction to do for PPS, do it here (180 phase between ASICs)
+    return raw_pps
 
 def gps(self,hk=None,asic=None):
     '''

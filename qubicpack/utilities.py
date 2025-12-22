@@ -336,3 +336,5 @@ def read_compressor_log(filename):
 
     compressorlog['timestamp'] = np.array(compressorlog['timestamp'])
     return compressorlog
+
+    

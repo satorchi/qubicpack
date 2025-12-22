@@ -26,6 +26,9 @@ qc_utc_date = dt.datetime.strptime('2020-02-27 10:23:33','%Y-%m-%d %H:%M:%S')
 # on 18 apr 2023, we implemented the observation mount used at Alto Chorillos
 obsmount_implemented = dt.datetime.strptime('2023-04-18 08:17:10','%Y-%m-%d %H:%M:%S')
 
+# since 17 Dec 2025, the PLC is controlling the observation mount.
+obsmount_plc_implemented = dt.datetime.strptime('2025-12-17 17:49:58','%Y-%m-%d %H:%M:%S')
+
 # on, or about, 23 Nov 2022, the FPGA electronics were updated (photo of Fabrice and Damien R.)
 # there is a 180 degree phase difference between the PPS in ASIC-1 and ASIC-2
 fpga_pps_180phase_date = dt.datetime.strptime('2022-11-23 14:56:52','%Y-%m-%d %H:%M:%S')

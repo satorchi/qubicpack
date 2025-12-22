@@ -44,16 +44,18 @@ class qubicfp:
         get_hk,\
         gps,\
         pps,\
+        assign_pointing_data,\
         azimuth_redmount,\
         elevation_redmount,\
+        azimuth_cortex,\
+        elevation_cortex,\
         azimuth,\
         elevation,\
         hwp_position,\
         calsource,\
         qubicstudio_filetype_truename,\
-        qubicstudio_hk_truename,\
-        azel_etc
-
+        qubicstudio_hk_truename
+    
     from .assign_variables import\
         assign_constants,\
         assign_fitsblurbs,\

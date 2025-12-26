@@ -19,7 +19,8 @@ from glob import glob
 import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
-from qubicpack.utilities import obsmount_implemented, interpret_rawmask
+from qubicpack.utilities import obsmount_implemented, obsmount_plc_implemented, read_obsmount_bindat, interpret_rawmask
+from qubicpack.pointing import read_pointing_bindat, position_key, axis_names
 
 qubicasic_hk_keys = ['Apol',
                      'CN',
@@ -1342,6 +1343,71 @@ def gps(self,hk=None,asic=None):
     # if delta > 1799: return gps-delta
     return gps
 
+def assign_pointing_data(self,datadir):
+    '''
+    determine where to find the pointing data, and load it
+    we try in order of preference, and return when we've got it
+    '''
+    self.pointing_data = {}
+    for axis_name in axis_names:
+        self.pointing_data[axis_name] = {}
+        self.pointing_data[axis_name]['ok'] = False
+    axis_n_ok = 0
+
+    # pointing acquisition with observation mount PLC implemented December 2025
+    pointing_file = os.sep.join([datadir,'Hks','POINTING.dat'])
+    if os.path.isfile(pointing_file):
+        pointing_dat = read_pointing_bindat(pointing_file)
+        self.pointing_data['TIMESTAMP'] =  pointing_dat['header'].TIMESTAMP
+        for axisname in axis_names:
+            self.pointing_data[axisname] = pointing_dat['data'][axisname][position_key]
+            self.pointing_data[axisname]['ok'] = True
+            axis_n_ok += 1
+        return pointing_dat['ok']
+
+    # the red mount used at APC and in Salta 2018 to 2022
+    if 'INTERN_HK' in self.hk.keys():
+        self.pointing_data['TIMESTAMP'] = self.timeaxis(datatype='INTERN_HK')
+        if 'Platform-Azimut' in self.hk['INTERN_HK'].keys():
+            self.pointing_data['AZ']['VALUE'] = self.azimuth_redmount()
+            self.pointing_data['AZ']['ok'] = True
+            axis_n_ok += 1
+        if 'Platform-Elevation' in self.hk['INTERN_HK'].keys():
+            self.pointing_data['EL']['VALUE'] = self.elevation_redmount()
+            self.pointing_data['EL']['ok'] = True
+            axis_n_ok += 1
+        if axis_n_ok>0: return self.pointing_data['AZ']['ok'] and self.pointing_data['EL']['ok']
+
+    # pointing acquisition used with the observation mount raspberry pi "motor cortex"
+    for axisname in axis_names:
+        pointing_file = os.sep.join([datadir,'Hks','%s.dat' % axisname])
+        if os.path.isfile(pointing_file):
+            axdat = read_obsmount_bindat(pointing_file)
+            self.pointing_data[axisname]['VALUE'] = axdat['VALUE']
+            self.pointing_data[axisname]['TIMESTAMP'] = axdat['TIMESTAMP']
+            self.pointing_data[axisname]['ok'] = True
+            axis_n_ok += 1
+    if axis_n_ok>=2: return True
+
+    # the slow acquisition hack used with the motor cortex
+    if 'EXTERN_HK' in self.hk.keys():
+        self.pointing_data['TIMESTAMP'] = self.timeaxis(datatype='EXTERN_HK')
+        qskeys = {'AZ': 'Pressure_6',
+                  'EL': 'Pressure_7',
+                  'RO': 'Pressure_3',
+                  'TR': 'Pressure_4'
+                  }
+        for axisname in qskeys.keys():
+            qskey = qskeys[axisname] 
+            if qskey in self.hk['EXTERN_HK'].keys():
+                self.pointing_data[axisname]['VALUE'] = self.hk['EXTERN_HK'][qskey]
+                self.pointing_data[axisname]['ok'] = True
+                axis_n_ok += 1
+        if axis_n_ok>0: return self.pointing_data['AZ']['ok'] and self.pointing_data['EL']['ok']
+    
+    
+    return False
+
 def azimuth_redmount(self):
     '''
     return the Azimuth data timeline from the Red Mount (a.k.a. Calibration Mount)
@@ -1360,13 +1426,11 @@ def azimuth_redmount(self):
     az = (azRaw.astype(int) - 2**15) * 360.0/2**16
     return az
 
-def azimuth(self):
+def azimuth_cortex(self):
     '''
-    return the Azimuth data
+    return the Azimuth data timeline using the EXTERN_HK hack (slow sampling)
+    this was the observation mount controlled by the pair of raspberry pi, including the motor cortex
     '''
-    if self.obsdate < obsmount_implemented:
-        return self.azimuth_redmount()
-
     hktype = 'EXTERN_HK'
     if hktype not in self.hk.keys():
         self.printmsg('No platform data!')
@@ -1379,6 +1443,15 @@ def azimuth(self):
 
     az = self.hk[hktype][azkey]
     return az
+    
+def azimuth(self):
+    '''
+    return the Azimuth data
+    '''
+    if self.pointing_data['AZ']['ok']:
+        return self.pointing_data['AZ']['VALUE']
+    self.printmsg('No Azimuth data!')
+    return None
 
 def elevation_redmount(self):
     '''
@@ -1400,27 +1473,41 @@ def elevation_redmount(self):
     el = (elRaw.astype(int) - offset) * 360.0/2**16
     return el
 
-def elevation(self):
+def elevation_cortex(self):
     '''
-    return the Elevation data
-    '''
-
-    if self.obsdate < obsmount_implemented:
-        return self.elevation_redmount()
-    
+    return the Elevation data (slow sampling)
+    this was the observation mount controlled by the pair of raspberry pi, including the motor cortex
+    '''    
     hktype = 'EXTERN_HK'
     if hktype not in self.hk.keys():
         self.printmsg('No platform data!')
         return None
 
-    azkey = 'Pressure_7' # a bit of trickery here while waiting for QS to be upgraded
-    if azkey not in self.hk[hktype].keys():
+    elkey = 'Pressure_7' # a bit of trickery here while waiting for QS to be upgraded
+    if elkey not in self.hk[hktype].keys():
         self.printmsg('No Elevation data!')
         return None
 
-    el = self.hk[hktype][azkey]
+    el = self.hk[hktype][elkey]
     return el
-    
+
+def elevation(self):
+    '''
+    return the elevation data
+    '''
+    if self.pointing_data['EL']['ok']:
+        return self.pointing_data['EL']['VALUE']
+    self.printmsg('No Elevation data!')
+    return None
+
+def rotation(self):
+    '''
+    return the bore sight rotation data
+    '''
+    if self.pointing_data['RO']['ok']:
+        return self.pointing_data['RO']['VALUE']
+    self.printmsg('No Rotation data!')
+    return None
 
 def hwp_position(self):
     '''

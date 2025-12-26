@@ -51,6 +51,7 @@ class qubicfp:
         elevation_cortex,\
         azimuth,\
         elevation,\
+        rotation,\
         hwp_position,\
         calsource,\
         qubicstudio_filetype_truename,\

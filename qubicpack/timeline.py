@@ -249,6 +249,23 @@ def timeline_timeaxis(self,timeline_index=None,axistype='pps',gps_sample_offset=
     self.printmsg('timeline_timeaxis returning time axis based on %s.' % default_descr,verbosity=2)
     return time_axis_default
 
+def pointing_timeaxis(self,axis=None):
+    '''
+    return the time axis for the pointing data
+    '''
+    if 'TIMESTAMP' in self.pointing_data.keys():
+        return self.pointing_data['TIMESTAMP']
+
+    if axis in self.pointing_data.keys() and 'TIMESTAMP' in self.pointing_data[axis].keys():
+        return self.pointing_data[axis]['TIMESTAMP']
+
+    if not self.pointing_data['ok']:
+        self.printmsg('ERROR! No pointing data, or pointing data incomplete',verbosity=1)
+        return None
+
+    self.printmsg('Please specify a pointing axis')
+    return None
+
 def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None,gps_sample_offset=None):
     '''
     wrapper to return the time axis for data.

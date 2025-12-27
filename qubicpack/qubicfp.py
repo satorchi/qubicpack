@@ -69,7 +69,8 @@ class qubicfp:
         assign_temperature_labels
 
     from .timeline import\
-        timeaxis
+        timeaxis,\
+        pointing_timeaxis
 
     from .timestamping_diagnostic import\
         timestamp_diagnostic,\

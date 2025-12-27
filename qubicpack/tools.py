@@ -622,6 +622,9 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
 
     # assign bath temperature
     self.assign_bath_temperature()
+
+    # assign pointing data
+    self.assign_pointing_data(datadir)
     
     return True
 
@@ -1349,6 +1352,7 @@ def assign_pointing_data(self,datadir):
     we try in order of preference, and return when we've got it
     '''
     self.pointing_data = {}
+    self.pointing_data['ok'] = False
     for axis_name in axis_names:
         self.pointing_data[axis_name] = {}
         self.pointing_data[axis_name]['ok'] = False
@@ -1359,10 +1363,11 @@ def assign_pointing_data(self,datadir):
     if os.path.isfile(pointing_file):
         pointing_dat = read_pointing_bindat(pointing_file)
         self.pointing_data['TIMESTAMP'] =  pointing_dat['header'].TIMESTAMP
+        self.pointing_data['ok'] = pointing_dat['ok']
         for axisname in axis_names:
             self.pointing_data[axisname] = pointing_dat['data'][axisname][position_key]
             self.pointing_data[axisname]['ok'] = True
-            axis_n_ok += 1
+            axis_n_ok += 1        
         return pointing_dat['ok']
 
     # the red mount used at APC and in Salta 2018 to 2022
@@ -1376,7 +1381,8 @@ def assign_pointing_data(self,datadir):
             self.pointing_data['EL']['VALUE'] = self.elevation_redmount()
             self.pointing_data['EL']['ok'] = True
             axis_n_ok += 1
-        if axis_n_ok>0: return self.pointing_data['AZ']['ok'] and self.pointing_data['EL']['ok']
+        self.pointing_data['ok'] = self.pointing_data['AZ']['ok'] and self.pointing_data['EL']['ok']
+        if axis_n_ok>0: return self.pointing_data['ok']
 
     # pointing acquisition used with the observation mount raspberry pi "motor cortex"
     for axisname in axis_names:
@@ -1387,7 +1393,10 @@ def assign_pointing_data(self,datadir):
             self.pointing_data[axisname]['TIMESTAMP'] = axdat['TIMESTAMP']
             self.pointing_data[axisname]['ok'] = True
             axis_n_ok += 1
-    if axis_n_ok>=2: return True
+        
+        if axis_n_ok>=2:
+            self.pointing_data['ok'] = True
+            return pointing_data['ok']
 
     # the slow acquisition hack used with the motor cortex
     if 'EXTERN_HK' in self.hk.keys():
@@ -1403,10 +1412,12 @@ def assign_pointing_data(self,datadir):
                 self.pointing_data[axisname]['VALUE'] = self.hk['EXTERN_HK'][qskey]
                 self.pointing_data[axisname]['ok'] = True
                 axis_n_ok += 1
-        if axis_n_ok>0: return self.pointing_data['AZ']['ok'] and self.pointing_data['EL']['ok']
+        if axis_n_ok>0:
+            self.pointing_data['ok'] = self.pointing_data['AZ']['ok'] and self.pointing_data['EL']['ok']
+            return self.pointing_data['ok']
     
-    
-    return False
+    self.pointing_data['ok'] = False
+    return self.pointing_data['ok']
 
 def azimuth_redmount(self):
     '''

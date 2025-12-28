@@ -22,6 +22,8 @@ from qubicpack.pix2tes import assign_pix2tes,pix2tes,tes2pix
 from qubicpack.plot_fp import plot_fp
 from qubicpack.timestamping_diagnostic import pps2date
 
+from satorchipy.datefunctions import tstamp2dt, utcfromtimestamp
+
 def exist_timeline_data(self):
     '''
     check if we have timeline data
@@ -192,7 +194,7 @@ def timeline_computertime(self,timeline_index=None):
         if len(timeline_date)==0: return None
         # fix weirdness
         t = timeline_date[0]
-        utcoffset = t.timestamp() - dt.datetime.utcfromtimestamp(t.timestamp()).timestamp()
+        utcoffset = t.timestamp() - utcfromtimestamp(t.timestamp()).timestamp()
         timestamps = np.array( [(t.timestamp()+utcoffset) for t in timeline_date] )
         return timestamps
 
@@ -272,6 +274,15 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None,gps_sample_off
     the datatypes are the various hk or scientific
     '''
 
+    # first check if we want the pointing time axis
+    hktype = self.qubicstudio_hk_truename(datatype)
+    if hktype=='POINTING':
+        return self.pointing_timeaxis()
+    if hktype=='AZ':
+        return self.pointing_timeaxis(axis='AZ')
+    if hktype=='EL':
+        return self.pointing_timeaxis(axis='EL')
+    
     # valid axistypes in order of preference
     valid_axistypes = ['pps','timestamp','index','computertime']
     if axistype.lower() not in valid_axistypes:
@@ -280,6 +291,7 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None,gps_sample_off
     
     datatype = self.qubicstudio_filetype_truename(datatype)
     self.printmsg('timeaxis(): datatype=%s' % datatype,verbosity=3)
+    
     
     if datatype is None: datatype = 'ASIC_SUMS'
 
@@ -606,9 +618,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         ax.text(0.5,1.0,ttl+'\n'+subttl,va='bottom',ha='center',fontsize=fontsize,transform=ax.transAxes)
 
     # plot date instead of timestamp
-    time_axis_date = np.empty(len(time_axis),dtype=dt.datetime)
-    for idx,tstamp in enumerate(time_axis):
-        time_axis_date[idx] = dt.datetime.utcfromtimestamp(tstamp)
+    time_axis_date = tstamp2dt(time_axis)
     peak0_date = time_axis_date[ipeak0]
     peak1_date = time_axis_date[ipeak1]
     

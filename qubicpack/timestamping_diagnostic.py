@@ -252,7 +252,7 @@ def assign_default_gps_sample_offset(self):
     This should be called after reading a qubicstudio dataset
     '''
     self.default_gps_sample_offset = default_gps_sample_offset
-    if self.obsdate > dt.datetime.strptime('2023-02-01','%Y-%m-%d').replace(tzinfo=dt.UTC):
+    if self.obsdate > dt.datetime.strptime('2023-02-01','%Y-%m-%d').replace(tzinfo=dt.timezone.utc):
         if self.asic==2:
             self.default_gps_sample_offset = 10
 

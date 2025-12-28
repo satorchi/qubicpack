@@ -399,17 +399,17 @@ def guess_detector_name(self):
         self.printmsg('no observation date!')
         return self.detector_name
 
-    P73_lastdate = dt.datetime.strptime('2017-11-05','%Y-%m-%d').replace(tzinfo=dt.UTC)
+    P73_lastdate = dt.datetime.strptime('2017-11-05','%Y-%m-%d').replace(tzinfo=dt.timezone.utc)
     if self.obsdate<P73_lastdate:
         self.assign_detector_name('P73')
         return self.detector_name
 
-    P82_lastdate = dt.datetime.strptime('2017-11-30','%Y-%m-%d').replace(tzinfo=dt.UTC)
+    P82_lastdate = dt.datetime.strptime('2017-11-30','%Y-%m-%d').replace(tzinfo=dt.timezone.utc)
     if self.obsdate<P82_lastdate:
         self.assign_detector_name('P82')
         return self.detector_name
 
-    QS_firstdate=dt.datetime.strptime('2018-11-19','%Y-%m-%d').replace(tzinfo=dt.UTC)
+    QS_firstdate=dt.datetime.strptime('2018-11-19','%Y-%m-%d').replace(tzinfo=dt.timezone.utc)
     if self.datafiletype!='QP_FITS':
         if self.obsdate>QS_firstdate:            
             if self.asic==1 or self.asic==2:

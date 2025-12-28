@@ -18,20 +18,20 @@ import matplotlib.pyplot as plt
 from satorchipy.datefunctions import str2dt
 # on 6 Feb 2018, we reversed the wires for the ASICs
 # so now QubicStudio and the dilution fridge use the same ASIC designation
-asic_reversal_date = dt.datetime.strptime('2018-02-06 18:00','%Y-%m-%d %H:%M').replace(tzinfo=dt.UTC)
+asic_reversal_date = dt.datetime.strptime('2018-02-06 18:00','%Y-%m-%d %H:%M').replace(tzinfo=dt.timezone.utc)
 
 # on 27 Feb 2020, qubic-central was finally changed to UTC
-qc_utc_date = dt.datetime.strptime('2020-02-27 10:23:33','%Y-%m-%d %H:%M:%S').replace(tzinfo=dt.UTC)
+qc_utc_date = dt.datetime.strptime('2020-02-27 10:23:33','%Y-%m-%d %H:%M:%S').replace(tzinfo=dt.timezone.utc)
 
 # on 18 apr 2023, we implemented the observation mount used at Alto Chorillos
-obsmount_implemented = dt.datetime.strptime('2023-04-18 08:17:10','%Y-%m-%d %H:%M:%S').replace(tzinfo=dt.UTC)
+obsmount_implemented = dt.datetime.strptime('2023-04-18 08:17:10','%Y-%m-%d %H:%M:%S').replace(tzinfo=dt.timezone.utc)
 
 # since 17 Dec 2025, the PLC is controlling the observation mount.
-obsmount_plc_implemented = dt.datetime.strptime('2025-12-17 17:49:58','%Y-%m-%d %H:%M:%S').replace(tzinfo=dt.UTC)
+obsmount_plc_implemented = dt.datetime.strptime('2025-12-17 17:49:58','%Y-%m-%d %H:%M:%S').replace(tzinfo=dt.timezone.utc)
 
 # on, or about, 23 Nov 2022, the FPGA electronics were updated (photo of Fabrice and Damien R.)
 # there is a 180 degree phase difference between the PPS in ASIC-1 and ASIC-2
-fpga_pps_180phase_date = dt.datetime.strptime('2022-11-23 14:56:52','%Y-%m-%d %H:%M:%S').replace(tzinfo=dt.UTC)
+fpga_pps_180phase_date = dt.datetime.strptime('2022-11-23 14:56:52','%Y-%m-%d %H:%M:%S').replace(tzinfo=dt.timezone.utc)
 
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128
@@ -321,7 +321,7 @@ def read_compressor_log(filename):
         
     for line in lines:
         col = line.split(' ')
-        date = str2dt(col[0]).replace(tzinfo=dt.UTC)
+        date = str2dt(col[0]).replace(tzinfo=dt.timezone.utc)
         if date is None:continue
         tstamp = date.timestamp()
         keyval = None

@@ -959,7 +959,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         axsrc.text(0.5,1.01,self.calsource_infotext(),va='bottom',ha='center',fontsize=fontsize,transform=axsrc.transAxes)
         curves += curvesrc
 
-    if plot_azel:
+    if plot_azel and self.azimuth() is not None and self.elevation() is not None:
         az = self.azimuth()
         t_az = self.timeaxis(datatype='azimuth')
         d_az = tstamp2dt(t_az)

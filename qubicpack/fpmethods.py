@@ -12,6 +12,7 @@ methods for the QUBIC focal plane class qubicfp
 '''
 import numpy as np
 import datetime as dt
+TZUTC = dt.timezone.utc
 import sys,os,time,re
 from copy import copy
 
@@ -398,20 +399,20 @@ def read_qubicpack_fits(self,hdulist):
     
     self.datafiletype = 'QP_FITS'
     self.observer = hdulist[0].header['OBSERVER']
-    self.assign_obsdate(dt.datetime.strptime(hdulist[0].header['DATE-OBS'],'%Y-%m-%d %H:%M:%S UTC'))
+    self.assign_obsdate(dt.datetime.strptime(hdulist[0].header['DATE-OBS'],'%Y-%m-%d %H:%M:%S UTC').replace(tzinfo=TZUTC))
             
     asic_idx = hdulist[0].header['ASIC'] - 1
-    self.QubicStudio_ip=hdulist[0].header['QUBIC-IP']
+    self.QubicStudio_ip = hdulist[0].header['QUBIC-IP']
 
     if 'TES_TEMP' in hdulist[0].header.keys():
-        self.temperature=hdulist[0].header['TES_TEMP']
+        self.temperature = hdulist[0].header['TES_TEMP']
     else:
-        self.temperature=None
+        self.temperature = None
 
     if 'END-OBS' in hdulist[0].header.keys():
-        self.endobs=dt.datetime.strptime(hdulist[0].header['END-OBS'],'%Y-%m-%d %H:%M:%S UTC')
+        self.endobs = dt.datetime.strptime(hdulist[0].header['END-OBS'],'%Y-%m-%d %H:%M:%S UTC').replace(tzinfo=TZUTC)
     else:
-        self.endobs=None
+        self.endobs = None
 
     if 'DET_NAME' in hdulist[0].header.keys():
         self.assign_detector_name(hdulist[0].header['DET_NAME'])

@@ -15,6 +15,7 @@ tools for reading/writing and organizing data
 import numpy as np
 import sys,os,time,subprocess,struct,re
 import datetime as dt
+TZUTC = dt.timezone.utc
 from glob import glob
 import pickle
 from collections import OrderedDict
@@ -76,7 +77,7 @@ def read_date_from_filename(self,filename):
     '''
     try:
         datestr=filename.split('_')[-1].split('.')[0]
-        date=dt.datetime.strptime(datestr,'%Y%m%dT%H%M%SUTC').replace(tzinfo=dt.timezone.utc)
+        date=dt.datetime.strptime(datestr,'%Y%m%dT%H%M%SUTC').replace(tzinfo=TZUTC)
     except:
         date=None
     return date
@@ -357,7 +358,7 @@ def find_calsource(self,datadir):
     file_delta = 1e6
     for f in files:
         basename = os.path.basename(f)
-        file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.fits').replace(tzinfo=dt.timezone.utc)
+        file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.fits').replace(tzinfo=TZUTC)
         delta = (self.obsdate - file_date).total_seconds()
         if np.abs(delta)<file_delta:
             file_delta = np.abs(delta)
@@ -580,12 +581,12 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     if self.obsdate is None:
         # still unsuccessful, so try to get the date from the dataset name
         try:
-            self.obsdate = dt.datetime.strptime(self.dataset_name.split('__')[0],'%Y-%m-%d_%H.%M.%S').replace(tzinfo=dt.timezone.utc)
+            self.obsdate = dt.datetime.strptime(self.dataset_name.split('__')[0],'%Y-%m-%d_%H.%M.%S').replace(tzinfo=TZUTC)
             self.endobs = self.obsdate
             self.printmsg('Assigning observation date from dataset name',verbosity=2)
         except:
             self.printmsg('Error! Could not find an observation date.',verbosity=2)
-            self.obsdate = dt.datetime.strptime('2017-05-11T09:00:00','%Y-%m-%dT%H:%M:%S').replace(tzinfo=dt.timezone.utc)
+            self.obsdate = dt.datetime.strptime('2017-05-11T09:00:00','%Y-%m-%dT%H:%M:%S').replace(tzinfo=TZUTC)
             self.endobs = self.obsdate
 
     for asicobj in self.asic_list:
@@ -1047,7 +1048,7 @@ def read_qubicpack_fits(self,h):
 
     self.datafiletype='QP_FITS'
     self.observer=h[0].header['OBSERVER']
-    self.assign_obsdate(dt.datetime.strptime(h[0].header['DATE-OBS'],'%Y-%m-%d %H:%M:%S UTC').replace(tzinfo=dt.timezone.utc))
+    self.assign_obsdate(dt.datetime.strptime(h[0].header['DATE-OBS'],'%Y-%m-%d %H:%M:%S UTC').replace(tzinfo=TZUTC))
             
     self.nsamples=h[0].header['NSAMPLES']
     if self.nsamples=='': self.nsamples=100 # data from 12/13 July 2017
@@ -1072,7 +1073,7 @@ def read_qubicpack_fits(self,h):
         self.temperature=None
 
     if 'END-OBS' in h[0].header.keys():
-        self.endobs=dt.datetime.strptime(h[0].header['END-OBS'],'%Y-%m-%d %H:%M:%S UTC').replace(tzinfo=dt.timezone.utc)
+        self.endobs=dt.datetime.strptime(h[0].header['END-OBS'],'%Y-%m-%d %H:%M:%S UTC').replace(tzinfo=TZUTC)
     else:
         self.endobs=None
 
@@ -1176,7 +1177,7 @@ def read_qubicpack_fits(self,h):
             for keyword in self.fitsblurbs.keys():
                 if keyword in hdu.header.keys():
                     if keyword=='DATE-OBS' or keyword=='END-OBS':
-                        val=dt.datetime.strptime(hdu.header[keyword],'%Y-%m-%d %H:%M:%S UTC').replace(tzinfo=dt.timezone.utc)
+                        val=dt.datetime.strptime(hdu.header[keyword],'%Y-%m-%d %H:%M:%S UTC').replace(tzinfo=TZUTC)
                     else:
                         val=hdu.header[keyword]
                     if val=='':val=None

@@ -20,6 +20,8 @@ from qubicpack.plot_fp import plot_fp
 from qubicpack.utilities import NPIXELS,TES_index
 from qubicpack.pixel_translation import make_id_focalplane
 
+from satorchipy.datefunctions import tstamp2dt, utcfromtimestamp
+
 def assign_defaults(self):
     '''default values for object variables
     '''
@@ -85,7 +87,7 @@ def calsource_oldinfo(self):
 
     if 'timestamp' in conf.keys():
         info_tstamp = conf['timestamp'][0]
-        info_date = dt.datetime.utcfromtimestamp(info_tstamp)
+        info_date = utcfromtimestamp(info_tstamp)
         info['date'] = info_date
     else:
         info['date'] = None
@@ -185,7 +187,7 @@ def calsource_info(self):
     info = {}
 
     info_tstamp = float(info_rawlist[0])
-    info_date = dt.datetime.utcfromtimestamp(info_tstamp)
+    info_date = utcfromtimestamp(info_tstamp)
     info['date'] = info_date
 
     for dev in device_list:
@@ -951,9 +953,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
     fig = ax.get_figure()
     if plot_calsource:
         t_src,v_src = self.calsource()
-        d_src = np.empty(len(t_src),dtype=dt.datetime)
-        for idx,tstamp in enumerate(t_src):
-            d_src[idx] = dt.datetime.utcfromtimestamp(tstamp)            
+        d_src = tstamp2dt(t_src)
         axsrc = ax.twinx()
         curvesrc = axsrc.plot(d_src,-v_src,color='red',label='calibration source')
         axsrc.text(0.5,1.01,self.calsource_infotext(),va='bottom',ha='center',fontsize=fontsize,transform=axsrc.transAxes)
@@ -961,20 +961,20 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
 
     if plot_azel:
         az = self.azimuth()
+        t_az = self.timeaxis(datatype='azimuth')
+        d_az = tstamp2dt(t_az)
         el = self.elevation()
-        t_hk = self.timeaxis(datatype='platform')
-        d_hk = np.empty(len(t_hk),dtype=dt.datetime)
-        for idx,tstamp in enumerate(t_hk):
-            d_hk[idx] = dt.datetime.utcfromtimestamp(tstamp)            
+        t_el = self.timeaxis(datatype='elevation')
+        d_el = tstamp2dt(t_el)
         
         axaz = ax.twinx()
-        curves += axaz.plot(d_hk,az,color='red',label='azimuth')
+        curves += axaz.plot(d_az,az,color='red',label='azimuth')
         axaz.tick_params(axis='y',labelcolor='red')
         axaz.set_ylim(az.min(),az.max())
         axaz.set_ylabel('azimuth',rotation=270,ha='right',va='bottom',color='red')
 
         axel = ax.twinx()
-        curves += axel.plot(d_hk,el,color='green',label='elevation')
+        curves += axel.plot(d_el,el,color='green',label='elevation')
         axel.tick_params(axis='y',labelcolor='green',pad=80)
         axel.set_ylim(el.min(),el.max())
         axel.set_ylabel('elevation',rotation=270,ha='left',va='bottom',color='green')
@@ -982,9 +982,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
     if plot_Tbath:
         Tbath = self.Tbath[1]
         t_Tbath = self.Tbath[0]
-        d_Tbath = np.empty(len(t_Tbath),dtype=dt.datetime)
-        for idx,tstamp in enumerate(t_Tbath):
-            d_Tbath[idx] = dt.datetime.utcfromtimestamp(tstamp)            
+        d_Tbath = tstamp2dt(t_Tbath)
         
         axbath = ax.twinx()
         curves += axbath.plot(d_Tbath,Tbath,color='magenta',label='T$_\\mathrm{bath}$')
@@ -995,9 +993,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
     if plot_hwp:
         hwp = self.hwp_position()
         t_hwp = self.timeaxis(datatype='hwp')
-        d_hwp = np.empty(len(t_hwp),dtype=dt.datetime)
-        for idx,tstamp in enumerate(t_hwp):
-            d_hwp[idx] = dt.datetime.utcfromtimestamp(tstamp)            
+        d_hwp = tstamp2dt(t_hwp)
         
         axhwp = ax.twinx()
         curves += axhwp.plot(d_hwp,hwp,color='purple',label='HWP')

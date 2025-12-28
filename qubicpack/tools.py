@@ -21,6 +21,7 @@ from collections import OrderedDict
 from astropy.io import fits as pyfits
 from qubicpack.utilities import obsmount_implemented, obsmount_plc_implemented, read_obsmount_bindat, interpret_rawmask
 from qubicpack.pointing import read_pointing_bindat, position_key, axis_names
+from satorchipy.datefunctions import utcnow, utcfromtimestamp
 
 qubicasic_hk_keys = ['Apol',
                      'CN',
@@ -55,7 +56,7 @@ qubicasic_hk_keys = ['Apol',
 def debugmsg(self,msg,verbosity=3):
     if verbosity<=self.verbosity:
         if self.logfile is None:
-            print('DEBUG %s : %s' % (dt.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),msg))
+            print('DEBUG %s : %s' % (utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),msg))
         else:
             self.writelog('DEBUG: %s' % msg)
     return
@@ -192,7 +193,7 @@ def write_fits(self):
         fitsfile_fullpath=self.output_filename(fitsfile)
         if os.path.exists(fitsfile_fullpath):
             self.printmsg('file already exists! %s' % fitsfile_fullpath)
-            fitsfile=dt.datetime.utcnow().strftime('resaved-%Y%m%dT%H%M%SUTC__')+fitsfile
+            fitsfile=utcnow().strftime('resaved-%Y%m%dT%H%M%SUTC__')+fitsfile
             fitsfile_fullpath=self.output_filename(fitsfile)
             self.printmsg('instead, saving to file: %s' % fitsfile_fullpath)
 
@@ -220,7 +221,7 @@ def write_fits(self):
         fitsfile_fullpath=self.output_filename(fitsfile)
         if os.path.exists(fitsfile_fullpath):
             self.printmsg('file already exists! %s' % fitsfile_fullpath)
-            fitsfile=dt.datetime.utcnow().strftime('resaved-%Y%m%dT%H%M%SUTC__')+fitsfile
+            fitsfile=utcnow().strftime('resaved-%Y%m%dT%H%M%SUTC__')+fitsfile
             fitsfile_fullpath=self.output_filename(fitsfile)
             self.printmsg('instead, saving to file: %s' % fitsfile_fullpath)
 
@@ -458,7 +459,7 @@ def assign_bath_temperature(self):
 
     # filter spike artefacts in the HK data
     if testemp is not None:
-        idxok = (testemp<0.5) & (testemp>0) & (hktstamps<dt.datetime.utcnow().timestamp())
+        idxok = (testemp<0.5) & (testemp>0) & (hktstamps<utcnow().timestamp())
         if idxok.sum()==0:
             idxok = (testemp<300) & (testemp>0)
 
@@ -471,7 +472,7 @@ def assign_bath_temperature(self):
                 temperature = 1e-3*float(tempstr)
                 testemp = np.array([temperature])
                 idxok = np.array([True])
-                utcoffset = self.obsdate.timestamp() - dt.datetime.utcfromtimestamp(self.obsdate.timestamp()).timestamp()
+                utcoffset = self.obsdate.timestamp() - utcfromtimestamp(self.obsdate.timestamp()).timestamp()
                 hktstamps = np.array([self.obsdate.timestamp()+utcoffset])
                 self.temperature = temperature                
                 self.printmsg('Assigning TES temperature from the dataset name: %.1fmK' % (1000*self.temperature),verbosity=1)
@@ -570,8 +571,8 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
         if self.hk is not None:
             for hktype in self.hk.keys():
                 if 'ComputerDate' in self.hk[hktype].keys():
-                    self.obsdate = dt.datetime.fromtimestamp(self.hk[hktype]['ComputerDate'][0])
-                    self.endobs = dt.datetime.fromtimestamp(self.hk[hktype]['ComputerDate'][-1])
+                    self.obsdate = utcfromtimestamp(self.hk[hktype]['ComputerDate'][0])
+                    self.endobs = utcfromtimestamp(self.hk[hktype]['ComputerDate'][-1])
         else:    
             self.printmsg('Error! No HK Data!',verbosity=1)
 
@@ -738,7 +739,7 @@ def read_qubicstudio_science_fits(self,hdu):
         self.printmsg('storing new timeline data for ASIC %i' % asic,verbosity=2)
     else: # multi file data set
         tstamp_start = 0.001*hdu.data.field(0)[0]
-        start_str = dt.datetime.utcfromtimestamp(tstamp_start).strftime('%Y-%m-%d %H:%M:%S')
+        start_str = utcfromtimestamp(tstamp_start).strftime('%Y-%m-%d %H:%M:%S')
         tstamp_end = 0.001*hdu.data.field(0)[-1]
         self.printmsg('concatenating detector timeline data to pre-existing timeline: starting at %s' % start_str,verbosity=2)
         tdata['TIMELINE'] = np.concatenate((tdata['TIMELINE'],adu),axis=1)
@@ -823,7 +824,7 @@ def read_qubicstudio_science_fits(self,hdu):
                                                  
         
     for tstamp in timestamp:
-        dateobs.append(dt.datetime.utcfromtimestamp(tstamp))
+        dateobs.append(utcfromtimestamp(tstamp))
 
     if 'DATE-OBS' not in tdata.keys():
         tdata['DATE-OBS'] = dateobs
@@ -895,7 +896,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
         tdata['WARNING'].append(msg)
     npts = len(timestamp)
     for tstamp in timestamp:
-        dateobs.append(dt.datetime.utcfromtimestamp(tstamp))
+        dateobs.append(utcfromtimestamp(tstamp))
     if npts==0:
         tdata['ASICDATE'] = None
         tdata['BEGASIC%i' % asic] = None
@@ -1226,7 +1227,7 @@ def writelog(self,msg):
     if self.logfile is None: self.assign_logfile()
     
     handle=open(self.logfile,'a')
-    timestamp=dt.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC -- ')
+    timestamp=utcnow().strftime('%Y-%m-%d %H:%M:%S UTC -- ')
     handle.write(timestamp+msg+'\n')
     handle.close()
     self.printmsg(timestamp+msg)
@@ -1360,6 +1361,7 @@ def assign_pointing_data(self,datadir):
 
     # pointing acquisition with observation mount PLC implemented December 2025
     pointing_file = os.sep.join([datadir,'Hks','POINTING.dat'])
+    self.printmsg('Looking for %s' % pointing_file,verbosity=3)
     if os.path.isfile(pointing_file):
         pointing_dat = read_pointing_bindat(pointing_file)
         self.pointing_data['TIMESTAMP'] =  pointing_dat['header'].TIMESTAMP
@@ -1371,6 +1373,7 @@ def assign_pointing_data(self,datadir):
         return pointing_dat['ok']
 
     # the red mount used at APC and in Salta 2018 to 2022
+    self.printmsg('Looking for redmount pointing data',verbosity=3)
     if 'INTERN_HK' in self.hk.keys():
         self.pointing_data['TIMESTAMP'] = self.timeaxis(datatype='INTERN_HK')
         if 'Platform-Azimut' in self.hk['INTERN_HK'].keys():
@@ -1387,6 +1390,7 @@ def assign_pointing_data(self,datadir):
     # pointing acquisition used with the observation mount raspberry pi "motor cortex"
     for axisname in axis_names:
         pointing_file = os.sep.join([datadir,'Hks','%s.dat' % axisname])
+        self.printmsg('Looking for pointing data: %s' % pointing_file,verbosity=3)
         if os.path.isfile(pointing_file):
             axdat = read_obsmount_bindat(pointing_file)
             self.pointing_data[axisname]['VALUE'] = axdat['VALUE']
@@ -1396,9 +1400,10 @@ def assign_pointing_data(self,datadir):
         
         if axis_n_ok>=2:
             self.pointing_data['ok'] = True
-            return pointing_data['ok']
+            return self.pointing_data['ok']
 
     # the slow acquisition hack used with the motor cortex
+    self.printmsg('Looking for pointing data in EXTERN_HK',verbosity=3)
     if 'EXTERN_HK' in self.hk.keys():
         self.pointing_data['TIMESTAMP'] = self.timeaxis(datatype='EXTERN_HK')
         qskeys = {'AZ': 'Pressure_6',
@@ -1444,7 +1449,7 @@ def azimuth_cortex(self):
     '''
     hktype = 'EXTERN_HK'
     if hktype not in self.hk.keys():
-        self.printmsg('No platform data!')
+        self.printmsg('No position data!')
         return None
 
     azkey = 'Pressure_6' # a bit of trickery here while waiting for QS to be upgraded
@@ -1491,7 +1496,7 @@ def elevation_cortex(self):
     '''    
     hktype = 'EXTERN_HK'
     if hktype not in self.hk.keys():
-        self.printmsg('No platform data!')
+        self.printmsg('No position data!')
         return None
 
     elkey = 'Pressure_7' # a bit of trickery here while waiting for QS to be upgraded
@@ -1646,10 +1651,7 @@ def qubicstudio_filetype_truename(self,ftype,asic=None):
     self.printmsg('DEBUG: calling filetype_truename with ftype=%s' % ftype,verbosity=4)
     if ftype is None: return None
     if ftype.upper() == 'PLATFORM' or ftype.upper().find('AZ')==0 or ftype.upper().find('EL')==0:
-        if self.obsdate < obsmount_implemented:
-            return 'INTERN_HK'
-        else:
-            return 'EXTERN_HK'
+        return 'POINTING'
         
     if ftype.upper() == 'HK': return 'INTERN_HK'
     if ftype.upper().find('HWP')==0: return 'INTERN_HK'
@@ -1704,17 +1706,12 @@ def qubicstudio_hk_truename(self,hktype):
     hktype_upper = hktype.upper()
     if hktype_upper == 'SWITCH1': return 'RFSwitch 1 closed'
     if hktype_upper == 'SWITCH2': return 'RFSwitch 2 closed'
-    if hktype_upper == 'AZ':
-        if self.obsdate < obsmount_implemented:
-            return 'Platform-Azimut'
-        else:
-            return 'Pressure_6'
-        
-    if hktype_upper == 'EL':
-        if self.obsdate < obsmount_implemented:
-            return 'Platform-Elevation'
-        else:
-            return 'Pressure_7'
+
+    if hktype_upper == 'PLATFORM': return 'POINTING'
+    if hktype_upper.find('AZ')==0: return 'AZ'
+    if hktype_upper.find('EL')==0: return 'EL'
+    if hktype_upper.find('RO')==0: return 'POINTING'
+    if hktype_upper.find('TR')==0: return 'POINTING'
         
     if hktype_upper.find('AV')==0: return hktype_upper
     if hktype_upper == 'CALSOURCE': return 'CALSOURCE'

@@ -19,6 +19,7 @@ import matplotlib
 from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index
 from qubicpack.pix2tes import assign_pix_grid, assign_pix2tes, tes2pix, pix2tes, TES2PIX
 from qubicpack import __file__
+from satorchipy.datefunctions import utcnow
 
 ### the rest of the defs are methods of the qubicasic object
 
@@ -273,7 +274,7 @@ def assign_obsdate(self,d=None):
     '''
     global TES2PIX
     if not isinstance(d,dt.datetime):
-        self.obsdate=dt.datetime.utcnow()
+        self.obsdate=utcnow()
     else:
         self.obsdate=d
 
@@ -304,7 +305,7 @@ def assign_datadir(self,d=None):
     if isinstance(d,str): datadirs=[d]+datadirs
 
     # make sure we have write permission
-    tmpfile=dt.datetime.utcnow().strftime('tmpFile_%Y%m%dT%M%H%S.%f.UTC.tmp')
+    tmpfile=utcnow().strftime('tmpFile_%Y%m%dT%M%H%S.%f.UTC.tmp')
     tmpdir_ok=False
     for datadir in datadirs:
         try:
@@ -398,7 +399,7 @@ def guess_detector_name(self):
         self.printmsg('no observation date!')
         return self.detector_name
 
-    P73_lastdate = dt.datetime.strptime('2017-11-05','%Y-%m-%d')
+    P73_lastdate = dt.datetime.strptime('2017-11-05','%Y-%m-%d').replace(tzone=dt.UTC)
     if self.obsdate<P73_lastdate:
         self.assign_detector_name('P73')
         return self.detector_name
@@ -424,7 +425,7 @@ def assign_logfile(self,rootname=None):
     '''
     if rootname is None:rootname='logfile'
     
-    logfile='QUBIC_%s_%s.txt' % (rootname,dt.datetime.utcnow().strftime('%Y%m%dT%H%M%SUTC'))
+    logfile='QUBIC_%s_%s.txt' % (rootname,utcnow().strftime('%Y%m%dT%H%M%SUTC'))
     logfile_fullpath=self.output_filename(logfile)
     self.logfile=logfile_fullpath
     return self.logfile

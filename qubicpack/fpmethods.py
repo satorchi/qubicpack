@@ -815,6 +815,11 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
 
     units can be:  ADU, Watts, Amps
     '''
+    if indextype.upper().find('QS')==0:
+        is_QSindex = True
+    else:
+        is_QSindex = False
+    
     if units.upper().find('AM')==0:
         unit_type = 'Amp'
     elif units.upper().find('W')==0:
@@ -866,12 +871,20 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
 
     # prepare the numpy array
     n_asics = copy(asic_ctr)
-    if indextype.upper().find('QS')==0:
+    n_alldets = n_asics*NPIXELS
+    if is_QSindex:
         ndets = n_asics*124
     else:
-        ndets = n_asics*NPIXELS
+        ndets = n_alldets
     todarray = np.empty((ndets,nsamples),dtype=float)
     todarray[:] = np.nan
+
+    # the number of dark pixels to be returned as the third item in the tuple
+    n_darkpix = n_alldets - ndets
+    if n_darkpix > 0:
+        darkpix_array = np.empty((n_darkpix,nsamples),dtype=float)
+    else:
+        darkpix_array = None
 
     self.printmsg('number of ASICs with data: %i' % asic_ctr,verbosity=3)
             
@@ -893,23 +906,33 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
             
         
         tstamps = timeaxis_list[asic_ctr-1]
+        darkpix_idx = 0
         for TESidx in range(NPIXELS):
             TESnum = TESidx + 1
-            if indextype.upper().find('QS')==0:
+            if is_QSindex:
                 mask = (FPidentity.ASIC==asic) & (FPidentity.TES==TESnum)
-                if mask.sum()!=1:
-                    self.printmsg('ERROR! Dark pixel? Could not find the index for ASIC%02i TES%03i' % (asic,TESnum),verbosity=3)
+                if mask.sum()>1:
+                    self.printmsg('ERROR! Multiple QSindex returned for ASIC%02i TES%03i' % (asic,TESnum),verbosity=3)
                     continue
-                QSindex = FPidentity.QSindex[mask][0]
-                self.printmsg('tod(): QSindex=%i' % QSindex,verbosity=3)
-                tod_index = QSindex - QSoffset
+                if mask.sum()==0:
+                    tod_index = None
+                else:
+                    QSindex = FPidentity.QSindex[mask][0]
+                    self.printmsg('tod(): QSindex=%i' % QSindex,verbosity=3)
+                    tod_index = QSindex - QSoffset
             else:
                 tod_index = (asic_ctr-1)*NPIXELS+TESidx
-            self.printmsg('tod(): tod_index = %03i' % tod_index,verbosity=3)
+                
             tline_interp = np.interp(t_tod, tstamps, tline_array[TESidx,:])
-            todarray[tod_index,:] = tline_interp            
+            if tod_index is None:
+                self.printmsg('tod(): darkpix_index = %03i' % darkpix_idx,verbosity=3)
+                darkpix_array[darkpix_idx,:] = tline_interp
+                darkpix_idx += 1
+            else:
+                self.printmsg('tod(): tod_index = %03i' % tod_index,verbosity=3)
+                todarray[tod_index,:] = tline_interp            
 
-    return (t_tod,todarray)
+    return (t_tod,todarray,darkpix_array)
 
 def timeline(self,TES=None,asic=None):
     '''

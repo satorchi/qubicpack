@@ -932,6 +932,10 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
                 self.printmsg('tod(): tod_index = %03i' % tod_index,verbosity=3)
                 todarray[tod_index,:] = tline_interp            
 
+    # for compatibility with scripts already done in qubicsoft, we return only the tuple of 2 items of indextype is TES
+    if darkpix_array is None:
+        return (t_tod,todarray)
+    
     return (t_tod,todarray,darkpix_array)
 
 def timeline(self,TES=None,asic=None):

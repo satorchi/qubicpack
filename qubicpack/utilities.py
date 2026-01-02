@@ -32,7 +32,8 @@ obsmount_plc_implemented = dt.datetime.strptime('2025-12-17 17:49:58','%Y-%m-%d 
 
 # on, or about, 23 Nov 2022, the FPGA electronics were updated (photo of Fabrice and Damien R.)
 # there is a 180 degree phase difference between the PPS in ASIC-1 and ASIC-2
-fpga_pps_180phase_date = dt.datetime.strptime('2022-11-23 14:56:52','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
+# It was 8 Feb 2023: https://elog-qubic.in2p3.fr/demo/967
+fpga_pps_180phase_date = dt.datetime.strptime('2023-02-08 11:21:19','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
 
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128

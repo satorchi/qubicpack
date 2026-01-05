@@ -17,6 +17,7 @@ import h5py
 from satorchipy.datefunctions import utcnow
 from .flags import nflags, flag_definition
 
+# explanatory notes for the primary header
 hdr_comment = {}
 hdr_comment['TELESCOP'] ='Telescope used for the observation'
 hdr_comment['FILETYPE'] = 'File identification'
@@ -28,10 +29,21 @@ hdr_comment['INDXTYPE'] = 'index ordering: QUBICSOFT or TES'
 hdr_comment['INFOINDX'] = 'link to more details about index ordering'
 hdr_comment['INFO_FMT'] = 'link to more details about QUBIC Level1 data format'
 hdr_comment['INFODSET'] = 'link to more details about this dataset'
-
 hdr_keys = hdr_comment.keys()
 
+# explanatory notes for the housekeeping header
+hk_comment = {}
+hk_comment['COMMENT'] = "all housekeeping data has been interpolated to the same time axis"
+hk_comment['TBATH'] = "The bolometer bath temperature should be around 320mK"
+hk_comment['1K Stage'] = "The 1K stage should be around 1.1K"
+hk_comment['HWP'] = "Half Wave Plate position"
+hk_comment['AZIMUTH'] = "telescope azimuth pointing in degrees"
+hk_comment['ELEVATION'] = "telescope elevation pointing in degrees"
+hk_comment['ROTATION'] = "telescope bore-sight rotation angle in degrees"
+hk_keys = hk_comment.keys()
+
 def write_level1_header(self,handle,
+                        filename='UNNAMED.hdf5',
                         indextype='QUBICSOFT',
                         units='Watt',
                         infolink='https://qubic.in2p3.fr/wiki/TD/DatasetDetails'):
@@ -47,7 +59,7 @@ def write_level1_header(self,handle,
     hdr['FILEDATE'] = utcnow().strftime('%Y-%m-%dT%H:%M:%S')
     hdr['DATASET'] = self.dataset_name
     hdr['UNITS'] = units
-    hdr['FILENAME'] = filename+filename_suffix
+    hdr['FILENAME'] = filename
     if indextype.upper().find('Q')>=0:
         hdr['INDXTYPE'] = 'QUBICSOFT'
     else:
@@ -72,6 +84,18 @@ def write_level1_header(self,handle,
     
     return
 
+def write_level1_housekeeping_header(self,handle):
+    '''
+    write some explanatory information about the housekeeping data    
+    '''
+
+    hkgrp = handle.create_group('HOUSEKEEPING')
+    for key in hk_comment.keys():
+        hkgrp.attrs[key] = hk_comment[key]
+
+    return hkgrp
+    
+
 def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic.in2p3.fr/wiki/TD/DatasetDetails',savepath=None):
     '''
     write a HDF5 file with Level-1 data
@@ -86,22 +110,23 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic
     
     # initialize
     filename_suffix = '_level1.hdf5'
-    filename = self.dataset_name
+    filename = self.dataset_name+filename_suffix
+    basename = os.path.basename(filename)
     if savepath is None: # save in current directory
         savepath = '.'
 
-    filename_fullpath = os.sep.join([savepath,filename+filename_suffix])
+    filename_fullpath = os.sep.join([savepath,filename])
     try:
-        handle = h5py.open(filename_fullpath,'w')
+        handle = h5py.File(filename_fullpath,'w')
     except:
         print('ERROR! Could not create file: %s' % filename_fullpath)
         return None
 
     # write the primary header
-    self.write_level1_header(handle,indextype,units,infolink)
+    self.write_level1_header(handle,basename,indextype,units,infolink)
 
     # create a group for the science data
-    scigrp = h.create_group('SCIENCE DATA')
+    scigrp = handle.create_group('SCIENCE DATA')
     
     # scigrp contains the level-1 array and the flagarray
     # with indextype=QS, the dark pixels are in a separate array
@@ -125,19 +150,62 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic
     flag_array = self.assign_flags(indextype,t_tod)
 
     # write flags
-    scigrp.create_dataset('FLAGS',data=flagarray)
+    scigrp.create_dataset('FLAGS',data=flag_array)
 
     
     # make another group with the housekeeping data
-    # 300mK stage Temperature
-    # 1K stage Temperature
-    # HWP position
-    # azimuth
-    # elevation
-    # bore sight rotation
+    hkgrp = self.write_level1_housekeeping_header(handle)
+
+    # make a list of all the time axes, and interpolate all to the one with the largest number of samples
+    hk = {}
+    nsamples_list = []
+    tstamp_start_list = []
+    tstamp_end_list = []
+
+    # bath temperature
+    timeaxis = self.Tbath[0]
+    if timeaxis is not None:
+        hk['TBATH'] = (timeaxis,self.Tbath[1])
+        nsamples_list.append(len(timeaxis))
+        tstamp_start_list.append(timeaxis[0])
+        tstamp_end_list.append(timeaxis[-1])
+        
+    for key in hk_keys:
+        if key=='COMMENT': continue
+        if key=='TBATH': continue # special case because there are multiple sensors. already done above.
+        val = self.get_hk(key)
+        if val is not None:
+            timeaxis = self.timeaxis(datatype=key)
+            hk[key] = (timeaxis,val)
+            nsamples_list.append(len(timeaxis))
+            tstamp_start_list.append(timeaxis[0])
+            tstamp_end_list.append(timeaxis[-1])            
+
+    tstamp_start = min(tstamp_start_list)
+    tstamp_end = max(tstamp_end_list)
+    nsamples = max(nsamples_list)
+
+    t_interp = tstamp_start + (tstamp_end-tstamp_start)*np.arange(nsamples)/(nsamples-1)
+    hkgrp.create_dataset('TIMESTAMP',data=t_interp)
+    for key in hk.keys():
+        val_interp = np.interp(t_interp, hk[key][0], hk[key][1])
+        self.printmsg('write_level1: hk val_interp shape=%s' % (str(val_interp.shape)),verbosity=3)
+        hkgrp.create_dataset(key,data=val_interp)
+
+    # add a comment if data is missing
+    for key in hk_keys:
+        if key=='COMMENT': continue
+        if key not in hk.keys():
+            error_key = 'ERROR! %s'
+            hkgrp.attrs[error_key] = 'ERROR! No data for %s' % key
+    
+
+
+    # !!! TO BE IMPLEMENTED !!!
     # calsource info and value interpolated to data time axis
     # carbon fibre parameters
     # horn status
+    
     
     # write the file
     handle.close()

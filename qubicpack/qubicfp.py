@@ -156,10 +156,13 @@ class qubicfp:
         write_iv_fits
 
     from .level1.filetools import\
-        write_level1
+        write_level1,\
+        write_level1_header,\
+        write_level1_housekeeping_header
 
     from .level1.assign_flags import\
-        assign_flags
+        assign_flags,\
+        assign_temperature_flags
     
     def __init__(self):
 

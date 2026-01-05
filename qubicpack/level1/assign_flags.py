@@ -11,6 +11,8 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 assign the flags for the TOD
 '''
 import numpy as np
+from ..utilities import NPIXELS
+from ..pixel_translation import qsIndexes_within_TESorder
 from .flags import interpolate_flags, set_flag
 from .saturation import assign_saturation_flags
 
@@ -31,10 +33,13 @@ def assign_temperature_flags(self,timeaxis,flag_array):
     if Tbath is not None:
         Tbath_interp = np.interp(timeaxis,timeaxis_Tbath,Tbath)
 
-        for T_limit in [0.350,0.340,0.320]:
+        for T_limit in [0.350,0.340,0.330]:
             mask = Tbath_interp>T_limit
             flagname = 'bath temperature above %.0fmK' % (1000*T_limit)
-            flag_array[mask] = set_flag(flagname,flag_array[mask])
+            self.printmsg('assign_temperature_flags: flagname=%s' % flagname,verbosity=3)
+            self.printmsg('flag_array shape: %s' % (str(flag_array.shape)),verbosity=3)
+            self.printmsg('mask shape: %s' % (str(mask.shape)),verbosity=3)
+            flag_array[:,mask] = set_flag(flagname,flag_array[:,mask])
 
 
     # flags for 1K Stage
@@ -46,13 +51,13 @@ def assign_temperature_flags(self,timeaxis,flag_array):
         for T_limit in [1.3,1.2,1.1]:
             mask = T_interp>T_limit
             flagname = '1K temperature above %.1fK' % (T_limit)
-            flag_array[mask] = set_flag(flagname,flag_array[mask])
+            flag_array[:,mask] = set_flag(flagname,flag_array[:,mask])
     
     
     return flag_array
     
 
-def assign_flags(self,indextype='TES',t_tod=None,flag_array=None):
+def assign_flags(self,indextype='TES',t_tod=None):
     '''
     assign the flags
     '''
@@ -88,11 +93,37 @@ def assign_flags(self,indextype='TES',t_tod=None,flag_array=None):
         # asic_flag_array = assign_cosmicray_flags(timeline_array,asic_flag_array)
 
         if do_interpolate:
-            flag_list.append( interpolate_flags(timeaxis,t_tod,asic_flag_array) )
+            flags_interp = interpolate_flags(timeaxis,t_tod,asic_flag_array)
+            print('interpolated flags shape: %s' % (str(flags_interp.shape)))
+            flag_list.append( flags_interp )
         else:
             flag_list.append(asic_flag_array)
             
     # assign flags for temperature limits
+    if do_interpolate:
+        flag_array = np.array( flag_list ).reshape(NPIXELS*asic_ctr,npts_interp)
+        flag_array = self.assign_temperature_flags(t_tod,flag_array)
+        
+        if is_QSindex:
+            qsIndexes,TESmask = self.qsIndexes_within_TESorder()
+            flag_array = flag_array[TESmask,:][qsIndexes,:]
+        return flag_array
 
+    # flags per asic
+    asic_ctr = 0
+    temperature_flag_list = []
+    for asicobj in self.asic_list:
+        if asicobj is None: continue
+        asic_ctr += 1
+        idx = asic_ctr - 1
+        timeaxis = asicobj.timeaxis()
+        asic_flag_array = self.assign_temperature_flags(timeaxis,flag_list[idx])
+        temperature_flag_list.append(asic_flag_array)
+    flag_list = temperature_flag_list
+        
+    if is_QSindex:
+        print("It doesn't make sense to demand QS indexes without interpolation.")
+        print("Please, call assign_flags() with a desired timeaxis for interpolation")
+    
+    return flag_list
 
-    return

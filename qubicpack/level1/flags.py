@@ -100,12 +100,23 @@ def interpolate_flags(timeaxis,t_tod,flag_array):
     
     # function to interpolate extrapolating from previous value
     interp_prev_func = interp1d(timeaxis,flag_array,kind='previous',fill_value='extrapolate')
+    interp_prev = interp_prev_func(t_tod)
+    mask = (interp_prev>=0)
+    mask = ~mask
+    if mask.sum()>0:
+        print('There are nans in interp_prev')
+
 
     # function to interpolate extrapolating from next value
     interp_next_func = interp1d(timeaxis,flag_array,kind='next',fill_value='extrapolate')
+    interp_next = interp_next_func(t_tod)
+    mask = (interp_next>=0)
+    mask = ~mask
+    if mask.sum()>0:
+        print('There are nans in interp_next')
 
     # take the worst flag of the two interpolations
-    flag_interps = np.array( [interp_prev_func(t_tod), interp_next_func(t_tod)] )            
-    flag_array_interp = np.max(flag_interps,axis=0)
+    flag_interps = np.array( [interp_prev, interp_next] )            
+    flag_array_interp = np.nanmax(flag_interps,axis=0)
     return flag_array_interp
 

@@ -117,6 +117,9 @@ class qubicfp:
         make_iv_tex_report,\
         make_iv_report
 
+    from .pixel_translation import\
+        qsIndexes_within_TESorder
+
 
     from .iv import\
         ADU2I

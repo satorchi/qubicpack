@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 from astropy.io import fits
 
 from qubicpack.pix2tes import assign_tes_grid, tes2pix
-from qubicpack.utilities import figure_window_title
+from qubicpack.utilities import figure_window_title, NPIXELS
 quadrant_colour = ['blue','red','green','purple']
 asic_colour = ['green','#00cc00','purple','#7210a7','blue','darkblue','red','#cc0000']
 FPidentity = None
@@ -476,3 +476,38 @@ def make_qubicsoft_detarray_fits(config='TD',detector=None,fp=None):
     
     return
 
+def qsIndexes_within_TESorder(self):
+    '''
+    make an array of TES indexes in the order of QubicSoft indexes
+
+    This gives an array the size of the number of detectors in the focal plane (248 for the TD)
+    The elements in the array are TES indexes (not TES numbers)
+    In order to use this, take the timeline_array, mask out the dark pixels, and then apply the QS index order
+    For example:
+    QS_timeline_array = TES_timeline_array[TESmask,:][qsIndexes,:]
+    '''
+    FPidentity = make_id_focalplane()
+    
+    qsIndex_list = []
+    TESmask_list = []
+    asic_ctr = 0
+    for asic_idx,asicobj in enumerate(self.asic_list):
+        if asicobj is None: continue
+        asic_ctr += 1
+        asic_num = asic_idx + 1
+        TESmask = np.ones(NPIXELS,dtype=bool)
+        for TESidx in range(NPIXELS):
+            TESnum = TESidx + 1
+            mask = (FPidentity.ASIC==asic_num) & (FPidentity.TES==TESnum)
+            if mask.sum()==0: 
+                TESmask[TESidx] = False
+                continue
+            qsidx = FPidentity[mask].QSindex[0]
+            qsIndex_list.append(qsidx)
+        TESmask_list.append(TESmask)
+        
+    TESmask = np.array(TESmask_list).reshape(asic_ctr*NPIXELS)
+    qsIndexes = np.array(qsIndex_list)
+    # we have to adjust the qsIndex array to start at 0
+    qsIndexes -= qsIndexes.min()
+    return qsIndexes, TESmask

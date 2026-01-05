@@ -12,10 +12,10 @@ utilities to write and read QUBIC Level-1 data files
 '''
 import os
 import numpy as np
-from astropy.io import fits
+import h5py
 
 from satorchipy.datefunctions import utcnow
-from qubicpack.level1.flags import flag_definition
+from .flags import nflags, flag_definition
 
 hdr_comment = {}
 hdr_comment['TELESCOP'] ='Telescope used for the observation'
@@ -31,19 +31,19 @@ hdr_comment['INFODSET'] = 'link to more details about this dataset'
 
 hdr_keys = hdr_comment.keys()
 
-def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic.in2p3.fr/wiki/TD/DatasetDetails'):
+def write_level1_header(self,handle,
+                        indextype='QUBICSOFT',
+                        units='Watt',
+                        infolink='https://qubic.in2p3.fr/wiki/TD/DatasetDetails'):
     '''
-    write a fits file with Level-1 data
+    write the QUBIC Level-1 primary header to file
     '''
-    
-    # initialize
-    filename_suffix = '_level1.fits'
-    filename = self.dataset_name
+
     hdr = {}
     for key in hdr_keys:
         hdr[key] = None
     hdr['TELESCOP'] = 'QUBIC'
-    hdr['FILETYPE'] = 'LEVEL1'
+    hdr['FILETYPE'] = 'QUBIC LEVEL1'
     hdr['FILEDATE'] = utcnow().strftime('%Y-%m-%dT%H:%M:%S')
     hdr['DATASET'] = self.dataset_name
     hdr['UNITS'] = units
@@ -55,49 +55,80 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic
     hdr['INFOINDX'] = 'https://qubic.in2p3.fr/wiki/TD/TEStranslation'
     hdr['INFO_FMT'] = 'https://qubic.in2p3.fr/wiki/TD/ProcessedDataFormat'
     hdr['INFODSET'] = infolink
-
-    for flagbit in flag_definition.keys():
-        if flag_definition[flagbit]=='available': continue
-        flag_key = 'FLAG_%03i' % flagbit
-        hdr[flag_key] = flag_definition[flagbit]
     
-
     # Primary header
-    prihdr = fits.Header()
     for key in hdr.keys():
-        val = hdr[key]
+        handle.attrs[key] = hdr[key]
         if key in hdr_comment.keys():
-            comment = hdr_comment[key]
-        else:
-            comment = ''
-        prihdr[key] = (val,comment)
+            comment_key = '%s COMMENT' % key
+            handle.attrs[comment_key] = hdr_comment[key]
 
-    # add flag definitions in header
-    for idx,flagdef in enumerate(flag_definition):
-        if flagdef!='available':
-            key = 'FLAG%04i' % idx
-            prihdr[key] = flagdef
-
-    # create the primary HDU
-    prihdu = fits.PrimaryHDU(header=prihdr)
-
-    # prepare the hdulist
-    hdulist = [prihdu]
-
-    # HDU with the level-1 array and the flagarray
-    # formats defined at https://docs.astropy.org/en/stable/io/fits/usage/table.html
-    t_tod,todarray = self.tod(indextype=indextype,units=units)
-    flagarray = np.zeros(todarray.shape,dtype=int)
-    col1 = fits.Column(name='TODarray', format='D', unit=units, array=todarray)
-    col2 = fits.Column(name='timestamps',format='D',units='sec',array=t_tod)
-    col3 = fits.Column(name='flags', format='K', unit='UINT', array=flagarray)
-    cols  = fits.ColDefs([col1,col2,col3])
-    tbhdu = fits.BinTableHDU.from_columns(cols)
-    hdulist.append(tbhdu)
-
-    # HDU with dark TES "temperature" detectors
+    # add flag definitions in header, in reverse order
+    for flagbit in range(nflags-1,-1,-1):
+        flagdef = flag_definition[flagbit]
+        if flagdef=='available': continue
+        flag_key = 'FLAG_%03i' % flagbit
+        handle.attrs[flag_key] = flagdef
     
-    # make another HDU with the housekeeping data
+    return
+
+def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic.in2p3.fr/wiki/TD/DatasetDetails',savepath=None):
+    '''
+    write a HDF5 file with Level-1 data
+    '''
+
+    if indextype.upper().find('QUBICSOFT')>=0 or indextype.upper()=='QS':
+        is_QSindex = True
+        indextype = 'QUBICSOFT'
+    else:
+        is_QSindex = False
+        indextype = 'TES'
+    
+    # initialize
+    filename_suffix = '_level1.hdf5'
+    filename = self.dataset_name
+    if savepath is None: # save in current directory
+        savepath = '.'
+
+    filename_fullpath = os.sep.join([savepath,filename+filename_suffix])
+    try:
+        handle = h5py.open(filename_fullpath,'w')
+    except:
+        print('ERROR! Could not create file: %s' % filename_fullpath)
+        return None
+
+    # write the primary header
+    self.write_level1_header(handle,indextype,units,infolink)
+
+    # create a group for the science data
+    scigrp = h.create_group('SCIENCE DATA')
+    
+    # scigrp contains the level-1 array and the flagarray
+    # with indextype=QS, the dark pixels are in a separate array
+    # otherwise, they are in the TOD array in the TES order
+    tod_tuple = self.tod(indextype=indextype,units=units)
+    t_tod = tod_tuple[0]
+    todarray = tod_tuple[1]
+    # tod_tuple might be only length 2 for backwards compatibility
+    if len(tod_tuple)==2:
+        dark_pixels = None
+    else:
+        dark_pixels = tod_tuple[2]
+
+
+    scigrp.create_dataset('TIMESTAMP',data=t_tod)
+    scigrp.create_dataset('TOD',data=todarray)
+    if dark_pixels is not None:
+        scigrp.create_dataset('DARK PIXELS',data=dark_pixels)
+    
+    # assign the flags for the TOD
+    flag_array = self.assign_flags(indextype,t_tod)
+
+    # write flags
+    scigrp.create_dataset('FLAGS',data=flagarray)
+
+    
+    # make another group with the housekeeping data
     # 300mK stage Temperature
     # 1K stage Temperature
     # HWP position
@@ -108,16 +139,15 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic
     # carbon fibre parameters
     # horn status
     
-    # write the FITS file
-    thdulist = fits.HDUList(hdulist)
-    thdulist.writeto(hdr['FILENAME'],overwrite=True)
-    print('Level-1 data written to file: %s' % hdr['FILENAME'])
+    # write the file
+    handle.close()
+    print('Level-1 data written to file: %s' % filename_fullpath)
     return
 
 
 def read_level1(filename):
     '''
-    read a QUBIC Level-1 fits file
+    read a QUBIC Level-1 HDF5 file
     '''
 
     if not os.path.exists(filename):
@@ -128,22 +158,17 @@ def read_level1(filename):
         print('ERROR! Not a file: %s' % filename)
         return None
 
-    hdulist = fits.open(filename)
-    nhdu = len(hdulist)
-    if nhdu < 3:
-        print('ERROR! File does not have the necessary data: %s' % filename)
-        return None
-
-    prihdr = hdulist[0].header
+    handle = h5py.open(filename,'r')
+    prihdr = handle.attrs
+    
     if 'TELESCOP' not in prihdr.keys() or prihdr['TELESCOP']!='QUBIC':
         print('ERROR! Not a QUBIC file: %s' % filename)
+        handle.close()
         return None
 
-    if 'FILETYPE' not in prihdr.keys() or prihdr['FILETYPE']!='LEVEL1':
+    if 'FILETYPE' not in prihdr.keys() or prihdr['FILETYPE']!='QUBIC LEVEL1':
         print('ERROR! Not a QUBIC Level-1 file: %s' % filename)
+        handle.close()
         return None
-
-
-              
-    hdulist.close()
-    return ok
+    
+    return handle

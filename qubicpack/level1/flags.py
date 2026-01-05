@@ -11,6 +11,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 definition and tools for flagging data
 '''
 import numpy as np
+from scipy.interpolate import interp1d
 
 # The maximum number of flags possible is 64
 # Data is flagged by a 64-bit integer
@@ -89,7 +90,22 @@ def show_flags(flagval):
         if isset_flag(flag,flagval):print(flag)
     return
 
-        
-
     
-        
+def interpolate_flags(timeaxis,t_tod,flag_array):
+    '''
+    interpolate flags onto TOD interpolated time axis
+    best method determined by JCH in notebook FlaggingAndInterpolation
+    https://github.com/qubicsoft/qubic/blob/master/qubic/doc/Time%20Domain%20Analysis/FlaggingAndInterpolation.ipynb
+    '''
+    
+    # function to interpolate extrapolating from previous value
+    interp_prev_func = interp1d(timeaxis,flag_array,kind='previous',fill_value='extrapolate')
+
+    # function to interpolate extrapolating from next value
+    interp_next_func = interp1d(timeaxis,flag_array,kind='next',fill_value='extrapolate')
+
+    # take the worst flag of the two interpolations
+    flag_interps = np.array( [interp_prev_func(t_tod), interp_next_func(t_tod)] )            
+    flag_array_interp = np.max(flag_interps,axis=0)
+    return flag_array_interp
+

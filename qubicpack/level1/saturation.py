@@ -19,7 +19,7 @@ positive_saturation_value = saturation_value
 negative_saturation_value = -(saturation_value-1)
 saturation_bit = flag_bit['saturation']
 
-def check_saturation(todarray,flag_array=None):
+def assign_saturation_flags(todarray,flag_array=None):
     '''
     go through the data, and return the flag array adjusted for saturation
     '''

@@ -154,6 +154,9 @@ class qubicfp:
 
     from .level1.filetools import\
         write_level1
+
+    from .level1.assign_flags import\
+        assign_flags
     
     def __init__(self):
 

@@ -835,11 +835,14 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
     t0_list = []
     tfinal_list = []
     asic_ctr = 0
-    qsidx_minlist = []
+    quadrant_list = []
     for asic_idx,asicobj in enumerate(self.asic_list):
         if asicobj is None: continue
         asic_ctr += 1
         asic = asicobj.asic
+        mask = (FPidentity.TES>0) & (FPidentity.ASIC==asic)
+        quadrant = np.unique(FPidentity[mask].quadrant)[0]
+        quadrant_list.append(quadrant)
         
         tstamps = asicobj.timeaxis(datatype='sci',axistype=axistype)
         timeaxis_list.append(tstamps)
@@ -847,15 +850,14 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
         t0_list.append(tstamps[0])
         tfinal_list.append(tstamps[-1])
 
-        # if we are using the indextype='QS' option
-        # we have to adjust the QSindex so it starts at 0 regardless of the location of the detector array in the focal plane
-        # for example, for the TD, it's in Quadrant-3, and the QSindex begins at 496
-        mask = (FPidentity.ASIC==asic) & (FPidentity.TES>0)
-        qsidx_minlist.append(FPidentity.QSindex[mask].min())
-
-    # this won't work for scattered ASICs.
+    # if we are using the indextype='QS' option
+    # we have to adjust the QSindex so it starts at 0 regardless of the location of the detector array in the focal plane
+    # for example, for the TD, it's in Quadrant-3, and the QSindex begins at 496
+    
+    # this won't work for scattered ASICs, I don't think
     # Hopefully, we only ever have to deal with the TD (2 asics in quadrant-3) or the Full Instrument
-    QSoffset = min(qsidx_minlist)
+    quadrant = min(quadrant_list)
+    QSoffset = 124*2*(quadrant-1)
     self.printmsg('tod(): QSoffset=%i' % QSoffset,verbosity=3)
         
 

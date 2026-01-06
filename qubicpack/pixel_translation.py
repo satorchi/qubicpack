@@ -90,8 +90,8 @@ def make_id_focalplane():
     tes_grid = assign_tes_grid()
 
     # initialize the matrix
-    names = 'index,row,col,x,y,quadrant,matrix,TES,PIX,ASIC,FPindex,QSindex,QPindex,TES_x,TES_y'
-    fmts = 'int,int,int,float,float,int,a4,int,int,int,int,int,int,int,int'
+    names = 'index,row,col,x,y,quadrant,matrix,TES,PIX,ASIC,FPindex,QSindex,quadrant_QSindex,QPindex,TES_x,TES_y'
+    fmts = 'int,int,int,float,float,int,a4,int,int,int,int,int,int,int,int,int'
     FPidentity = np.recarray(names=names,formats=fmts,shape=(34*34))
 
     fp_idx = 0 # fp_idx counts by rows/columns of the full focal plane: 34x34
@@ -192,7 +192,8 @@ def make_id_focalplane():
         idx = FPidentity[fpmask].index[0]
         FPidentity[idx].QSindex = qs_idx + quadrant_idx*ndet_quadrant
             
-            
+    quadrant_QSindex_identity = FPidentity.QSindex - 2*124*(FPidentity.quadrant-1)
+    FPidentity.quadrant_QSindex = quadrant_QSindex_identity
     return FPidentity
 
 

@@ -118,5 +118,5 @@ def interpolate_flags(timeaxis,t_tod,flag_array):
     # take the worst flag of the two interpolations
     flag_interps = np.array( [interp_prev, interp_next] )            
     flag_array_interp = np.nanmax(flag_interps,axis=0)
-    return flag_array_interp
+    return flag_array_interp.astype(np.uint)
 

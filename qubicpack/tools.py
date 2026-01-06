@@ -20,8 +20,8 @@ from glob import glob
 import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
-from qubicpack.utilities import obsmount_implemented, obsmount_plc_implemented, read_obsmount_bindat, interpret_rawmask
-from qubicpack.pointing import read_pointing_bindat, position_key, axis_names
+from .utilities import obsmount_implemented, obsmount_plc_implemented, read_obsmount_bindat, interpret_rawmask
+from .pointing import read_pointing_bindat, position_key, axis_names
 from satorchipy.datefunctions import utcnow, utcfromtimestamp
 
 qubicasic_hk_keys = ['Apol',
@@ -1293,6 +1293,11 @@ def get_hk(self,data=None,hk=None,asic=None):
 
     if hk is None:
         hk = self.qubicstudio_filetype_truename(data,asic=asic)
+
+    if hk=='POINTING':
+        for axisname in axis_names:
+            if data==axisname and axisname in self.pointing_data.keys() and self.pointing_data[axisname]['ok']:
+                return self.pointing_data[axisname]['VALUE']
         
     if hk is None: # try to find which Housekeeping
         for key in self.hk.keys():

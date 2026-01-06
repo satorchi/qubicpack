@@ -141,16 +141,16 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic
         dark_pixels = tod_tuple[2]
 
 
-    scigrp.create_dataset('TIMESTAMP',data=t_tod)
-    scigrp.create_dataset('TOD',data=todarray)
+    scigrp.create_dataset('TIMESTAMP', data=t_tod, compression='gzip', compression_opts=9)
+    scigrp.create_dataset('TOD', data=todarray, compression='gzip', compression_opts=9)
     if dark_pixels is not None:
-        scigrp.create_dataset('DARK PIXELS',data=dark_pixels)
+        scigrp.create_dataset('DARK PIXELS', data=dark_pixels, compression='gzip', compression_opts=9)
     
     # assign the flags for the TOD
     flag_array = self.assign_flags(indextype,t_tod)
 
     # write flags
-    scigrp.create_dataset('FLAGS',data=flag_array)
+    scigrp.create_dataset('FLAGS',data=flag_array, compression='gzip', compression_opts=9)
 
     
     # make another group with the housekeeping data
@@ -186,11 +186,11 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic
     nsamples = max(nsamples_list)
 
     t_interp = tstamp_start + (tstamp_end-tstamp_start)*np.arange(nsamples)/(nsamples-1)
-    hkgrp.create_dataset('TIMESTAMP',data=t_interp)
+    hkgrp.create_dataset('TIMESTAMP',data=t_interp, compression='gzip', compression_opts=9)
     for key in hk.keys():
         val_interp = np.interp(t_interp, hk[key][0], hk[key][1])
         self.printmsg('write_level1: hk val_interp shape=%s' % (str(val_interp.shape)),verbosity=3)
-        hkgrp.create_dataset(key,data=val_interp)
+        hkgrp.create_dataset(key,data=val_interp, compression='gzip', compression_opts=9)
 
     # add a comment if data is missing
     for key in hk_keys:

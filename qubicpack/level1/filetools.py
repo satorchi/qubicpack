@@ -96,11 +96,13 @@ def write_level1_housekeeping_header(self,handle):
     return hkgrp
     
 
-def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink='https://qubic.in2p3.fr/wiki/TD/DatasetDetails',savepath=None):
+def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink=None,savepath=None):
     '''
     write a HDF5 file with Level-1 data
     '''
-
+    if infolink is None:
+        infolink = 'https://qubic.in2p3.fr/wiki/TD/DatasetDetails'
+    
     if indextype.upper().find('QUBICSOFT')>=0 or indextype.upper()=='QS':
         is_QSindex = True
         indextype = 'QUBICSOFT'

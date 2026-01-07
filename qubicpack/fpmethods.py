@@ -912,8 +912,6 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
                 if mask.sum()==0:
                     tod_index = None
                 else:
-                    QSindex = FPidentity[mask].QSindex[0]
-                    self.printmsg('tod(): QSindex=%i' % QSindex,verbosity=3)
                     tod_index = FPidentity[mask].quadrant_QSindex[0]
             else:
                 tod_index = (asic_ctr-1)*NPIXELS+TESidx

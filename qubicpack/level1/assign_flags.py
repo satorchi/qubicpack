@@ -12,7 +12,6 @@ assign the flags for the TOD
 '''
 import numpy as np
 from ..utilities import NPIXELS
-from ..pixel_translation import qsIndexes_within_TESorder
 from .flags import interpolate_flags, set_flag
 from .saturation import assign_saturation_flags
 
@@ -93,7 +92,7 @@ def assign_flags(self,indextype='TES',t_tod=None):
         # asic_flag_array = assign_cosmicray_flags(timeline_array,asic_flag_array)
 
         if do_interpolate:
-            flags_interp = interpolate_flags(timeaxis,t_tod,asic_flag_array)
+            flags_interp = interpolate_flags(t_tod,timeaxis,asic_flag_array)
             print('interpolated flags shape: %s' % (str(flags_interp.shape)))
             flag_list.append( flags_interp )
         else:
@@ -106,8 +105,9 @@ def assign_flags(self,indextype='TES',t_tod=None):
         
         if is_QSindex:
             qsIndexes,TESmask = self.qsIndexes_within_TESorder()
-            flag_array = flag_array[TESmask,:][qsIndexes,:]
-        return flag_array
+            QS_flag_array = np.empty(flag_array[TESmask,:].shape,dtype=np.uint64)
+            QS_flag_array[qsIndexes,:] = flag_array[TESmask,:]
+        return QS_flag_array
 
     # flags per asic
     asic_ctr = 0

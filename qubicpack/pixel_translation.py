@@ -485,7 +485,7 @@ def qsIndexes_within_TESorder(self):
     The elements in the array are TES indexes (not TES numbers)
     In order to use this, take the timeline_array, mask out the dark pixels, and then apply the QS index order
     For example:
-    QS_timeline_array = TES_timeline_array[TESmask,:][qsIndexes,:]
+    QS_timeline_array[qsIndexes] = TES_timeline_array[TESmask,:]
     '''
     FPidentity = make_id_focalplane()
     
@@ -503,12 +503,10 @@ def qsIndexes_within_TESorder(self):
             if mask.sum()==0: 
                 TESmask[TESidx] = False
                 continue
-            qsidx = FPidentity[mask].QSindex[0]
+            qsidx = FPidentity[mask].quadrant_QSindex[0]
             qsIndex_list.append(qsidx)
         TESmask_list.append(TESmask)
         
     TESmask = np.array(TESmask_list).reshape(asic_ctr*NPIXELS)
     qsIndexes = np.array(qsIndex_list)
-    # we have to adjust the qsIndex array to start at 0
-    qsIndexes -= qsIndexes.min()
     return qsIndexes, TESmask

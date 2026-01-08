@@ -120,7 +120,6 @@ class qubicfp:
     from .pixel_translation import\
         qsIndexes_within_TESorder
 
-
     from .iv import\
         ADU2I
 

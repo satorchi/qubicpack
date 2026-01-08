@@ -91,7 +91,7 @@ def show_flags(flagval):
     return
 
     
-def interpolate_flags(timeaxis,t_tod,flag_array):
+def interpolate_flags(t_tod,timeaxis,flag_array):
     '''
     interpolate flags onto TOD interpolated time axis
     best method determined by JCH in notebook FlaggingAndInterpolation

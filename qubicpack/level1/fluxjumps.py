@@ -16,6 +16,7 @@ code adapted from Jupyter notebook "Automatic_flux_jump_versions" by Belen Costa
 this should be updated using "jumps_soft.py" in branch bcostanza-dev of qubicsoft
 see:  qubic/scripts/Calibration/Flux_jumps/2025-data/jumps_soft.py
 '''
+import numpy as np
 from scipy.signal import argrelextrema, find_peaks, find_peaks_cwt, savgol_filter 
 import bottleneck as bn
 from sklearn.cluster import DBSCAN

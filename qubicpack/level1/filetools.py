@@ -25,6 +25,8 @@ hdr_comment['DATASET']  = 'QubicStudio dataset name'
 hdr_comment['UNITS']    = 'physical units:  ADU, Watt, or Amp'
 hdr_comment['FILENAME'] = 'name of this file'
 hdr_comment['FILEDATE'] = 'UT date this file was created'
+hdr_comment['OBSDATE']  = 'UT date beginning this dataset'
+hdr_comment['ENDOBS']   = 'UT date end of this dataset'
 hdr_comment['INDXTYPE'] = 'index ordering: QUBICSOFT or TES'
 hdr_comment['INFOINDX'] = 'link to more details about index ordering'
 hdr_comment['INFO_FMT'] = 'link to more details about QUBIC Level1 data format'
@@ -50,15 +52,17 @@ def write_level1_header(self,handle,
     '''
     write the QUBIC Level-1 primary header to file
     '''
-
+    datefmt = '%Y-%m-%dT%H:%M:%S'
     hdr = {}
     for key in hdr_keys:
         hdr[key] = None
     hdr['TELESCOP'] = 'QUBIC'
     hdr['FILETYPE'] = 'QUBIC LEVEL1'
-    hdr['FILEDATE'] = utcnow().strftime('%Y-%m-%dT%H:%M:%S')
-    hdr['DATASET'] = self.dataset_name
-    hdr['UNITS'] = units
+    hdr['FILEDATE'] = utcnow().strftime(datefmt)
+    hdr['DATASET']  = self.dataset_name
+    hdr['OBSDATE']  = self.obsdate.strftime(datefmt)
+    hdr['ENDOBS']   = self.endobs.strftime(datefmt)
+    hdr['UNITS']    = units
     hdr['FILENAME'] = filename
     if indextype.upper().find('Q')>=0:
         hdr['INDXTYPE'] = 'QUBICSOFT'

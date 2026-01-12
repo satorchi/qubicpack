@@ -105,7 +105,14 @@ def assign_flags(self,indextype='TES',t_tod=None):
         
         if is_QSindex:
             qsIndexes,TESmask = self.qsIndexes_within_TESorder()
-            QS_flag_array = np.empty(flag_array[TESmask,:].shape,dtype=np.uint64)
+
+            # we need to have a full quadrant for QS index, even if there is only 1 ASIC
+            if (asic_ctr % 2)==1:
+                ndets = (asic_ctr+1)*124
+            else:
+                ndets = asic_ctr*124
+            
+            QS_flag_array = np.zeros((ndets,npts_interp),dtype=np.uint64)
             QS_flag_array[qsIndexes,:] = flag_array[TESmask,:]
         return QS_flag_array
 

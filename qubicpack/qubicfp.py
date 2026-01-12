@@ -157,7 +157,9 @@ class qubicfp:
     from .level1.filetools import\
         write_level1,\
         write_level1_header,\
-        write_level1_housekeeping_header
+        write_level1_housekeeping,\
+        write_level1_calinfo,\
+        write_level1_horninfo
 
     from .level1.assign_flags import\
         assign_flags,\

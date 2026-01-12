@@ -44,6 +44,9 @@ hk_comment['ELEVATION'] = "telescope elevation pointing in degrees"
 hk_comment['ROTATION'] = "telescope bore-sight rotation angle in degrees"
 hk_keys = hk_comment.keys()
 
+
+datefmt = '%Y-%m-%dT%H:%M:%S.%fZ'
+
 def write_level1_header(self,handle,
                         filename='UNNAMED.hdf5',
                         indextype='QUBICSOFT',
@@ -52,7 +55,7 @@ def write_level1_header(self,handle,
     '''
     write the QUBIC Level-1 primary header to file
     '''
-    datefmt = '%Y-%m-%dT%H:%M:%S'
+    
     hdr = {}
     for key in hdr_keys:
         hdr[key] = None
@@ -71,33 +74,131 @@ def write_level1_header(self,handle,
     hdr['INFOINDX'] = 'https://qubic.in2p3.fr/wiki/TD/TEStranslation'
     hdr['INFO_FMT'] = 'https://qubic.in2p3.fr/wiki/TD/ProcessedDataFormat'
     hdr['INFODSET'] = infolink
+
+    # create a group for supplementary information
+    infogrp = handle.create_group('EXPLANATORY NOTES')
+    infogrp.attrs['COMMENT'] = 'definitions of header keywords'
     
     # Primary header
     for key in hdr.keys():
         handle.attrs[key] = hdr[key]
         if key in hdr_comment.keys():
-            comment_key = '%s COMMENT' % key
-            handle.attrs[comment_key] = hdr_comment[key]
+            infogrp.attrs[key] = hdr_comment[key]
 
-    # add flag definitions in header, in reverse order
-    for flagbit in range(nflags-1,-1,-1):
-        flagdef = flag_definition[flagbit]
-        if flagdef=='available': continue
-        flag_key = 'FLAG_%03i' % flagbit
-        handle.attrs[flag_key] = flagdef
+    # add a comment about flag definitions
+    handle.attrs['FLAG DEFINITIONS'] = 'Flag definitions can be found in the attributes of the flag data: /SCIENCE DATA/FLAGS'
+
+    # add a comment about calibration source and carbon fibre info
+    handle.attrs['CALIBRATION INFO'] = 'Information about calibration source and carbon fibre settings are in the attributes of CALIBRATION INFO group'
     
     return
 
-def write_level1_housekeeping_header(self,handle):
+def write_level1_housekeeping(self,handle):
     '''
-    write some explanatory information about the housekeeping data    
+    write some explanatory information about the housekeeping data
+    interpolate all housekeeping data to the same time axis
+    and save the housekeeping data
     '''
 
+    # make a group for the housekeeping data
     hkgrp = handle.create_group('HOUSEKEEPING')
     for key in hk_comment.keys():
         hkgrp.attrs[key] = hk_comment[key]
 
+
+    # make a list of all the time axes, and interpolate all to the one with the largest number of samples
+    hk = {}
+    nsamples_list = []
+    tstamp_start_list = []
+    tstamp_end_list = []
+
+    # bath temperature
+    timeaxis = self.Tbath[0]
+    if timeaxis is not None:
+        hk['TBATH'] = (timeaxis,self.Tbath[1])
+        nsamples_list.append(len(timeaxis))
+        tstamp_start_list.append(timeaxis[0])
+        tstamp_end_list.append(timeaxis[-1])
+        
+    for key in hk_keys:
+        if key=='COMMENT': continue
+        if key=='TBATH': continue # special case because there are multiple sensors. already done above.
+        val = self.get_hk(key)
+        if val is not None:
+            timeaxis = self.timeaxis(datatype=key)
+            hk[key] = (timeaxis,val)
+            nsamples_list.append(len(timeaxis))
+            tstamp_start_list.append(timeaxis[0])
+            tstamp_end_list.append(timeaxis[-1])            
+
+    tstamp_start = min(tstamp_start_list)
+    tstamp_end = max(tstamp_end_list)
+    nsamples = max(nsamples_list)
+
+    # interpolate housekeeping to an evenly sampled time axis
+    # the number of samples is derived from the maximum sampling of all housekeeping
+    t_interp = tstamp_start + (tstamp_end-tstamp_start)*np.arange(nsamples)/(nsamples-1)
+    hkgrp.create_dataset('TIMESTAMP',data=t_interp, compression='gzip', compression_opts=9)
+    for key in hk.keys():
+        val_interp = np.interp(t_interp, hk[key][0], hk[key][1])
+        self.printmsg('write_level1: hk val_interp shape=%s' % (str(val_interp.shape)),verbosity=3)
+        hkgrp.create_dataset(key,data=val_interp, compression='gzip', compression_opts=9)
+
+    # add a comment if data is missing
+    for key in hk_keys:
+        if key=='COMMENT': continue
+        if key not in hk.keys():
+            error_key = 'ERROR! %s'
+            hkgrp.attrs[error_key] = 'ERROR! No data for %s' % key
+            
     return hkgrp
+
+def write_level1_calinfo(self,handle):
+    '''
+    write the calibration source and carbon fibre information
+    '''
+
+    calgrp = handle.create_group('CALIBRATION INFO')
+
+    # check for calibration information
+    calinfo = self.calsource_info()
+    if calinfo is None:
+        calgrp.attrs['NO CALIBRATION INFORMATION'] = 'There is no calibration source nor carbon fibre information in this dataset'
+        return calgrp
+
+    # an explanatory preamble
+    comment_list = ['Calibration source power monitor is found in the SCIENCE DATA.',
+                    'The source configuration parameters are found in the attributes of the subsystem groups.',
+                    'The DATE is the time that the calibration information was read',
+                    'which is usually a bit before the data acquisition start time.']
+                    
+    calgrp.attrs['COMMENT'] = '\n'.join(comment_list)
+
+    if 'date' in calinfo.keys():
+        calgrp.attrs['DATE'] = calinfo['date'].strftime(datefmt)
+        
+    for key in calinfo.keys():
+        if key=='date': continue # already done above
+        if key=='lamp': continue # legacy stuff
+        if key=='cf':
+            grpkey = 'CARBON FIBRE'
+        else:
+            grpkey = key.upper()
+        subgrp = calgrp.create_group(grpkey)
+        subinfo = calinfo[key]
+        for subkey in subinfo.keys():
+            subgrp.attrs[subkey.upper()] = subinfo[subkey]
+    
+    return calgrp
+
+def write_level1_horninfo(self,handle):
+    '''
+    write the horn shutter info
+    '''
+
+    # !!! TO BE IMPLEMENTED !!!
+    
+    return None
     
 
 def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink=None,savepath=None):
@@ -148,6 +249,7 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink=None,savepath=
 
 
     scigrp.create_dataset('TIMESTAMP', data=t_tod, compression='gzip', compression_opts=9)
+    scigrp['TIMESTAMP'].attrs['COMMENT'] = 'timestamps are the number of seconds since 1970-01-01T00:00:00Z'
     scigrp.create_dataset('TOD', data=todarray, compression='gzip', compression_opts=9)
     if dark_pixels is not None:
         scigrp.create_dataset('DARK PIXELS', data=dark_pixels, compression='gzip', compression_opts=9)
@@ -158,59 +260,25 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink=None,savepath=
     # write flags
     scigrp.create_dataset('FLAGS',data=flag_array, compression='gzip', compression_opts=9)
 
+    # add flag definitions in attributes, in reverse order
+    for flagbit in range(nflags-1,-1,-1):
+        flagdef = flag_definition[flagbit]
+        if flagdef=='available': continue
+        flag_key = 'FLAG_%03i' % flagbit
+        scigrp['FLAGS'].attrs[flag_key] = flagdef
+
+    # write the calibration source power monitor data, interpolated to the science data time axis
+    # TO BE IMPLEMENTED !!!
     
-    # make another group with the housekeeping data
-    hkgrp = self.write_level1_housekeeping_header(handle)
-
-    # make a list of all the time axes, and interpolate all to the one with the largest number of samples
-    hk = {}
-    nsamples_list = []
-    tstamp_start_list = []
-    tstamp_end_list = []
-
-    # bath temperature
-    timeaxis = self.Tbath[0]
-    if timeaxis is not None:
-        hk['TBATH'] = (timeaxis,self.Tbath[1])
-        nsamples_list.append(len(timeaxis))
-        tstamp_start_list.append(timeaxis[0])
-        tstamp_end_list.append(timeaxis[-1])
-        
-    for key in hk_keys:
-        if key=='COMMENT': continue
-        if key=='TBATH': continue # special case because there are multiple sensors. already done above.
-        val = self.get_hk(key)
-        if val is not None:
-            timeaxis = self.timeaxis(datatype=key)
-            hk[key] = (timeaxis,val)
-            nsamples_list.append(len(timeaxis))
-            tstamp_start_list.append(timeaxis[0])
-            tstamp_end_list.append(timeaxis[-1])            
-
-    tstamp_start = min(tstamp_start_list)
-    tstamp_end = max(tstamp_end_list)
-    nsamples = max(nsamples_list)
-
-    t_interp = tstamp_start + (tstamp_end-tstamp_start)*np.arange(nsamples)/(nsamples-1)
-    hkgrp.create_dataset('TIMESTAMP',data=t_interp, compression='gzip', compression_opts=9)
-    for key in hk.keys():
-        val_interp = np.interp(t_interp, hk[key][0], hk[key][1])
-        self.printmsg('write_level1: hk val_interp shape=%s' % (str(val_interp.shape)),verbosity=3)
-        hkgrp.create_dataset(key,data=val_interp, compression='gzip', compression_opts=9)
-
-    # add a comment if data is missing
-    for key in hk_keys:
-        if key=='COMMENT': continue
-        if key not in hk.keys():
-            error_key = 'ERROR! %s'
-            hkgrp.attrs[error_key] = 'ERROR! No data for %s' % key
     
+    # write the housekeeping data
+    hkgrp = self.write_level1_housekeeping(handle)
 
-
-    # !!! TO BE IMPLEMENTED !!!
-    # calsource info and value interpolated to data time axis
-    # carbon fibre parameters
+    # make a group for the calibration source and carbon fibre info
+    calgrp = self.write_level1_calinfo(handle)
+    
     # horn status
+    horngrp = self.write_level1_horninfo(handle)
     
     
     # write the file

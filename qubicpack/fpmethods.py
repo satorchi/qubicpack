@@ -868,16 +868,18 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
     n_asics = copy(asic_ctr)
     n_alldets = n_asics*NPIXELS
     if is_QSindex:
-        ndets = n_asics*124
+        n_darkpix = n_asics*4
+        # we need to have a full quadrant for QS index, even if there is only 1 ASIC
+        if (n_asics % 2)==1: ndets = (n_asics+1)*124
     else:
         ndets = n_alldets
-    todarray = np.empty((ndets,nsamples),dtype=float)
-    todarray[:] = np.nan
+        n_darkpix = 0
+    todarray = np.zeros((ndets,nsamples),dtype=float)
+    todarray[:] = np.nan # is this really what we want if there is no data?
 
-    # the number of dark pixels to be returned as the third item in the tuple
-    n_darkpix = n_alldets - ndets
+    # the dark pixels to be returned as the third item in the tuple, if necessary
     if n_darkpix > 0:
-        darkpix_array = np.empty((n_darkpix,nsamples),dtype=float)
+        darkpix_array = np.zeros((n_darkpix,nsamples),dtype=float)
     else:
         darkpix_array = None
 

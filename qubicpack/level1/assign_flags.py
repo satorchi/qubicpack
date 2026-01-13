@@ -14,7 +14,7 @@ import numpy as np
 from ..utilities import NPIXELS
 from .flags import interpolate_flags, set_flag
 from .saturation import assign_saturation_flags
-
+from .fluxjumps import fluxjumps
 
 def assign_temperature_flags(self,timeaxis,flag_array):
     '''
@@ -54,7 +54,29 @@ def assign_temperature_flags(self,timeaxis,flag_array):
     
     
     return flag_array
-    
+
+def assign_fluxjump_flags(self):
+    '''
+    Assign the flags for the detection of flux jumps
+    Flux jump detection by Belen Costanza (see comments in fluxjumps.py)
+
+    Note:  This is an qubicasic method, not a qubicfp method
+           We are working here with the todarray and timeaxis of a single asic
+    '''
+    timeline_array = self.timeline_array()
+    timeaxis = self.timeaxis()
+    tt = timeaxis - timeaxis[0]
+    ndets = timeline_array.shape[0]
+    flag_array = np.zeros(timeline_array.shape,dtype=np.uint64)
+    fj = fluxjumps()
+    for TESidx in range(ndets):
+        ans = fj.jumps_detection(tt,timeline_array[TESidx])
+        if ans[0]==0: continue # No jumps
+        for jumpidx,jumpstart in enumerate(ans[1]):
+            jumpend = ans[2][jumpidx]
+            flag_array[TESidx,jumpstart:jumpend] = set_flag('uncorrected flux jump',flag_array[TESidx,jumpstart:jumpend])
+        
+    return flag_array
 
 def assign_flags(self,indextype='TES',t_tod=None):
     '''
@@ -86,7 +108,8 @@ def assign_flags(self,indextype='TES',t_tod=None):
         asic_flag_array = assign_saturation_flags(timeline_array)
 
         # assign flags for flux jumps
-        # asic_flag_array = assign_fluxjump_flags(timeline_array,asic_flag_array)
+        asic_fluxjump_flag_array = asicobj.assign_fluxjump_flags()
+        asic_flag_array = asic_flag_array | asic_fluxjump_flag_array
 
         # assign flags for cosmic ray events
         # asic_flag_array = assign_cosmicray_flags(timeline_array,asic_flag_array)

@@ -870,7 +870,10 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
     if is_QSindex:
         n_darkpix = n_asics*4
         # we need to have a full quadrant for QS index, even if there is only 1 ASIC
-        if (n_asics % 2)==1: ndets = (n_asics+1)*124
+        if (n_asics % 2)==1:
+            ndets = (n_asics+1)*124
+        else:
+            ndets = n_asics*124
     else:
         ndets = n_alldets
         n_darkpix = 0

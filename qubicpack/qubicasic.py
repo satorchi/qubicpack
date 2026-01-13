@@ -167,6 +167,9 @@ class qubicasic:
         plot_timestamp_diagnostic,\
         lost_packets,\
         assign_default_gps_sample_offset
+
+    from .level1.assign_flags import\
+        assign_fluxjump_flags
     
     def __init__(self):
         self.assign_defaults()

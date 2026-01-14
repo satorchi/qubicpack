@@ -14,7 +14,7 @@ import os
 import numpy as np
 import h5py
 
-from satorchipy.datefunctions import utcnow
+from satorchipy.datefunctions import utcnow, tstamp2dt
 from .flags import nflags, flag_definition
 
 # explanatory notes for the primary header
@@ -251,6 +251,7 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink=None,savepath=
     scigrp.create_dataset('TIMESTAMP', data=t_tod, compression='gzip', compression_opts=9)
     scigrp['TIMESTAMP'].attrs['COMMENT'] = 'timestamps are the number of seconds since 1970-01-01T00:00:00Z'
     scigrp.create_dataset('TOD', data=todarray, compression='gzip', compression_opts=9)
+    scigrp['TOD'].attrs['COMMENT'] = 'index order is %s' % indextype
     if dark_pixels is not None:
         scigrp.create_dataset('DARK PIXELS', data=dark_pixels, compression='gzip', compression_opts=9)
     
@@ -268,8 +269,14 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink=None,savepath=
         scigrp['FLAGS'].attrs[flag_key] = flagdef
 
     # write the calibration source power monitor data, interpolated to the science data time axis
-    # TO BE IMPLEMENTED !!!
-    
+    t_calsrc,calsrc = self.calsource()
+    if calsrc is not None:
+        calsrc_interp = np.interp(t_tod,t_calsrc,calsrc)
+        scigrp.create_dataset('CALSOURCE',data=calsrc_interp, compression='gzip', compression_opts=9)
+        scigrp['CALSOURCE'].attrs['COMMENT'] = 'calsource data has been interpolated to the science data time sampling'
+        scigrp['CALSOURCE'].attrs['NSAMPLES'] = len(t_calsrc)
+        scigrp['CALSOURCE'].attrs['START DATE'] = tstamp2dt(t_calsrc[0]).strftime(datefmt)
+        scigrp['CALSOURCE'].attrs['END DATE'] = tstamp2dt(t_calsrc[-1]).strftime(datefmt)
     
     # write the housekeeping data
     hkgrp = self.write_level1_housekeeping(handle)

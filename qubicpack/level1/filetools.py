@@ -180,6 +180,7 @@ def write_level1_calinfo(self,handle):
     for key in calinfo.keys():
         if key=='date': continue # already done above
         if key=='lamp': continue # legacy stuff
+        if len(calinfo[key])==0: continue # ignore empty 
         if key=='cf':
             grpkey = 'CARBON FIBRE'
         else:

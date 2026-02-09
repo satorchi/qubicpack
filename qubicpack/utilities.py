@@ -302,8 +302,9 @@ def read_compressor_log(filename):
         return None
 
     h = open(filename,'r')
-    lines = h.read().split('\n')
+    txt = h.read()
     h.close()
+    lines = txt.replace('\0','').split('\n')
     del(lines[-1])
     
     compressorlog = {}
@@ -323,6 +324,7 @@ def read_compressor_log(filename):
         
     for line in lines:
         col = line.split(' ')
+        if col[0] is None: continue
         date = str2dt(col[0]).replace(tzinfo=TZUTC)
         if date is None:continue
         tstamp = date.timestamp()

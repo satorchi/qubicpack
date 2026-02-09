@@ -1373,7 +1373,8 @@ def assign_pointing_data(self,datadir):
         self.pointing_data['TIMESTAMP'] =  pointing_dat['header'].TIMESTAMP
         self.pointing_data['ok'] = pointing_dat['ok']
         for axisname in axis_names:
-            self.pointing_data[axisname] = pointing_dat['data'][axisname][position_key]
+            if axisname not in pointing_dat['data'].keys(): continue
+            self.pointing_data[axisname]['VALUE'] = pointing_dat['data'][axisname][position_key]
             self.pointing_data[axisname]['ok'] = True
             axis_n_ok += 1        
         return pointing_dat['ok']

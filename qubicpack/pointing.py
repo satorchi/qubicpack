@@ -61,7 +61,7 @@ def interpret_pointing_chunk(dat):
     
     dat_str = dat.decode()
     if len(dat_str)==0:
-        packet['error'] = 'empty data chunk'
+        packet['error'] = 'POINTING: empty data chunk'
         return packet
 
     dat_list = dat_str.split('\n')
@@ -111,9 +111,13 @@ def read_pointing_bindat(filename):
     '''
     read the binary data saved by the observation mount PLC
     '''
+    dat = {}
+    dat['ok'] = False
+    dat['header'] = None
+    dat['data'] = None
     if not os.path.isfile(filename):
         print('ERROR!  File not found: %s' % filename)
-        return None
+        return dat
 
     h = open(filename,'rb')
     dat_bytes = h.read()
@@ -148,11 +152,11 @@ def read_pointing_bindat(filename):
                 exec(cmd)
         idx += 1
                 
-    dat = {}
     dat['header'] = headerdat[0:idx]
     final_axdat = {}
     for axname in axis_names:
         final_axdat[axname] = axdat[axname][0:idx]
         
     dat['data'] = final_axdat
+    dat['ok'] = True
     return dat

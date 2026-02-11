@@ -24,7 +24,8 @@ Homepage = "https://github.com/satorchi/qubicpack"
 packages = ["qubicpack", "qubicpack.level1"]
 script-files = ["qubicpack/scripts/quicklook.py",
                 "qubicpack/scripts/Vphi_analysis.py",
-                "qubicpack/scripts/IV_analysis.py"]
+                "qubicpack/scripts/IV_analysis.py",
+		"qubicpack/scripts/calculate_and_upload_DACoffsetTable.py"]
 include-package-data = true	
 
 [tool.setuptools.package-data]

@@ -41,8 +41,7 @@ data_keys = ['AXIS',
              'IS_MOVING',
              'IS_OUTOFRANGE',
              'FAULT']
-position_key = {}
-position_key = ['AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC']
+position_key = {'AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
 rec_data_names = ','.join(data_keys[1:])
 rec_data_format_list = ['float64','float64','float64','float64','float64','uint8','uint8','uint8','uint8','uint8','uint8','uint8']
 rec_data_format = ','.join(rec_data_format_list)

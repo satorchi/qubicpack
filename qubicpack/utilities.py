@@ -24,16 +24,25 @@ asic_reversal_date = dt.datetime.strptime('2018-02-06 18:00','%Y-%m-%d %H:%M').r
 # on 27 Feb 2020, qubic-central was finally changed to UTC
 qc_utc_date = dt.datetime.strptime('2020-02-27 10:23:33','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
 
+# on, or about, 23 Nov 2022, the FPGA electronics were updated (photo of Fabrice and Damien R.)
+# there is a 180 degree phase difference between the PPS in ASIC-1 and ASIC-2
+# It was 8 Feb 2023: https://elog-qubic.in2p3.fr/demo/967
+fpga_pps_180phase_date = dt.datetime.strptime('2023-02-08 11:21:19','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
+
+# first data from Alto Chorrillos: trying to correct for PPS/GPS offset (180 phase difference) between ASICs
+default_gps_offset_asic2_date = dt.datetime(year=2023,month=2,day=16,hour=17,minute=6,second=14,tzinfo=TZUTC)
+
+# phase difference between PPS on the ASICs was repaired 2026-03-04:
+# elog:  https://elog-qubic.in2p3.fr/demo/1330
+# rocketchat: https://chat.in2p3.fr/group/Hpr9YuA3au2CaK3z3?msg=mr9DGrNmDfHSokQRE
+pps_phase_difference_corrected_date = dt.datetime(year=2026,month=3,day=4,hour=18,minute=31,tzinfo=TZUTC)
+
 # on 18 apr 2023, we implemented the observation mount used at Alto Chorillos
 obsmount_implemented = dt.datetime.strptime('2023-04-18 08:17:10','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
 
 # since 17 Dec 2025, the PLC is controlling the observation mount.
 obsmount_plc_implemented = dt.datetime.strptime('2025-12-17 17:49:58','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
 
-# on, or about, 23 Nov 2022, the FPGA electronics were updated (photo of Fabrice and Damien R.)
-# there is a 180 degree phase difference between the PPS in ASIC-1 and ASIC-2
-# It was 8 Feb 2023: https://elog-qubic.in2p3.fr/demo/967
-fpga_pps_180phase_date = dt.datetime.strptime('2023-02-08 11:21:19','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
 
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128

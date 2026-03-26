@@ -137,7 +137,7 @@ def assign_flags(self,indextype='TES',t_tod=None):
             
             QS_flag_array = np.zeros((ndets,npts_interp),dtype=np.uint64)
             QS_flag_array[qsIndexes,:] = flag_array[TESmask,:]
-        return QS_flag_array
+            return QS_flag_array
 
     # flags per asic
     asic_ctr = 0

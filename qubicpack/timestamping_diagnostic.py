@@ -16,7 +16,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import datetime as dt
 TZUTC = dt.timezone.utc
-from qubicpack.utilities import figure_window_title
+from qubicpack.utilities import figure_window_title, default_gps_offset_asic2_date, pps_phase_difference_corrected_date
 
 # default for gps_sample_offset in pps2date
 # if in the future we want to change the default behaviour, we only have to change the following line
@@ -253,9 +253,8 @@ def assign_default_gps_sample_offset(self):
     This should be called after reading a qubicstudio dataset
     '''
     self.default_gps_sample_offset = default_gps_sample_offset
-    if self.obsdate > dt.datetime.strptime('2023-02-01','%Y-%m-%d').replace(tzinfo=TZUTC):
-        if self.asic==2:
-            self.default_gps_sample_offset = 10
+    if (self.obsdate > default_gps_offset_asic2_date) and (self.obsdate < pps_phase_difference_corrected_date) and (self.asic==2):
+        self.default_gps_sample_offset = 10
 
     return
 

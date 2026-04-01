@@ -410,7 +410,7 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
         ttl = '%s\n%s' % (mapinfo['title'],label)
         ax.text(0.5,1.01,ttl,ha='center',va='bottom',transform=ax.transAxes)
         if projected:
-            ax.set_xlabel('$\phi$ / degrees')
+            ax.set_xlabel('$\\phi$ / degrees')
         else:
             ax.set_xlabel('azimuth / degrees')
         if idx==0 or separate_figs:

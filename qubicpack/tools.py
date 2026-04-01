@@ -1715,6 +1715,9 @@ def qubicstudio_hk_truename(self,hktype):
     if hktype_upper == 'SWITCH2': return 'RFSwitch 2 closed'
 
     if hktype_upper == 'PLATFORM': return 'POINTING'
+    if hktype_upper == 'POSITION': return 'POINTING'
+    if hktype_upper == 'OBSMOUNT': return 'POINTING'
+    if hktype_upper.find('MOUNT')>=0: return 'POINTING'
     if hktype_upper.find('AZ')==0: return 'AZ'
     if hktype_upper.find('EL')==0: return 'EL'
     if hktype_upper.find('RO')==0: return 'POINTING'

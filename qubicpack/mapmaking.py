@@ -138,11 +138,10 @@ def make_map_no_modulation(self,
     # azimuth and elevation
     el_raw = self.elevation()
     az_raw = self.azimuth()
+    position_timeaxis = self.timeaxis(datatype='position')
 
-    # get the data and time axes
-    hk_timeaxis = self.timeaxis(datatype='hk')
     if hk_timeoffset is not None:
-        hk_timeaxis += hk_timeoffset
+        position_timeaxis += hk_timeoffset
     sci_timeaxis = self.timeaxis(datatype='sci',asic=asic)
     data_raw = self.timeline(TES=TES,asic=asic)
 
@@ -158,13 +157,10 @@ def make_map_no_modulation(self,
     else:
         signal = data_raw
         
-    # interpolate science data to housekeeping time axis
-    # data = np.interp(hk_timeaxis,sci_timeaxis,signal)
-
     # interpolate hk data to science data
     data = signal
-    az = np.interp(sci_timeaxis,hk_timeaxis,az_raw)
-    el = np.interp(sci_timeaxis,hk_timeaxis,el_raw)
+    az = np.interp(sci_timeaxis,position_timeaxis,az_raw)
+    el = np.interp(sci_timeaxis,position_timeaxis,el_raw)
 
     # find the indexes of the elevation which are the same
     el_index_list = []

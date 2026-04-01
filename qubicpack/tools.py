@@ -21,7 +21,7 @@ import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
 from .utilities import obsmount_implemented, obsmount_plc_implemented, read_obsmount_bindat, interpret_rawmask
-from .pointing import read_pointing_bindat, position_key, axis_names
+from .pointing import read_pointing_bindat, position_offset, position_key, axis_names
 from satorchipy.datefunctions import utcnow, utcfromtimestamp
 
 qubicasic_hk_keys = ['Apol',
@@ -1374,7 +1374,7 @@ def assign_pointing_data(self,datadir):
         self.pointing_data['ok'] = pointing_dat['ok']
         for axisname in axis_names:
             if axisname not in pointing_dat['data'].keys(): continue
-            self.pointing_data[axisname]['VALUE'] = pointing_dat['data'][axisname][position_key[axisname]]
+            self.pointing_data[axisname]['VALUE'] = pointing_dat['data'][axisname][position_key[axisname]] + position_offset[axisname]
             self.pointing_data[axisname]['ok'] = True
             axis_n_ok += 1        
         return pointing_dat['ok']

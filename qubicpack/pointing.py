@@ -15,6 +15,16 @@ import os
 import numpy as np
 from qubicpack.utilities import fmt_translation
 
+# position offsets measured
+# 'EL': 49.315, # see elog: https://elog-qubic.in2p3.fr/demo/1296
+# 'EL': 49.935, # see elog: https://elog-qubic.in2p3.fr/demo/1321
+# 'AZ':  9.0    # see elog: https://elog-qubic.in2p3.fr/demo/1322 
+position_offset = {'AZ': 9.0, 
+                   'EL': 49.935,
+                   'RO': 0.0,
+                   'TR': 0.0
+                   }
+
 axis_fullname = {'AZ': 'azimuth', 'EL': 'elevation', 'RO': 'boresight rotation', 'TR': 'Little Train'}
 axis_names = list(axis_fullname.keys())
 

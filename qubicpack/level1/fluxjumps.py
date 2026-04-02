@@ -17,7 +17,7 @@ see:  qubic/scripts/Calibration/Flux_jumps/2025-data/jumps_soft.py
 '''
 import numpy as np
 from scipy.signal import argrelextrema, find_peaks, find_peaks_cwt, savgol_filter 
-import bottleneck as bn
+from bottleneck import move_median
 from sklearn.cluster import DBSCAN
 
 class fluxjumps:
@@ -45,7 +45,7 @@ class fluxjumps:
     def haar_function(self, todarray):
 
         tod_haar = np.zeros(todarray.size)
-        xf = bn.move_median(todarray, self.window_size)[self.window_size:]
+        xf = move_median(todarray, self.window_size)[self.window_size:]
         tod_haar[self.window_size+self.window_size//2:-self.window_size+self.window_size//2] = xf[:-self.window_size] - xf[self.window_size:]
 
         return tod_haar
@@ -120,7 +120,7 @@ class fluxjumps:
             j = i + 1
 
             # Agrupar mientras estén dentro del margen
-            while j < len(xcf) and xc[j] - xfin <= max_gap:
+            while (j < len(xcf)) and ((xc[j] - xfin) <= max_gap):
                 xfin = xcf[j]
                 j += 1
 

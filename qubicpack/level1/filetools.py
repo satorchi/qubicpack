@@ -15,6 +15,7 @@ import numpy as np
 import h5py
 
 from satorchipy.datefunctions import utcnow, tstamp2dt
+from satorchipy.utilities import make_errmsg
 from .flags import nflags, flag_definition
 
 # explanatory notes for the primary header
@@ -227,7 +228,8 @@ def write_level1(self,indextype='QUBICSOFT',units='Watt',infolink=None,savepath=
     try:
         handle = h5py.File(filename_fullpath,'w')
     except:
-        print('ERROR! Could not create file: %s' % filename_fullpath)
+        errmsg = make_errmsg('ERROR! Could not create file: %s' % filename_fullpath)
+        print(errmsg)
         return None
 
     # write the primary header

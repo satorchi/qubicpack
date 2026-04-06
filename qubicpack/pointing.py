@@ -38,6 +38,10 @@ rec_header_names = ','.join(header_keys)
 rec_header_format_list = ['float64','uint8','uint8','uint8','int16']
 rec_header_format = ','.join(rec_header_format_list)
 
+v2_rec_header_names = ','.join(['RX_TIMESTAMP']+header_keys)
+v2_rec_header_format_list = ['float64','float64','uint8','uint8','uint8','int16']
+v2_rec_header_format = ','.join(v2_rec_header_format_list)
+
 data_keys = ['AXIS',
              'ACT_VEL_RES',
              'ACT_VEL_ENC',
@@ -133,17 +137,46 @@ def read_pointing_bindat(filename):
     dat_bytes = h.read()
     h.close()
 
-    chunk_list = dat_bytes.split(STX)
+    # check if it's the version 1 or version 2 which includes the timestamp of reception
+    STXv2 = STX + 'RX'.encode()
+    chunk_list = dat_bytes.split(STXv2)
     npts = len(chunk_list) - 1
-
-    headerdat = np.recarray(names=rec_header_names,formats=rec_header_format,shape=(npts))
+    if npts>1:
+        pointing_file_version = 2
+        rechdr_names = v2_rec_header_names
+        rechdr_fmts = v2_rec_header_format
+    else:
+        chunk_list = dat_bytes.split(STX)
+        pointing_file_version = 1        
+        npts = len(chunk_list) - 1
+        rechdr_names = rec_header_names
+        rechdr_fmts = rec_header_format
+        
+    headerdat = np.recarray(names=rechdr_names,formats=rechdr_fmts,shape=(npts))
     axdat = {}
     for axname in axis_names:
         axdat[axname] = np.recarray(names=rec_data_names,formats=rec_data_format,shape=(npts))
 
     idx = 0
+    v2_separator = 'XR'.encode()
     for chunk in chunk_list:
-        # print('[%04i]' % idx)
+        if pointing_file_version==2:
+            chunks = chunk.split(v2_separator)
+            if len(chunks)<2: continue
+            chunk = chunks[-1]
+            try:
+                rx_timestamp_str = chunks[0].decode()
+            except:
+                continue
+
+            try:
+                rx_timestamp = eval(rx_timestamp_str)
+            except:
+                continue
+
+            headerdat[idx].RX_TIMESTAMP = rx_timestamp
+
+        # from here, both v1 and v2 are the same
         packet = interpret_pointing_chunk(chunk)
         if not packet['ok']:
             print('packet not okay: %s' % packet['error'])

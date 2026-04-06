@@ -43,6 +43,9 @@ obsmount_implemented = dt.datetime.strptime('2023-04-18 08:17:10','%Y-%m-%d %H:%
 # since 17 Dec 2025, the PLC is controlling the observation mount.
 obsmount_plc_implemented = dt.datetime.strptime('2025-12-17 17:49:58','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
 
+# 2026-04-06 13:15:22 fast dumping of obsmount data also includes the timestamp of reception
+#  do not rely on the PLC clock
+obsmount_fastdump_v2_implemented = dt.datetime.strptime('2026-04-06 13:15:22','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
 
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128

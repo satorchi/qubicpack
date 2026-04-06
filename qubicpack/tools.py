@@ -1370,7 +1370,11 @@ def assign_pointing_data(self,datadir):
     self.printmsg('Looking for %s' % pointing_file,verbosity=3)
     if os.path.isfile(pointing_file):
         pointing_dat = read_pointing_bindat(pointing_file)
-        self.pointing_data['TIMESTAMP'] =  pointing_dat['header'].TIMESTAMP
+        # we use the timestamp of reception because the PLC clock is not synchronized
+        if 'RX_TIMESTAMP' in pointing_dat['header'].dtype.names:
+            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].RX_TIMESTAMP
+        else:
+            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP
         self.pointing_data['ok'] = pointing_dat['ok']
         for axisname in axis_names:
             if axisname not in pointing_dat['data'].keys(): continue

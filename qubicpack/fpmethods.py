@@ -962,6 +962,9 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
     TES,asic = args
     self.printmsg('plotting timeline for asic=%i, TES=%i' % (asic,TES),verbosity=2)
 
+    labelpad_step = 80
+    labelpad = 0
+
 
     if ax is None:
         newplot = True
@@ -995,13 +998,15 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         
         axaz = ax.twinx()
         curves += axaz.plot(d_az,az,color='red',label='azimuth')
-        axaz.tick_params(axis='y',labelcolor='red')
+        axaz.tick_params(axis='y',labelcolor='red',pad=labelpad)
+        labelpad += labelpad_step
         axaz.set_ylim(az.min(),az.max())
         axaz.set_ylabel('azimuth',rotation=270,ha='right',va='bottom',color='red')
 
         axel = ax.twinx()
         curves += axel.plot(d_el,el,color='green',label='elevation')
-        axel.tick_params(axis='y',labelcolor='green',pad=80)
+        axel.tick_params(axis='y',labelcolor='green',pad=labelpad)
+        labelpad += labelpad_step
         axel.set_ylim(el.min(),el.max())
         axel.set_ylabel('elevation',rotation=270,ha='left',va='bottom',color='green')
 
@@ -1012,7 +1017,8 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         
         axbath = ax.twinx()
         curves += axbath.plot(d_Tbath,Tbath,color='magenta',label='T$_\\mathrm{bath}$')
-        axbath.tick_params(axis='y',labelcolor='magenta')
+        axbath.tick_params(axis='y',labelcolor='magenta',pad=labelpad)
+        labelpad += labelpad_step
         axbath.set_ylim(Tbath.min(),Tbath.max())
         axbath.set_ylabel('T$_\\mathrm{bath}$ / K',rotation=270,ha='right',va='bottom',color='magenta')
     
@@ -1023,7 +1029,8 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         
         axhwp = ax.twinx()
         curves += axhwp.plot(d_hwp,hwp,color='purple',label='HWP')
-        axhwp.tick_params(axis='y',labelcolor='purple')
+        axhwp.tick_params(axis='y',labelcolor='purple',pad=labelpad)
+        labelpad += labelpad_step
         axhwp.set_ylim(hwp.min(),hwp.max())
         axhwp.set_ylabel('HWP position',rotation=270,ha='right',va='bottom',color='purple')
 

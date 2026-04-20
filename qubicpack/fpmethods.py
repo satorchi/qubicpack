@@ -951,6 +951,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
                   plot_calsource=False,
                   plot_azel=False,
                   plot_Tbath=False,
+                  plot_1K=False,
                   plot_hwp=False,
                   plot_raw=False):
     '''
@@ -1021,6 +1022,19 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         labelpad += labelpad_step
         axbath.set_ylim(Tbath.min(),Tbath.max())
         axbath.set_ylabel('T$_\\mathrm{bath}$ / K',rotation=270,ha='right',va='bottom',color='magenta')
+
+    if plot_1K:
+        T1K = self.get_hk('1K Stage')
+        t_T1K = self.timeaxis(datatype='1K Stage')
+        d_T1K = tstamp2dt(t_T1K)
+        
+        ax1K = ax.twinx()
+        curves += ax1K.plot(d_T1K,T1K,color='#1f77b4',label='T$_\\mathrm{1K}$')
+        ax1K.tick_params(axis='y',labelcolor='#1f77b4',pad=labelpad)
+        labelpad += labelpad_step
+        ax1K.set_ylim(T1K.min(),T1K.max())
+        ax1K.set_ylabel('T$_\\mathrm{1K}$ / K',rotation=270,ha='right',va='bottom',color='#1f77b4')
+        
     
     if plot_hwp:
         hwp = self.hwp_position()
@@ -1038,6 +1052,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
 
     labs = [l.get_label() for l in curves]
     ax.legend(curves, labs, loc='upper right',facecolor='white',framealpha=0.7)
+    fig.set_tight_layout(True)
     pngname = '%s_TES%03i_ASIC%02i_timeline.png' % (self.dataset_name,TES,asic)
     ret['pngname'] = pngname
     if newplot: fig.savefig(pngname,format='png',dpi=100,bbox_inches='tight')

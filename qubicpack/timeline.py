@@ -515,7 +515,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
 
     biasphase = self.bias_phase()
         
-    ttl=str('QUBIC Timeline curve for TES#%3i (%s)' % (TES,timeline_start.strftime('%Y-%b-%d %H:%M UTC')))
+    ttl=str('QUBIC TES#%3i: %s' % (TES,self.dataset_name))
 
     if 'TES_TEMP' in keys and tdata['TES_TEMP'] is not None:
         tempstr='%.0f mK' % (1000*tdata['TES_TEMP'])
@@ -661,10 +661,9 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     labs = [l.get_label() for l in curves]
     ax.legend(curves, labs, loc='upper right',fontsize=fontsize)
 
-    pngname=str('TES%03i_array-%s_ASIC%i_timeline_%s.png' % (TES,self.detector_name,self.asic,timeline_start.strftime('%Y%m%dT%H%M%SUTC')))
-    pngname_fullpath=self.output_filename(pngname)
-    if newplot and isinstance(pngname_fullpath,str):
-        plt.savefig(pngname_fullpath,format='png',dpi=100,bbox_inches='tight')
+    pngname = 'TES%03i_array-%s_ASIC%i_timeline_%s.png' % (TES,self.detector_name,self.asic,timeline_start.strftime('%Y%m%dT%H%M%SUTC'))
+    if newplot and isinstance(pngname,str):
+        plt.savefig(pngname,format='png',dpi=100,bbox_inches='tight')
     if xwin:plt.show()
     else: plt.close('all')
 

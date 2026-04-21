@@ -1048,7 +1048,7 @@ def plot_iv(self,TES=None,multi=False,xwin=True,best=True):
     I0=self.draw_tangent(TES)
     
     R1=self.R1(TES)
-    if not R1 is None: txt+=str('\ndynamic normal resistance:  R$_1$=%.4f $\Omega$' % R1)
+    if not R1 is None: txt+=str('\ndynamic normal resistance:  R$_1$=%.4f $\\Omega$' % R1)
 
     # draw a fit to the I-V curve
     txt+=str('\nfit residual: %.4e' % filterinfo['residual'])
@@ -1107,7 +1107,7 @@ def plot_iv(self,TES=None,multi=False,xwin=True,best=True):
         entry=self.lookup_TEStable(key='PIX',value=PIX)
         R300=entry['R300']
         if isinstance(R300,float):
-            R300str='%.2f $\Omega$' % R300
+            R300str='%.2f $\\Omega$' % R300
         else:
             R300str=R300
         txt+='\nRoom Temperature Resistance: %s' % R300str
@@ -1584,9 +1584,9 @@ def plot_fom(self,response=None,fom='responsivity',
     elif fom=='P':
         lbl = 'P / W'
     elif fom=='G0':
-        lbl = 'G / $\Omega^{-1}$'
+        lbl = 'G / $\\Omega^{-1}$'
     elif fom=='Z0':
-        lbl = 'Z / $\Omega$'
+        lbl = 'Z / $\\Omega$'
     else:
         lbl = '%s' % fom
     ax.set_ylabel(lbl)
@@ -1623,7 +1623,7 @@ def plot_fom(self,response=None,fom='responsivity',
 
 
     if fom=='responsivity':
-        ax.plot(Vbias,0.5/Vtes,label='$\dfrac{1}{2\\mathrm{V}_\\mathrm{TES}}$',color='red')
+        ax.plot(Vbias,0.5/Vtes,label='$\\dfrac{1}{2\\mathrm{V}_\\mathrm{TES}}$',color='red')
 
     # draw a vertical line at the turnover
     if not Vturnover_TES is None:
@@ -2005,9 +2005,9 @@ def iv_tex_table_entry(self,TES):
         R1str='-'
     else:
         if abs(R1)<100:
-            R1str=str('%.2f $\Omega$' % R1)
+            R1str=str('%.2f $\\Omega$' % R1)
         else:
-            R1str=str('%.2e $\Omega$' % R1)
+            R1str=str('%.2e $\\Omega$' % R1)
 
     comment=self.filtersummary[TES_idx]['comment']
     if comment=='no comment': comment='good'
@@ -2022,9 +2022,9 @@ def iv_tex_table_entry(self,TES):
         R300=entry['R300']
         if isinstance(R300,float):
             if abs(R300)<10000:
-                R300str='%.1f $\Omega$' % R300
+                R300str='%.1f $\\Omega$' % R300
             else:
-                R300str='%.2e $\Omega$' % R300
+                R300str='%.2e $\\Omega$' % R300
         else:
             R300str=R300
 

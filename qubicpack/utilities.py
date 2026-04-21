@@ -192,7 +192,14 @@ def interpret_rawmask(rawmask_hk,nsamples):
     '''
     interpret the RawMask bit values to sample numbers for the ASIC setting
     '''
-    mask = np.zeros(nsamples,dtype=bool)
+
+    # this is a hack to get past an anomalie with the nsamples read from conf-asics-*.fits
+    # it does not seem correct in dataset: 2025-06-20_09.36.52__dome-closed-IV_sample_1000-no_regs
+    if nsamples>1000:
+        mask = np.zeros(nsamples,dtype=bool)
+    else:
+        mask = np.zeros(1000,dtype=bool)
+        
     for maskidx,bits in enumerate(rawmask_hk):
 
         if bits==0: continue
@@ -204,7 +211,7 @@ def interpret_rawmask(rawmask_hk,nsamples):
             mask[maskidx*8+vector_idx] = bitval
             # print('[%03i] bitmask=%s, bits=%s, bitval=%i' % ((maskidx*8+bitidx),f'{bitmask:08b}',f'{bits:08b}',bitval))
     # nmasked = mask.sum()
-    return mask
+    return mask[0:nsamples]
 
 
 ############ file tools for housekeeping data ###################

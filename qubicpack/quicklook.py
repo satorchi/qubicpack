@@ -333,7 +333,7 @@ def plot_hwp(self,ax=None,fontsize=12):
     return ax
     
 
-def quicklook(self,TES=(54,54),
+def quicklook(self,TES=(96,94),
               xwin=True,
               savedir=None,
               filename=None,

@@ -1042,7 +1042,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         d_hwp = tstamp2dt(t_hwp)
         
         axhwp = ax.twinx()
-        curves += axhwp.plot(d_hwp,hwp,color='purple',label='HWP')
+        curves += axhwp.plot(d_hwp,hwp,ls='none',marker='d',color='purple',label='HWP')
         axhwp.tick_params(axis='y',labelcolor='purple',pad=labelpad)
         labelpad += labelpad_step
         axhwp.set_ylim(hwp.min(),hwp.max())

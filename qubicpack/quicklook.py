@@ -142,7 +142,7 @@ def plot_300mKtemperatures(self,ax=None,fontsize=12):
 
     label = {}
     label['AVS47_1_CH2'] = 'TES stage RIRT'
-    label['AVS47_1_CH5'] = 'Film breaker'
+    #label['AVS47_1_CH5'] = 'Film breaker'
     label['AVS47_1_CH6'] = '0.3K fridge CH'
 
     ax = self.plot_temperatures(ax,label,'300mK Temperatures',fontsize)

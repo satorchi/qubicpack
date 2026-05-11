@@ -28,12 +28,12 @@ position_offset = {'AZ': 9.0,
 axis_fullname = {'AZ': 'azimuth', 'EL': 'elevation', 'RO': 'boresight rotation', 'TR': 'Little Train'}
 axis_names = list(axis_fullname.keys())
 
-header_keys = ['TIMESTAMP',
-               'IS_ETHERCAT',
-               'IS_SYNC',
-               'IS_MAINT',
-               'AXES_ASYNC_COUNT']
-n_header_keys = len(header_keys)
+v1_header_keys = ['TIMESTAMP',
+                  'IS_ETHERCAT',
+                  'IS_SYNC',
+                  'IS_MAINT',
+                  'AXES_ASYNC_COUNT']
+
 rec_header_names = ','.join(header_keys)
 rec_header_format_list = ['float64','uint8','uint8','uint8','int16']
 rec_header_format = ','.join(rec_header_format_list)
@@ -41,6 +41,17 @@ rec_header_format = ','.join(rec_header_format_list)
 v2_rec_header_names = ','.join(['RX_TIMESTAMP']+header_keys)
 v2_rec_header_format_list = ['float64','float64','uint8','uint8','uint8','int16']
 v2_rec_header_format = ','.join(v2_rec_header_format_list)
+
+v3_header_keys = ['TIMESTAMP1',
+                  'TIMESTAMP2',
+                  'IS_ETHERCAT',
+                  'IS_SYNC',
+                  'IS_MAINT',
+                  'AXES_ASYNC_COUNT']
+v3_rec_header_names = ','.join(['RX_TIMESTAMP']+v3_header_keys)
+v3_rec_header_format_list = ['float64','float64','float64','uint8','uint8','uint8','int16']
+v3_rec_header_format = ','.join(v3_rec_header_format_list)
+
 
 data_keys = ['AXIS',
              'ACT_VEL_RES',
@@ -72,6 +83,7 @@ def interpret_pointing_chunk(dat):
     packet = {}
     packet['ok'] = False
     packet['error'] = 'NONE'
+    packet['version'] = 1
     
     dat_str = dat.decode()
     if len(dat_str)==0:
@@ -110,6 +122,12 @@ def interpret_pointing_chunk(dat):
             continue
 
         # header data
+        n_headers = len(col)
+        if n_headers==len(v3_header_keys):
+            packet['version'] = 3
+            header_keys = v3_header_keys
+        else:
+            header_keys = v1_header_keys
         for idx,val_str in enumerate(col):
             key = header_keys[idx]
             try:
@@ -139,12 +157,20 @@ def read_pointing_bindat(filename):
 
     # check if it's the version 1 or version 2 which includes the timestamp of reception
     STXv2 = STX + 'RX'.encode()
+    v2_separator = 'XR'.encode()
     chunk_list = dat_bytes.split(STXv2)
     npts = len(chunk_list) - 1
     if npts>1:
-        pointing_file_version = 2
-        rechdr_names = v2_rec_header_names
-        rechdr_fmts = v2_rec_header_format
+        first_chunk = chunk_list[0].split(v2_separator)[0]
+        packet = interpret_pointing_chunk(first_chunk)
+        if packet['version']==3:
+            pointing_file_version = 3
+            rechdr_names = v3_rec_header_names
+            rechdr_fmts = v3_rec_header_format
+        else:        
+            pointing_file_version = 2
+            rechdr_names = v2_rec_header_names
+            rechdr_fmts = v2_rec_header_format
     else:
         chunk_list = dat_bytes.split(STX)
         pointing_file_version = 1        
@@ -158,7 +184,6 @@ def read_pointing_bindat(filename):
         axdat[axname] = np.recarray(names=rec_data_names,formats=rec_data_format,shape=(npts))
 
     idx = 0
-    v2_separator = 'XR'.encode()
     for chunk in chunk_list:
         if pointing_file_version==2:
             chunks = chunk.split(v2_separator)

@@ -34,11 +34,11 @@ v1_header_keys = ['TIMESTAMP',
                   'IS_MAINT',
                   'AXES_ASYNC_COUNT']
 
-rec_header_names = ','.join(header_keys)
+rec_header_names = ','.join(v1_header_keys)
 rec_header_format_list = ['float64','uint8','uint8','uint8','int16']
 rec_header_format = ','.join(rec_header_format_list)
 
-v2_rec_header_names = ','.join(['RX_TIMESTAMP']+header_keys)
+v2_rec_header_names = ','.join(['RX_TIMESTAMP']+v1_header_keys)
 v2_rec_header_format_list = ['float64','float64','uint8','uint8','uint8','int16']
 v2_rec_header_format = ','.join(v2_rec_header_format_list)
 

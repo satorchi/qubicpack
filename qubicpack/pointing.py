@@ -139,9 +139,9 @@ def interpret_pointing_chunk(dat):
             except:
                 packet[key] = val_str
 
-    for key in plc_timestamp_keys:
-        if key in packet.keys():            
-            packet[key] *= 0.001
+    # for key in plc_timestamp_keys:
+    #     if key in packet.keys():            
+    #         packet[key] *= 0.001
             
     packet['ok'] = True
     return packet

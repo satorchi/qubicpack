@@ -42,7 +42,7 @@ v2_rec_header_names = ','.join(['RX_TIMESTAMP']+v1_header_keys)
 v2_rec_header_format_list = ['float64','float64','uint8','uint8','uint8','int16']
 v2_rec_header_format = ','.join(v2_rec_header_format_list)
 
-v3_header_keys = ['TIMESTAMP',
+v3_header_keys = ['TIMESTAMP1',
                   'TIMESTAMP2',
                   'IS_ETHERCAT',
                   'IS_SYNC',
@@ -139,9 +139,10 @@ def interpret_pointing_chunk(dat):
             except:
                 packet[key] = val_str
 
-    # for key in plc_timestamp_keys:
-    #     if key in packet.keys():            
-    #         packet[key] *= 0.001
+    # PLC data packet has timestamp in milliseconds
+    for key in packet.keys():
+        if key in packet.find('TIMESTAMP')==0: 
+            packet[key] *= 0.001
             
     packet['ok'] = True
     return packet
@@ -168,23 +169,28 @@ def read_pointing_bindat(filename):
     chunk_list = dat_bytes.split(STXv2)
     npts = len(chunk_list) - 1
     if npts>1:
-        first_chunk = chunk_list[0].split(v2_separator)[0]
+        first_chunk = chunk_list[0].split(v2_separator)[-1]
         packet = interpret_pointing_chunk(first_chunk)
+        print('PLC data first chunk packet is version: %i' % packet['version'])
         if packet['version']==3:
             pointing_file_version = 3
             rechdr_names = v3_rec_header_names
             rechdr_fmts = v3_rec_header_format
+            header_keys = v3_header_keys
         else:        
             pointing_file_version = 2
             rechdr_names = v2_rec_header_names
             rechdr_fmts = v2_rec_header_format
+            header_keys = v1_header_keys
     else:
         chunk_list = dat_bytes.split(STX)
         pointing_file_version = 1        
         npts = len(chunk_list) - 1
         rechdr_names = rec_header_names
         rechdr_fmts = rec_header_format
-        
+        header_keys = v1_header_keys
+
+    print('PLC data format version: %i' % pointing_file_version)
     headerdat = np.recarray(names=rechdr_names,formats=rechdr_fmts,shape=(npts))
     axdat = {}
     for axname in axis_names:

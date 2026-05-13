@@ -141,7 +141,7 @@ def interpret_pointing_chunk(dat):
 
     # PLC data packet has timestamp in milliseconds
     for key in packet.keys():
-        if key in packet.find('TIMESTAMP')==0: 
+        if key.find('TIMESTAMP')==0:
             packet[key] *= 0.001
             
     packet['ok'] = True
@@ -169,7 +169,7 @@ def read_pointing_bindat(filename):
     chunk_list = dat_bytes.split(STXv2)
     npts = len(chunk_list) - 1
     if npts>1:
-        first_chunk = chunk_list[0].split(v2_separator)[-1]
+        first_chunk = chunk_list[1].split(v2_separator)[-1]
         packet = interpret_pointing_chunk(first_chunk)
         print('PLC data first chunk packet is version: %i' % packet['version'])
         if packet['version']==3:
@@ -198,7 +198,7 @@ def read_pointing_bindat(filename):
 
     idx = 0
     for chunk in chunk_list:
-        if pointing_file_version==2:
+        if pointing_file_version>1:
             chunks = chunk.split(v2_separator)
             if len(chunks)<2: continue
             chunk = chunks[-1]

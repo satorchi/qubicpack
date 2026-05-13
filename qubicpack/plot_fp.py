@@ -125,9 +125,9 @@ def plot_fp(args):
     if xwin: plt.ion()
     else: plt.ioff()
     fig,ax=plt.subplots(nrows,ncols,figsize=figsize)
-    fig.text(0.5,0.985,ttl,ha='center',fontsize=ttlfontsize)
     figure_window_title(fig,ttl)
-    fig.suptitle(subttl,fontsize=ttlfontsize)
+    figttl = '\n'.join([ttl,subttl])
+    fig.suptitle(figttl,fontsize=ttlfontsize)
     
 
     for j in range(nrows):

@@ -52,11 +52,6 @@ v3_rec_header_names = ','.join(['RX_TIMESTAMP']+v3_header_keys)
 v3_rec_header_format_list = ['float64','float64','float64','uint8','uint8','uint8','int16']
 v3_rec_header_format = ','.join(v3_rec_header_format_list)
 
-plc_timestamp_keys = []
-for key in v1_header_keys + v3_header_keys:
-    if key.find('TIMESTAMP')==0:
-        plc_timestamp_keys.append(key)
-
 data_keys = ['AXIS',
              'ACT_VEL_RES',
              'ACT_VEL_ENC',

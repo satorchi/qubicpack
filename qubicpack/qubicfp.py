@@ -55,7 +55,8 @@ class qubicfp:
         hwp_position,\
         calsource,\
         qubicstudio_filetype_truename,\
-        qubicstudio_hk_truename
+        qubicstudio_hk_truename,\
+        dome
     
     from .assign_variables import\
         assign_constants,\

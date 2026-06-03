@@ -72,6 +72,9 @@ def infotext(self):
     if self.temperature is not None:
         txt += ' T$_\\mathrm{bath}$=%.1fmK' % (1000*self.temperature)
 
+    domeinfo = self.dome()
+    txt += ' Dome %s' % domeinfo['status']
+
     return txt
 
 def calsource_oldinfo(self):
@@ -962,6 +965,9 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
     if args is None:return
     TES,asic = args
     self.printmsg('plotting timeline for asic=%i, TES=%i' % (asic,TES),verbosity=2)
+    ttl_list = [self.infotext()]
+    ttl_list.append(self.asic(asic).infotext(TES=TES))
+    ttl = '\n'.join(ttl_list)
 
     labelpad_step = 80
     labelpad = 0
@@ -981,6 +987,7 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
         
     ax = ret['ax']
     fig = ax.get_figure()
+    fig.suptitle(ttl)
     if plot_calsource:
         t_src,v_src = self.calsource()
         d_src = tstamp2dt(t_src)

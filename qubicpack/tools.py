@@ -1657,7 +1657,11 @@ def qubicstudio_filetype_truename(self,ftype,asic=None):
 
     self.printmsg('DEBUG: calling filetype_truename with ftype=%s' % ftype,verbosity=4)
     if ftype is None: return None
-    if ftype.upper() == 'PLATFORM' or ftype.upper().find('AZ')==0 or ftype.upper().find('EL')==0:
+    if ftype.upper() == 'PLATFORM'\
+       or ftype.upper().find('AZ')==0\
+       or ftype.upper().find('EL')==0\
+       or ftype.upper().find('RO')==0\
+       or ftype.upper().find('TR')==0:
         return 'POINTING'
         
     if ftype.upper() == 'HK': return 'INTERN_HK'
@@ -1721,8 +1725,8 @@ def qubicstudio_hk_truename(self,hktype):
     if hktype_upper.find('MOUNT')>=0: return 'POINTING'
     if hktype_upper.find('AZ')==0: return 'AZ'
     if hktype_upper.find('EL')==0: return 'EL'
-    if hktype_upper.find('RO')==0: return 'POINTING'
-    if hktype_upper.find('TR')==0: return 'POINTING'
+    if hktype_upper.find('RO')==0: return 'RO'
+    if hktype_upper.find('TR')==0: return 'TR'
         
     if hktype_upper.find('AV')==0: return hktype_upper
     if hktype_upper == 'CALSOURCE': return 'CALSOURCE'
@@ -1730,6 +1734,11 @@ def qubicstudio_hk_truename(self,hktype):
     if hktype_upper == 'TBATH': return 'AVS47_1_CH2'
     if hktype_upper == 'HWP': return 'HWP-Position'
     if hktype_upper.find('SYNC')>=0: return 'NETQUIC synchro error'
+
+    if hktype_upper.find('DOME')>=0 or hktype_upper.find('PUERTA')>=0:
+        if hktype_upper[-1]=='A': return 'Temp_18'
+        if hktype_upper[-1]=='B': return 'Temp_19'
+        return hktype
 
     hktype_spaces = hktype_upper.replace(' ','_')
     if hktype_spaces.find('FLL_P')>=0: return 'FLL_P'
@@ -1742,6 +1751,48 @@ def qubicstudio_hk_truename(self,hktype):
         if hktype_upper == self.temperature_labels[key].upper(): return key
     
     return hktype
+
+def dome(self):
+    '''
+    return the dome status info
+    '''
+    retval = {}
+    retval['ok'] = True
+    retval['error'] = 'NONE'
+    retval['status'] = 'OPEN'
+
+    for key in ['DOME A','DOME B']:
+        door = self.get_hk(key)
+        retval[key] = door
+        npts = len(door)
+        mask = (door!=-1060) & (door!=-1061)
+        npts_valid = door[mask].sum()
+        if npts_valid==0:
+            retval[key+' status'] = 'UNKNOWN'
+            retval['status'] = 'UNKNOWN'
+            retval['ok'] = False
+            continue
+        
+        if npts_valid!=npts:
+            retval['ok'] = False
+            retval['error'] = 'partial housekeeping'
+
+        door_valid = door[mask]
+        maskopen = (door_valid<24) & (door_valid>=0)
+        npts_open = door_valid[maskopen].sum()
+
+        if npts_open==0:
+            retval[key+' status'] = 'CLOSED'
+            retval['status'] = 'CLOSED'
+        elif npts_open<npts_valid:
+            open_percent = 100*(npts_open/npts_valid)
+            retval[key+' status'] = 'OPEN %.1f%% of the time' % open_percent
+            if open_percent<95: retval['status'] = 'CLOSED'
+        else:        
+            retval[key+' status'] = 'OPEN'
+    
+    return retval
+    
 
 def azel_etc(self,TES=None):
     '''

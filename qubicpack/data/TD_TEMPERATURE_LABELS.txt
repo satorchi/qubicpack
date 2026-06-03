@@ -42,3 +42,15 @@ HEATER4 = 1K-4HS
 HEATER5 = 300mK-3CP
 HEATER6 = 300mK-3HS
 HEATER7 = 1K-heater
+
+Pressure_0 = pressure
+Pressure_3 = azimuth
+Pressure_4 = elevation
+Pressure_5 = rotation
+Pressure_6 = train
+
+MHS1 = mech heat switch 1
+MHS2 = mech heat switch 2
+
+Temp_18 = Dome Puerta A
+Temp_19 = Dome Puerta B

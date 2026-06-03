@@ -22,7 +22,7 @@ from collections import OrderedDict
 from astropy.io import fits as pyfits
 from .utilities import obsmount_implemented, obsmount_plc_implemented, read_obsmount_bindat, interpret_rawmask
 from .pointing import read_pointing_bindat, position_offset, position_key, axis_names
-from satorchipy.datefunctions import utcnow, utcfromtimestamp
+from satorchipy.datefunctions import utcnow, utcfromtimestamp, str2dt
 
 qubicasic_hk_keys = ['Apol',
                      'CN',
@@ -75,12 +75,8 @@ def read_date_from_filename(self,filename):
     read the date from the filename. 
     this hasn't been used in a long time
     '''
-    try:
-        datestr=filename.split('_')[-1].split('.')[0]
-        date=dt.datetime.strptime(datestr,'%Y%m%dT%H%M%SUTC').replace(tzinfo=TZUTC)
-    except:
-        date=None
-    return date
+    datestr=filename.split('_')[-1].split('.')[0]
+    return str2dt(datestr)
 
 def data_subdir(self):
     '''

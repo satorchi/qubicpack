@@ -990,70 +990,72 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
     fig.suptitle(ttl)
     if plot_calsource:
         t_src,v_src = self.calsource()
-        d_src = tstamp2dt(t_src)
-        axsrc = ax.twinx()
-        curvesrc = axsrc.plot(d_src,-v_src,color='red',label='calibration source')
-        axsrc.text(0.5,1.01,self.calsource_infotext(),va='bottom',ha='center',fontsize=fontsize,transform=axsrc.transAxes)
-        curves += curvesrc
+        if v_src is not None:
+            d_src = tstamp2dt(t_src)
+            axsrc = ax.twinx()
+            curvesrc = axsrc.plot(d_src,-v_src,color='red',label='calibration source')
+            axsrc.text(0.5,1.01,self.calsource_infotext(),va='bottom',ha='center',fontsize=fontsize,transform=axsrc.transAxes)
+            curves += curvesrc
 
-    if plot_azel and self.azimuth() is not None and self.elevation() is not None:
+    if plot_azel:
         az = self.azimuth()
-        t_az = self.timeaxis(datatype='azimuth')
-        d_az = tstamp2dt(t_az)
+        if az is not None:
+            t_az = self.timeaxis(datatype='azimuth')
+            d_az = tstamp2dt(t_az)
+            axaz = ax.twinx()
+            curves += axaz.plot(d_az,az,color='red',label='azimuth')
+            axaz.tick_params(axis='y',labelcolor='red',pad=labelpad)
+            labelpad += labelpad_step
+            axaz.set_ylim(az.min(),az.max())
+            axaz.set_ylabel('azimuth',rotation=270,ha='right',va='bottom',color='red')
+            
         el = self.elevation()
-        t_el = self.timeaxis(datatype='elevation')
-        d_el = tstamp2dt(t_el)
-        
-        axaz = ax.twinx()
-        curves += axaz.plot(d_az,az,color='red',label='azimuth')
-        axaz.tick_params(axis='y',labelcolor='red',pad=labelpad)
-        labelpad += labelpad_step
-        axaz.set_ylim(az.min(),az.max())
-        axaz.set_ylabel('azimuth',rotation=270,ha='right',va='bottom',color='red')
-
-        axel = ax.twinx()
-        curves += axel.plot(d_el,el,color='green',label='elevation')
-        axel.tick_params(axis='y',labelcolor='green',pad=labelpad)
-        labelpad += labelpad_step
-        axel.set_ylim(el.min(),el.max())
-        axel.set_ylabel('elevation',rotation=270,ha='left',va='bottom',color='green')
+        if el is not None:
+            t_el = self.timeaxis(datatype='elevation')
+            d_el = tstamp2dt(t_el)
+            axel = ax.twinx()
+            curves += axel.plot(d_el,el,color='green',label='elevation')
+            axel.tick_params(axis='y',labelcolor='green',pad=labelpad)
+            labelpad += labelpad_step
+            axel.set_ylim(el.min(),el.max())
+            axel.set_ylabel('elevation',rotation=270,ha='left',va='bottom',color='green')
 
     if plot_Tbath:
         Tbath = self.Tbath[1]
-        t_Tbath = self.Tbath[0]
-        d_Tbath = tstamp2dt(t_Tbath)
-        
-        axbath = ax.twinx()
-        curves += axbath.plot(d_Tbath,Tbath,color='magenta',label='T$_\\mathrm{bath}$')
-        axbath.tick_params(axis='y',labelcolor='magenta',pad=labelpad)
-        labelpad += labelpad_step
-        axbath.set_ylim(Tbath.min(),Tbath.max())
-        axbath.set_ylabel('T$_\\mathrm{bath}$ / K',rotation=270,ha='right',va='bottom',color='magenta')
+        if Tbath is not None:
+            t_Tbath = self.Tbath[0]
+            d_Tbath = tstamp2dt(t_Tbath)
+            axbath = ax.twinx()
+            curves += axbath.plot(d_Tbath,Tbath,color='magenta',label='T$_\\mathrm{bath}$')
+            axbath.tick_params(axis='y',labelcolor='magenta',pad=labelpad)
+            labelpad += labelpad_step
+            axbath.set_ylim(Tbath.min(),Tbath.max())
+            axbath.set_ylabel('T$_\\mathrm{bath}$ / K',rotation=270,ha='right',va='bottom',color='magenta')
 
     if plot_1K:
         T1K = self.get_hk('1K Stage')
-        t_T1K = self.timeaxis(datatype='1K Stage')
-        d_T1K = tstamp2dt(t_T1K)
-        
-        ax1K = ax.twinx()
-        curves += ax1K.plot(d_T1K,T1K,color='#1f77b4',label='T$_\\mathrm{1K}$')
-        ax1K.tick_params(axis='y',labelcolor='#1f77b4',pad=labelpad)
-        labelpad += labelpad_step
-        ax1K.set_ylim(T1K.min(),T1K.max())
-        ax1K.set_ylabel('T$_\\mathrm{1K}$ / K',rotation=270,ha='right',va='bottom',color='#1f77b4')
+        if T1K is not None:
+            t_T1K = self.timeaxis(datatype='1K Stage')
+            d_T1K = tstamp2dt(t_T1K)
+            ax1K = ax.twinx()
+            curves += ax1K.plot(d_T1K,T1K,color='#1f77b4',label='T$_\\mathrm{1K}$')
+            ax1K.tick_params(axis='y',labelcolor='#1f77b4',pad=labelpad)
+            labelpad += labelpad_step
+            ax1K.set_ylim(T1K.min(),T1K.max())
+            ax1K.set_ylabel('T$_\\mathrm{1K}$ / K',rotation=270,ha='right',va='bottom',color='#1f77b4')
         
     
     if plot_hwp:
         hwp = self.hwp_position()
-        t_hwp = self.timeaxis(datatype='hwp')
-        d_hwp = tstamp2dt(t_hwp)
-        
-        axhwp = ax.twinx()
-        curves += axhwp.plot(d_hwp,hwp,ls='none',marker='d',color='purple',label='HWP')
-        axhwp.tick_params(axis='y',labelcolor='purple',pad=labelpad)
-        labelpad += labelpad_step
-        axhwp.set_ylim(hwp.min(),hwp.max())
-        axhwp.set_ylabel('HWP position',rotation=270,ha='right',va='bottom',color='purple')
+        if hwp is not None:
+            t_hwp = self.timeaxis(datatype='hwp')
+            d_hwp = tstamp2dt(t_hwp)
+            axhwp = ax.twinx()
+            curves += axhwp.plot(d_hwp,hwp,ls='none',marker='d',color='purple',label='HWP')
+            axhwp.tick_params(axis='y',labelcolor='purple',pad=labelpad)
+            labelpad += labelpad_step
+            axhwp.set_ylim(hwp.min(),hwp.max())
+            axhwp.set_ylabel('HWP position',rotation=270,ha='right',va='bottom',color='purple')
 
     
 

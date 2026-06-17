@@ -1758,16 +1758,24 @@ def dome(self):
     '''
     retval = {}
     retval['ok'] = True
-    retval['error'] = 'NONE'
+    retval['error'] = ''
     retval['status'] = 'OPEN'
 
     for key in ['DOME A','DOME B']:
         door = self.get_hk(key)
         retval[key] = door
+        if door is None:
+            retval['error'] += 'no info for %s ' % key
+            retval[key+' status'] = 'UNKNOWN'
+            retval['status'] = 'UNKNOWN'
+            retval['ok'] = False
+            continue
+            
         npts = len(door)
         mask = (door!=-1060) & (door!=-1061)
         npts_valid = door[mask].sum()
         if npts_valid==0:
+            retval['error'] += 'no data for %s ' % key
             retval[key+' status'] = 'UNKNOWN'
             retval['status'] = 'UNKNOWN'
             retval['ok'] = False

@@ -632,9 +632,11 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
     asic_idx = asic - 1
     detector_name = None
     temps_list=[]
+    obsdates = []
     for fp in fplist:
         go = fp.asic_list[asic_idx]
         if go is None: continue
+        obsdates.append(go.obsdate)
         if detector_name is None:
             detector_name = go.detector_name
         temps_list.append(go.temperature)
@@ -651,6 +653,10 @@ def calculate_TES_NEP(fplist,TES,asic,p0=None,T0_limit=0.7,n_limit=8,mean_istart
     ret['Tmax'] = temps_list.max()
     ret['mean_istart'] = []
     ret['mean_iend'] = []
+
+    obsdates.sort()
+    ret['start date'] = obsdates[0]
+    ret['end date'] = obsdates[-1]
     
     # make the arrays of Power and T_bath
     P = []
@@ -931,17 +937,21 @@ def plot_TES_NEP(fplist=None,TES=None,asic=None,result=None,xwin=True,p0=None,me
 
     obsdate_list = result['obsdates']
     if obsdate_list:
-        ymd_start = (obsdate_list[0].year,obsdate_list[0].month,obsdate_list[0].day)
-        ymd_end = (obsdate_list[-1].year,obsdate_list[-1].month,obsdate_list[-1].day)
-        if ymd_start==ymd_end:
-            datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%H:%M'))
-            fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%H%M%S'))
-        else:
-            datadate_str = '%s to %s' % (obsdate_list[0].strftime('%Y-%m-%d %H:%M'),obsdate_list[-1].strftime('%Y-%m-%d %H:%M'))
-            fname_datestr = '%s-%s' % (obsdate_list[0].strftime('%Y%m%dT%H%M%S'),obsdate_list[-1].strftime('%Y%m%dT%H%M%S'))
+        start_date = obsdate_list[0]
+        end_date = obsdate_list[-1]
     else:
-        datadate_str = 'insufficient data'
-        fname_datestr = '_'
+        start_date = result['start date']
+        end_date = result['end date']
+        
+        
+    ymd_start = (start_date.year,start_date.month,start_date.day)
+    ymd_end = (end_date.year,end_date.month,end_date.day)
+    if ymd_start==ymd_end:
+        datadate_str = '%s to %s' % (start_date.strftime('%Y-%m-%d %H:%M'),end_date.strftime('%H:%M'))
+        fname_datestr = '%s-%s' % (start_date.strftime('%Y%m%dT%H%M%S'),end_date.strftime('%H%M%S'))
+    else:
+        datadate_str = '%s to %s' % (start_date.strftime('%Y-%m-%d %H:%M'),end_date.strftime('%Y-%m-%d %H:%M'))
+        fname_datestr = '%s-%s' % (start_date.strftime('%Y%m%dT%H%M%S'),end_date.strftime('%Y%m%dT%H%M%S'))
 
     pngname='QUBIC_Array-%s_TES%03i_ASIC%i_NEP_%s.png' % (detector_name,TES,asic,fname_datestr)
     result['pngname'] = pngname

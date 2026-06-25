@@ -164,7 +164,8 @@ class qubicfp:
 
     from .level1.assign_flags import\
         assign_flags,\
-        assign_temperature_flags
+        assign_temperature_flags,\
+        assign_dome_flags
     
     def __init__(self):
 

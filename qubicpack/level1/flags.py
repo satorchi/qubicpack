@@ -9,6 +9,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
           permitted by law.
 
 definition and tools for flagging data
+see: https://qubic.in2p3.fr/wiki/TD/ProcessedDataFormat
 '''
 import numpy as np
 from scipy.interpolate import interp1d
@@ -25,6 +26,10 @@ flag_definition[63] = 'saturation'
 flag_definition[57] = 'cosmic ray'
 flag_definition[51] = 'uncorrected flux jump'
 flag_definition[45] = 'end of scan'
+flag_definition[44] = 'bad data replaced by White noise filling'
+flag_definition[43] = 'bad data replaced by Power spectrum-based constrained realization'
+flag_definition[42] = 'bad data replaced by ML-based constrained realization'
+flag_definition[41] = 'dome closed'
 flag_definition[39] = 'bath temperature above 350mK'
 flag_definition[38] = 'bath temperature above 340mK'
 flag_definition[37] = 'bath temperature above 330mK'
@@ -34,7 +39,9 @@ flag_definition[32] = '1K temperature above 1.2K'
 flag_definition[31] = '1K temperature above 1.1K'
 flag_definition[30] = '1K temperature rising'
 flag_definition[27] = 'corrected flux jump'
-flag_definition[17] = 'baseline adjusted'
+flag_definition[17] = 'baseline adjusted by Fourier Filtering'
+flag_definition[16] = 'baseline adjusted by Spline Fitting'
+flag_definition[15] = 'baseline adjusted by Boosted Decision Tree baseline'
 
 # for ease-of-use, we make a dictionary for the bit numbers
 flag_bit = {}

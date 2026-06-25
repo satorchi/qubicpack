@@ -43,6 +43,8 @@ hk_comment['HWP'] = "Half Wave Plate position"
 hk_comment['AZIMUTH'] = "telescope azimuth pointing in degrees"
 hk_comment['ELEVATION'] = "telescope elevation pointing in degrees"
 hk_comment['ROTATION'] = "telescope bore-sight rotation angle in degrees"
+hk_comment['DOME A'] = "dome door A opening angle: less than 24 degrees is OPEN"
+hk_comment['DOME B'] = "dome door B opening angle: less than 24 degrees is OPEN"
 hk_keys = hk_comment.keys()
 
 
@@ -122,6 +124,7 @@ def write_level1_housekeeping(self,handle):
         tstamp_end_list.append(timeaxis[-1])
         
     for key in hk_keys:
+        self.printmsg('write_level1_housekeeping: key "%s"' % key,verbosity=3)
         if key=='COMMENT': continue
         if key=='TBATH': continue # special case because there are multiple sensors. already done above.
         val = self.get_hk(key)

@@ -16,6 +16,26 @@ from .flags import interpolate_flags, set_flag
 from .saturation import assign_saturation_flags
 from .fluxjumps import fluxjumps
 
+def assign_dome_flags(self,timeaxis,flag_array):
+    '''
+    Assign the flags for the status of the dome:  Open or Closed
+    Because this is a flag for problems, the closed status is True, and open is False
+    '''
+    timeaxis_dome = self.timeaxis(datatype='DOME')
+    domeinfo = self.dome()
+    if not domeinfo['ok']:
+        # we do not have valid Dome status information (before 2026-06-03)
+        return flag_array
+
+    dome_a = domeinfo['DOME A']
+    dome_b = domeinfo['DOME B']
+    dome_closed_mask = (dome_a>24) | (dome_b>24)
+    dome_closed_mask_interp = interpolate_flags(timeaxis,timeaxis_dome,dome_closed_mask)
+    dome_closed_mask_interp = np.array(dome_closed_mask_interp,dtype=bool)
+    flag_array[:,dome_closed_mask_interp] = set_flag('dome closed',flag_array[:,dome_closed_mask_interp])
+    
+    return flag_array
+
 def assign_temperature_flags(self,timeaxis,flag_array):
     '''
     Assign the flags for temperature exceeding certain limits
@@ -125,6 +145,7 @@ def assign_flags(self,indextype='TES',t_tod=None):
     if do_interpolate:
         flag_array = np.array( flag_list ).reshape(NPIXELS*asic_ctr,npts_interp)
         flag_array = self.assign_temperature_flags(t_tod,flag_array)
+        flag_array = self.assign_dome_flags(t_tod,flag_array)
         if not is_QSindex:
             return flag_array
         

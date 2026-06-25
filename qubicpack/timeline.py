@@ -282,6 +282,10 @@ def timeaxis(self,datatype=None,axistype='pps',asic=None,TES=None,gps_sample_off
         return self.pointing_timeaxis(axis='AZ')
     if hktype=='EL':
         return self.pointing_timeaxis(axis='EL')
+    if hktype=='RO':
+        return self.pointing_timeaxis(axis='RO')
+    if hktype=='TR':
+        return self.pointing_timeaxis(axis='TR')
     
     # valid axistypes in order of preference
     valid_axistypes = ['pps','timestamp','index','computertime']

@@ -956,7 +956,8 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
                   plot_Tbath=False,
                   plot_1K=False,
                   plot_hwp=False,
-                  plot_raw=False):
+                  plot_raw=False,
+                  plot_dome=False):
     '''
     wrapper to plot timeline of the asic object 
     and plotted together with various possible housekeeping information
@@ -1057,7 +1058,21 @@ def plot_timeline(self,TES=None,asic=None,timeaxis='pps',ax=None,fontsize=12,
             axhwp.set_ylim(hwp.min(),hwp.max())
             axhwp.set_ylabel('HWP position',rotation=270,ha='right',va='bottom',color='purple')
 
-    
+    if plot_dome:
+        dome = self.dome()
+        if dome['ok']:
+            dome_a = dome['DOME A']
+            dome_b = dome['DOME B']
+            t_dome = self.timeaxis(datatype='dome')
+            d_dome = tstamp2dt(t_dome)
+            axdome = ax.twinx()
+            curves += axdome.plot(d_dome,dome_a,ls='none',marker='d',color='#00cc00',label='DOME A')
+            curves += axdome.plot(d_dome,dome_b,ls='none',marker='d',color='#7210a7',label='DOME B')
+            axdome.tick_params(axis='y',labelcolor='#00cc00',pad=labelpad)
+            labelpad += labelpad_step
+            axdome.set_ylim(0,90)
+            axdome.set_ylabel('DOME Door Open angle',rotation=270,ha='right',va='bottom',color='#00cc00')
+            
 
     labs = [l.get_label() for l in curves]
     ax.legend(curves, labs, loc='upper right',facecolor='white',framealpha=0.7)

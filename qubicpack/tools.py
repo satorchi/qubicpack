@@ -1677,6 +1677,7 @@ def qubicstudio_filetype_truename(self,ftype,asic=None):
     if ftype.upper().find('TBATH')==0: return 'EXTERN_HK'
     if ftype.upper().find('SWITCH')==0: return 'INTERN_HK'
     if ftype.upper().find('RAW')>=0: return 'ASIC_RAW'
+    if ftype.upper().find('DOME')>=0: return 'EXTERN_HK'
 
     # if we give a particular HK data name, return the associated filetype
     hktruename = self.qubicstudio_hk_truename(ftype)
@@ -1773,7 +1774,7 @@ def dome(self):
             
         npts = len(door)
         mask = (door!=-1060) & (door!=-1061)
-        npts_valid = door[mask].sum()
+        npts_valid = mask.sum()
         if npts_valid==0:
             retval['error'] += 'no data for %s ' % key
             retval[key+' status'] = 'UNKNOWN'

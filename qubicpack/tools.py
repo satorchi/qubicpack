@@ -1773,7 +1773,7 @@ def dome(self):
             continue
             
         npts = len(door)
-        mask = (door!=-1060) & (door!=-1061)
+        mask = (door!=-1060) & (door!=-1061) & (door>10) & (door<=90)
         npts_valid = mask.sum()
         if npts_valid==0:
             retval['error'] += 'no data for %s ' % key

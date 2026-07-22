@@ -311,56 +311,5 @@ def read_gps_bindat(filename,verbosity=0):
     rec_names = "STX,timestamp,rpN,rpE,rpD,roll,yaw,pitchIMU,rollIMU,temperature,checksum"
     return read_bindat(filename,names=rec_names,fmt=rec_fmt,STX=0xAA,verbosity=verbosity)
 
-def read_compressor_log(filename):
-    '''
-    read the pulse tube compressor data
-    '''
-
-    if not os.path.isfile(filename):
-        print('file not found: %s' % filename)
-        return None
-
-    h = open(filename,'r')
-    txt = h.read()
-    h.close()
-    lines = txt.replace('\0','').split('\n')
-    del(lines[-1])
-    
-    compressorlog = {}
-    compressorlog['date'] = []
-    compressorlog['timestamp'] = []
-
-    for line in lines:
-        if line.find('OFFLINE')>0: continue
-        sample_line = line
-        break
-    
-    col = sample_line.split(' ')
-    for item in col:
-        if item.find('=')<0: continue
-        key = item.split('=')[0]
-        compressorlog[key] = []
-        
-    for line in lines:
-        col = line.split(' ')
-        if col[0] is None: continue
-        date = str2dt(col[0]).replace(tzinfo=TZUTC)
-        if date is None:continue
-        tstamp = date.timestamp()
-        keyval = None
-        for item in col[1:]:
-            keyval = None
-            if item.find('=')<0:continue
-            keyval = item.split('=')
-            key = keyval[0]
-            val = float(keyval[1])
-            compressorlog[key].append(val)
-        if keyval is not None:
-            compressorlog['date'].append(date)
-            compressorlog['timestamp'].append(tstamp)
-
-
-    compressorlog['timestamp'] = np.array(compressorlog['timestamp'])
-    return compressorlog
 
     

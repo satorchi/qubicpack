@@ -16,9 +16,10 @@ import os,subprocess,pickle
 import datetime as dt
 import matplotlib
 
-from qubicpack.utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index
-from qubicpack.pix2tes import assign_pix_grid, assign_pix2tes, tes2pix, pix2tes, TES2PIX
-from qubicpack import __file__
+from .utilities import asic_reversal_date, NPIXELS, TES_index, ASIC_index
+from .pix2tes import assign_pix_grid, assign_pix2tes, tes2pix, pix2tes, TES2PIX
+from .housekeeping.utilities import read_hk_labels
+
 from satorchipy.datefunctions import utcnow
 
 ### the rest of the defs are methods of the qubicasic object
@@ -226,40 +227,10 @@ def assign_temperature_labels(self):
     '''
     read temperature labels
     '''
-    pkg_dir = os.path.dirname(__file__)
-    label_file = os.sep.join([pkg_dir,'data','TD_TEMPERATURE_LABELS.txt'])
-    if not os.path.isfile(label_file):
-        self.temperature_labels = None
-        self.printmsg('could not find temperature labels: %s' % label_file,verbosity=3)
-        return
-    h = open(label_file)
-    lines = h.read().split('\n')
-    h.close()
-    self.temperature_labels = {}
-    for line in lines:
-        if line=='': continue
-        keyval = line.split('=')
-        if len(keyval)<2: continue
-        key = keyval[0].strip()
-        val = keyval[1].strip()
-        #self.temperature_labels[key] = val
-
-        # QubicStudio assigned different keynames to these
-        if key.find('AVS')==0:
-            qskey = key.upper()
-            self.temperature_labels[qskey] = val
-        
-        if key.find('HEATER')==0:
-            heater_num = int(key.replace('HEATER',''))
-            qskey = 'Heaters_Amp_%i' % (heater_num - 1)
-            self.temperature_labels[qskey] = val
-            qskey = 'Heaters_Volt_%i' % (heater_num - 1)
-            self.temperature_labels[qskey] = val
-        
-        if key.find('TEMPERATURE')==0:
-            temp_num = int(key.replace('TEMPERATURE',''))
-            qskey = 'Temp_%i' % (temp_num - 1)
-            self.temperature_labels[qskey] = val
+    labels = read_hk_labels()
+    if labels is None: return
+    self.temperature_labels = labels['QubicStudio']
+    self.hk_labels = labels['housekeeping']
             
     # assign the temperature labels to the asic objects
     for asicobj in self.asic_list:

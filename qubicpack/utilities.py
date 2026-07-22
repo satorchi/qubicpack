@@ -11,7 +11,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 common utilities used in the qubicpack classes
 (see also pix2tes.py)
 '''
-import sys,os,struct
+import sys,os,struct,subprocess
 import datetime as dt
 TZUTC = dt.timezone.utc
 import numpy as np
@@ -50,6 +50,11 @@ obsmount_fastdump_v2_implemented = dt.datetime.strptime('2026-04-06 13:15:22','%
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128
 
+# get hostname
+cmd = 'hostname'
+proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+out,err = proc.communicate()
+hostname = out.decode().strip()
 
 def TES_index(TES):
     '''

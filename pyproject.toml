@@ -25,7 +25,13 @@ packages = ["qubicpack", "qubicpack.level1", "qubicpack.housekeeping"]
 script-files = ["qubicpack/scripts/quicklook.py",
                 "qubicpack/scripts/Vphi_analysis.py",
                 "qubicpack/scripts/IV_analysis.py",
-		"qubicpack/scripts/calculate_and_upload_DACoffsetTable.py"]
+		"qubicpack/scripts/calculate_and_upload_DACoffsetTable.py",
+		"qubicpack/scripts/plot_temperature.py",
+		"qubicpack/scripts/plot_compressor.py",
+		"qubicpack/scripts/plot_combidata.py",
+		"qubicpack/scripts/plot_touch.py",
+		"qubicpack/scripts/plot_pressure.py"
+		]
 include-package-data = true	
 
 [tool.setuptools.package-data]

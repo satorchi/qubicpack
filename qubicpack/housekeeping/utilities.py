@@ -17,8 +17,11 @@ TZUTC = dt.timezone.utc
 import numpy as np
 from satorchipy.datefunctions import str2dt
 from .. import __file__
+from ..utilities import hostname
 pkg_dir = os.path.dirname(__file__)
-    
+
+qc_hk_dir = '/home/qubic/data/temperature/broadcast'
+
 def read_hk_labels():
     '''
     read the housekeeping labels associated with each HK data file
@@ -47,6 +50,7 @@ def read_hk_labels():
             hkkey = key
             qs_labels[qskey] = val
             hk_labels[hkkey] = val
+            continue
         
         if key.find('HEATER')==0:
             heater_num = int(key.replace('HEATER',''))
@@ -55,6 +59,7 @@ def read_hk_labels():
                 hkkey = 'HEATER%i_%s' % (heater_num,meas)
                 qs_labels[qskey] = val
                 hk_labels[hkkey] = val
+            continue
         
         if key.find('TEMPERATURE')==0:
             temp_num = int(key.replace('TEMPERATURE',''))
@@ -62,6 +67,19 @@ def read_hk_labels():
             hkkey = 'TEMPERATURE%02i' % temp_num
             qs_labels[qskey] = val
             hk_labels[hkkey] = val
+            continue
+
+        if key.find('PRESSURE')==0:
+            temp_num = int(key.replace('PRESSURE',''))
+            qskey = 'Pressure_%i' % (temp_num - 1)
+            hkkey = 'PRESSURE%i' % temp_num
+            qs_labels[qskey] = val
+            hk_labels[hkkey] = val
+            continue
+        
+
+        qs_labels[key] = val
+        hk_labels[key] = val
 
     labels = {}
     labels['housekeeping'] = hk_labels
@@ -236,6 +254,34 @@ def read_hk_flags(flagfile=None):
             flag[datekey] = eventmsg
 
     return flag
+
+def download_hk(basenames,hk_dir,remote_machine='qubic'):
+    '''
+    download using rsync from qubic-central
+    '''
+    if hostname=='qubic-central':
+        print('NOT DOWNLOADING FROM qubic-central to qubic-central!')
+        return
+
+    if len(basenames)==0:
+        print('No files to download!')
+        return
+    
+    filenames = []
+    for b in basenames:
+        filenames.append(b+'.txt')
+        
+    print('download file: %s' % '\ndownload file: '.join(filenames))
+    print('[%s] downloading...' % dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+    if len(filenames)==1:
+        cmd = 'rsync -Pavtz %s:%s/%s %s' % (remote_machine,qc_hk_dir,filenames[0], hk_dir)
+    else:
+        cmd = 'rsync -Pavtz %s:%s/{%s} %s' % (remote_machine,qc_hk_dir,','.join(filenames), hk_dir)
+    os.system(cmd)
+    print('[%s] files downloaded' % dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+    return
 
 
     

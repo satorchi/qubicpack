@@ -17,9 +17,13 @@ from satorchipy.plotfunctions import nice_plot_colours as colours
 from satorchipy.plotfunctions import nice_plot_markers as markers
 from matplotlib import pyplot as plt
 
+from ..utilities import hostname
+from .utilities import qc_hk_dir
+
 # parse command line arguments
 plot_options = {}
 plot_options['download'] = True
+plot_options['qubic-central'] = 'qubic' # used for ssh connection
 plot_options['estimate cold date'] = True
 plot_options['show differences'] = True
 plot_options['hk_dir'] = None
@@ -88,7 +92,11 @@ for arg in sys.argv:
     if arg.find('--hk_dir=')==0:
         plot_options['hk_dir'] = arg.split('=')[-1]
         if not os.path.isdir(plot_options['hk_dir']):
-            plot_options['hk_dir'] = None
+            try:
+                os.makedirs(plot_options['hk_dir'], exist_ok=True)
+            except:
+                print('PLOT_OPTIONS: could not make directory: %s' % plot_options['hk_dir'])
+                plot_options['hk_dir'] = None
         continue
 
     if arg.find('--heater')==0:
@@ -131,19 +139,13 @@ for key in plot_options.keys():
     else:
         print('%s = %s' % (key,plot_options[key]))
     
-# get hostname
-cmd = 'hostname'
-proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-out,err = proc.communicate()
-hostname = out.decode().strip()
-
 hk_dir = plot_options['hk_dir']
 this_year = utcnow().strftime('%Y')
-qc_hk_dir = '/home/qubic/data/temperature/broadcast'
 if hostname != 'qubic-central':
     if hk_dir is None: hk_dir = '%s/hk' % this_year
 else:
     hk_dir = qc_hk_dir
+
 plot_options['hk_dir'] = hk_dir
 
 # plot default parameters

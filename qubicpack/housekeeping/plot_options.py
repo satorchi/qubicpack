@@ -12,6 +12,8 @@ options for various housekeeping plots
 '''
 import os,sys,subprocess,re
 import datetime as dt
+TZUTC = dt.timezone.utc
+
 from satorchipy.datefunctions import str2dt, tstamp2dt, utcnow, utcfromtimestamp
 from satorchipy.plotfunctions import nice_plot_colours as colours
 from satorchipy.plotfunctions import nice_plot_markers as markers
@@ -50,7 +52,7 @@ if os.path.isfile('plot_options.txt'):
         # special case for dates
         val_dt = str2dt(val_str)
         if val_dt is not None:
-            val = val_dt.replace(tzinfo=dt.UTC)
+            val = val_dt.replace(tzinfo=TZUTC)
         else:
             try:
                 val = eval(val_str)

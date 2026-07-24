@@ -63,6 +63,9 @@ if temperatures is None:
                  'AVS47_2_ch2',
                  'TEMPERATURE18',
                  ]
+    temperatures = []
+    for bname in basenames:
+        temperatures.append(label[bname])
 else:
     basenames = []
     for lbl in temperatures:

@@ -259,7 +259,7 @@ def download_hk(basenames,hk_dir,remote_machine='qubic'):
     '''
     download using rsync from qubic-central
     '''
-    if hostname=='qubic-central':
+    if hostname.find('qubic-central')==0:
         print('NOT DOWNLOADING FROM qubic-central to qubic-central!')
         return
 

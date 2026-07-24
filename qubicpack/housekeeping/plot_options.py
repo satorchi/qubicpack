@@ -143,7 +143,7 @@ for key in plot_options.keys():
     
 hk_dir = plot_options['hk_dir']
 this_year = utcnow().strftime('%Y')
-if hostname != 'qubic-central':
+if hostname.find('qubic-central')<0:
     if hk_dir is None: hk_dir = '%s/hk' % this_year
 else:
     hk_dir = qc_hk_dir

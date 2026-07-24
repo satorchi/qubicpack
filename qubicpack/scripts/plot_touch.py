@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from satorchipy.datefunctions import str2dt, utcfromtimestamp
 from satorchipy.plotfunctions import labelprops,plot_flags,mouse_click_date,get_colour
+from qubicpack.utilities import hostname
 from qubicpack.housekeeping.plot_options import boxprops,plot_options
 from qubicpack.housekeeping.utilities import read_hk_flags, read_hk_labels, read_hk_file, find_pt_start, download_hk, qc_hk_dir
 flag = read_hk_flags(plot_options['events'])
@@ -325,4 +326,4 @@ plot_flags(ax,flag,flagpos)
 pngname = '%s.png' % figname
 fig.savefig(pngname,format='png',dpi=300,bbox_inches='tight')
 plt.connect('button_press_event',mouse_click_date)
-plt.show()
+if hostname.find('qubic-central')<0: plt.show()

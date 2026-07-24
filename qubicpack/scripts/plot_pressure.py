@@ -7,7 +7,7 @@ import numpy as np
 from satorchipy.datefunctions import str2dt, utcnow, utcfromtimestamp
 from satorchipy.plotfunctions import mouse_click_date, labelprops, make_legend_label, plot_dayboundaries, plot_flags
 
-from qubicpack.utilities import fmt4latex
+from qubicpack.utilities import hostname, fmt4latex
 from qubicpack.housekeeping.utilities import read_hk_file, find_pt_start, read_hk_labels, read_hk_flags, download_hk
 from qubicpack.housekeeping.plot_options import boxprops,plot_options
 hk_dir = plot_options['hk_dir']
@@ -337,5 +337,4 @@ plot_dayboundaries(axlegend)
 pngname = 'pumpdown_%s.png' % date[-1].strftime('%Y%m%d')
 fig.savefig(pngname,format='png',dpi=300,bbox_inches='tight')
 plt.connect('button_press_event',mouse_click_date)
-plt.show()
-#ans = input('enter to exit')
+if hostname.find('qubic-central')<0: plt.show()

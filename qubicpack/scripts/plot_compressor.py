@@ -20,6 +20,7 @@ from scipy.optimize import curve_fit
 from satorchipy.datefunctions import str2dt, tstamp2dt, utcnow, utcfromtimestamp
 from satorchipy.plotfunctions import labelprops, plot_flags, plot_dayboundaries
 
+from qubicpack.utilities import hostname
 from qubicpack.housekeeping.utilities import read_compressor_log, read_hk_flags, download_hk
 from qubicpack.housekeeping.plot_options import boxprops,plot_options
 flag = read_hk_flags(plot_options['events'])
@@ -196,4 +197,4 @@ if __name__=='__main__':
     
     pngname = 'compressors_%s.png' % end_date.strftime('%Y%m%d')
     fig.savefig(pngname,format='png',dpi=300,bbox_inches='tight')
-    plt.show()
+    if hostname.find('qubic-central')<0: plt.show()

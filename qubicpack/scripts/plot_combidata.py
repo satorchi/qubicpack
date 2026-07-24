@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from satorchipy.plotfunctions import plot_flags, labelprops
 from satorchipy.datefunctions import utcnow, utcfromtimestamp, str2dt
+from qubicpack.utilities import hostname
 from qubicpack.housekeeping.utilities import read_hk_file, read_compressor_log, read_hk_flags, read_hk_labels, download_hk, qc_hk_dir
 from qubicpack.housekeeping.plot_options import boxprops, plot_options
 
@@ -155,4 +156,4 @@ ax.legend(curves, labels, loc='lower left',facecolor='wheat',framealpha=0.5)
 
 pngname = 'combiplot_%s.png' % max(end_date_list).strftime('%Y%m%d')
 fig.savefig(pngname,format='png',dpi=300,bbox_inches='tight')
-plt.show()
+if hostname.find('qubic-central')<0: plt.show()

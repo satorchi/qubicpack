@@ -67,6 +67,8 @@ if temperatures is None:
     for bname in basenames:
         temperatures.append(label[bname])
 else:
+    if not isinstance(temperatures,list):
+        temperatures = [temperatures]
     basenames = []
     for lbl in temperatures:
         basenames.append(basename[lbl])

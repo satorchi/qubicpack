@@ -42,6 +42,7 @@ v2_rec_header_names = ','.join(['RX_TIMESTAMP']+v1_header_keys)
 v2_rec_header_format_list = ['float64','float64','uint8','uint8','uint8','int16']
 v2_rec_header_format = ','.join(v2_rec_header_format_list)
 
+## 2026-05-13
 v3_header_keys = ['TIMESTAMP1',
                   'TIMESTAMP2',
                   'IS_ETHERCAT',
@@ -51,6 +52,20 @@ v3_header_keys = ['TIMESTAMP1',
 v3_rec_header_names = ','.join(['RX_TIMESTAMP']+v3_header_keys)
 v3_rec_header_format_list = ['float64','float64','float64','uint8','uint8','uint8','int16']
 v3_rec_header_format = ','.join(v3_rec_header_format_list)
+
+### 2026-07-30 17:59:18 CEST
+v4_header_keys = ['TIMESTAMP1',
+                  'TIMESTAMP2',
+                  'IS_ETHERCAT',
+                  'IS_SYNC',
+                  'IS_MAINT',
+                  'AXES_ASYNC_COUNT',
+                  'NTP_RESULT',
+                  'SET_RTC_RESULT']
+v4_rec_header_names = ','.join(['RX_TIMESTAMP']+v4_header_keys)
+v4_rec_header_format_list = ['float64','float64','float64','uint8','uint8','uint8','int16','int16','int16']
+v4_rec_header_format = ','.join(v4_rec_header_format_list)
+
 
 data_keys = ['AXIS',
              'ACT_VEL_RES',
@@ -122,7 +137,10 @@ def interpret_pointing_chunk(dat):
 
         # header data
         n_headers = len(col)
-        if n_headers==len(v3_header_keys):
+        if N_headers==len(v4_header_keys):
+            packet['version'] = 4
+            header_keys = v4_header_keys
+        elif n_headers==len(v3_header_keys):
             packet['version'] = 3
             header_keys = v3_header_keys
         else:

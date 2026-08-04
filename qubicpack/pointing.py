@@ -137,7 +137,7 @@ def interpret_pointing_chunk(dat):
 
         # header data
         n_headers = len(col)
-        if N_headers==len(v4_header_keys):
+        if n_headers==len(v4_header_keys):
             packet['version'] = 4
             header_keys = v4_header_keys
         elif n_headers==len(v3_header_keys):

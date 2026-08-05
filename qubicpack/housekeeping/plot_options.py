@@ -111,17 +111,26 @@ for arg in sys.argv:
 
     if arg.find('--log')==0:
         plot_options['log'] = True
+        continue
 
     # generic
     match  = re.search('--(.*)=',arg)
     if match:
         arg_str = match.groups()[0]
         val_str = arg.split('=')[-1]
+        
+        # special case for list of values
+        if val_str.find(',')>0:
+            val_list = val_str.split(',')
+            for idx,val in enumerate(val_list):
+                val_list[idx] = val.strip()
+            val_str = val_list
         try:
             val = eval(val_str)
         except:
             val = val_str
         plot_options[arg_str] = val
+        
         continue
 
     match  = re.search('--(.*)',arg)

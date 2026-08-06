@@ -248,9 +248,9 @@ def read_hk_flags(flagfile=None):
         for line in lines:
             if line.find('=')<0: continue
             col = line.split('=')
-            datekey = str2dt(col[0])
+            datekey = str2dt(col[0].strip())
             if datekey is None: continue
-            eventmsg = col[1]
+            eventmsg = col[1].strip()
             flag[datekey] = eventmsg
 
     return flag

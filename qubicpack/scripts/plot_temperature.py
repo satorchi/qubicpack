@@ -42,6 +42,9 @@ T_final['AVS47_2_ch1'] = 4.0
 T_final['AVS47_2_ch2'] = 10.0 # Fridge plate when we can start the cryo pumps
 T_final['AVS47_1_ch1'] = 25.0 # 1K stage, when we can start the cryo pumps
 
+# when to start fridge cycle 300mK
+T_final['AVS47_1_ch6'] = 4.0 # 300mK cold head
+
 
 # bad sensors
 # 'TEMPERATURE05',

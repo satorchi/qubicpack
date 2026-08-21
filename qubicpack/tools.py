@@ -1307,7 +1307,7 @@ def get_hk(self,data=None,hk=None,asic=None):
         return None
     
     if hk not in self.hk.keys():
-        if hk=='ASIC_SUMS' and self.__object_type__=='qubicfp':
+        if self.__object_type__=='qubicfp':
             if asic is None:
                 self.printmsg('Please enter a valid ASIC number')
                 return None

@@ -38,6 +38,7 @@ rec_header_names = ','.join(v1_header_keys)
 rec_header_format_list = ['float64','uint8','uint8','uint8','int16']
 rec_header_format = ','.join(rec_header_format_list)
 
+v2_header_keys = v1_header_keys
 v2_rec_header_names = ','.join(['RX_TIMESTAMP']+v1_header_keys)
 v2_rec_header_format_list = ['float64','float64','uint8','uint8','uint8','int16']
 v2_rec_header_format = ','.join(v2_rec_header_format_list)
@@ -185,7 +186,12 @@ def read_pointing_bindat(filename):
         first_chunk = chunk_list[1].split(v2_separator)[-1]
         packet = interpret_pointing_chunk(first_chunk)
         print('PLC data first chunk packet is version: %i' % packet['version'])
-        if packet['version']==3:
+        if packet['version']==4:
+            pointing_file_version = 4
+            rechdr_names = v4_rec_header_names
+            rechdr_fmts = v4_rec_header_format
+            header_keys = v4_header_keys
+        elif packet['version']==3:
             pointing_file_version = 3
             rechdr_names = v3_rec_header_names
             rechdr_fmts = v3_rec_header_format

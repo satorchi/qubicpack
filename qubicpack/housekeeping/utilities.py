@@ -98,9 +98,10 @@ def read_hk_file(filename):
     h = open(filename,'r')
     txt = h.read()
     h.close()
-    txt_clean = txt.replace('\x00','').replace('inf','64218') # infinity = 0xfada
-    txt_cleanclean = re.sub('\n.*\\.[0-9]*\\..*\n','\n',txt_clean)
-    lines = txt_cleanclean.split('\n')
+    txt_clean1 = txt.replace('\x00','').replace('inf','64218') # infinity = 0xfada
+    txt_clean2 = re.sub('\n.*\\.[0-9]*\\..*\n','\n',txt_clean1)
+    txt_clean3 = re.sub('(e.[0-9][0-9])([0-9])','\\1\n\\2',txt_clean2)
+    lines = txt_clean3.split('\n')
     del(lines[-1])
 
     # try to use numpy loadtxt which is fastest

@@ -28,11 +28,9 @@ class qubicfp:
         printmsg,\
         read_fits_field,\
         read_fits,\
-        find_calsource,\
         find_hornswitch,\
         assign_bath_temperature,\
         read_qubicstudio_dataset,\
-        read_calsource_fits,\
         read_qubicstudio_fits,\
         read_qubicstudio_hkextern_fits,\
         read_qubicstudio_hkfits,\
@@ -53,7 +51,6 @@ class qubicfp:
         elevation,\
         rotation,\
         hwp_position,\
-        calsource,\
         qubicstudio_filetype_truename,\
         qubicstudio_hk_truename,\
         dome
@@ -82,12 +79,17 @@ class qubicfp:
         plot_timestamp_diagnostic_fig2,\
         lost_packets
 
-    from .fpmethods import\
-        assign_verbosity,\
-        infotext,\
+    from .calsource import\
+        calsource,\
         calsource_oldinfo,\
         calsource_info,\
         calsource_infotext,\
+        find_calsource,\
+        read_calsource_fits
+        
+    from .fpmethods import\
+        assign_verbosity,\
+        infotext,\
         assign_defaults,\
         assign_temperature,\
         read_qubicstudio_science_fits,\

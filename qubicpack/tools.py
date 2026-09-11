@@ -20,7 +20,7 @@ from glob import glob
 import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
-from .utilities import obsmount_implemented, obsmount_plc_implemented, read_obsmount_bindat, interpret_rawmask
+from .utilities import obsmount_implemented, obsmount_plc_implemented, obsmount_plc_synchronized, read_obsmount_bindat, interpret_rawmask
 from .pointing import read_pointing_bindat, position_offset, position_key, axis_names
 from satorchipy.datefunctions import utcnow, utcfromtimestamp, str2dt
 
@@ -321,68 +321,6 @@ def read_fits_field(self,hdu,fieldname):
     return None
 
 
-def find_calsource(self,datadir):
-    '''
-    try to find, and then read the calsource file corresponding to the dataset
-    '''
-    # look for files within the last hour, and then take the closest one to the start time
-    # the files are in FITS format as of Wed 10 Apr 2019 10:21:35 CEST
-    self.printmsg('trying to find calsource data corresponding to %s' % self.dataset_name,verbosity=2)
-
-    if self.obsdate is None:
-        self.printmsg('No date for observation!',verbosity=1)
-        return
-
-    # calsource directory is normally two up
-    calsource_dir = '%s/calsource' % os.path.dirname(os.path.dirname(datadir))
-    filetype = 'calsource'
-    datadir = calsource_dir
-    search_start = self.obsdate - dt.timedelta(minutes=30)
-    pattern = []
-    pattern.append('%s/calsource_%s*.fits' % (calsource_dir,search_start.strftime('%Y%m%dT%H')))
-    pattern.append('%s/calsource_%s*.fits' % (calsource_dir,self.obsdate.strftime('%Y%m%dT%H')))
-    files = []
-    for p in pattern:
-        files += glob(p)
-    if len(files)==0:
-        self.printmsg('No %s data found in directory: %s' % (filetype,datadir),verbosity=1)
-        return
-    files.sort()
-
-    # find the file which starts before and nearest to obsdate
-    filename = None
-    file_delta = 1e6
-    for f in files:
-        basename = os.path.basename(f)
-        file_date = dt.datetime.strptime(basename,'calsource_%Y%m%dT%H%M%S.fits').replace(tzinfo=TZUTC)
-        delta = (self.obsdate - file_date).total_seconds()
-        if np.abs(delta)<file_delta:
-            file_delta = np.abs(delta)
-            filename = f
-
-    if file_delta>30:
-        self.printmsg('Did not find a corresponding calsource file.')
-        return
-    
-    self.printmsg('found calsource file which started %.1f seconds before the data acquisition' % file_delta)
-    self.printmsg('reading calsource file: %s' % filename)
-    hdulist=pyfits.open(filename)
-    nhdu=len(hdulist)
-    if nhdu!=2:
-        self.printmsg("This doesn't look like a calsource file!")
-        hdulist.close()
-        return
-    hdu = hdulist[1]
-    if 'EXTNAME' not in hdu.header.keys()\
-       and hdu.header['EXTNAME']!='CALSOURCE':
-        self.printmsg("This is not a calsource FITS file!")
-        hdulist.close()
-        return
-    
-    self.read_calsource_fits(hdu)
-    hdulist.close()
-    return
-
 def find_hornswitch(self,datadir):
     '''
     try to find hornswitch files corresponding to the observation date
@@ -625,17 +563,6 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
     self.assign_pointing_data(datadir)
     
     return True
-
-def read_calsource_fits(self,hdu):
-    '''
-    read the calibration source data from the given HDU of a fits file
-    '''
-    
-    self.hk['CALSOURCE'] = {}
-    self.hk['CALSOURCE']['timestamp'] = hdu.data.field(0)
-    self.hk['CALSOURCE']['Value'] = hdu.data.field(1)
-    
-    return
 
 def read_qubicstudio_fits(self,hdulist):
     '''
@@ -1366,12 +1293,37 @@ def assign_pointing_data(self,datadir):
     self.printmsg('Looking for %s' % pointing_file,verbosity=3)
     if os.path.isfile(pointing_file):
         pointing_dat = read_pointing_bindat(pointing_file)
-        # we use the timestamp of reception because the PLC clock is not synchronized
-        if 'RX_TIMESTAMP' in pointing_dat['header'].dtype.names:
-            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].RX_TIMESTAMP
-        else:
-            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP
+
+        # assign the 'ok' flag before possibly overriding it regarding TIMESTAMP
         self.pointing_data['ok'] = pointing_dat['ok']
+        
+        headernames = pointing_dat['header'].dtype.names
+        timestamp_assigned = False
+
+        # after 2026-09-08, the PLC clock was synchronized
+        if self.obsdate>=obsmount_plc_synchronized and 'TIMESTAMP1' in headernames:
+            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP1
+            timestamp_assigned = True
+                
+        # otherwise, we use the timestamp of reception because the PLC clock is not synchronized
+        if not timestamp_assigned:
+            if 'RX_TIMESTAMP' in headernames:
+                self.pointing_data['TIMESTAMP'] = pointing_dat['header'].RX_TIMESTAMP
+                timestamp_assigned = True
+
+        # finally, the original keyword was TIMESTAMP
+        if not timestamp_assigned and 'TIMESTAMP' in headernames:
+            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP
+            timestamp_assigned = True
+
+
+        # if we haven't found the timestamp, we have a problem!
+        if not timestamp_assigned:
+            self.pointing_data['TIMESTAMP'] = None # this will raise an error somewhere down the line!
+            self.printmsg('ERROR!  No timestamps in the POINTING.dat?!!',verbosity=0)
+            self.pointing_data['ok'] = False
+
+        # assign the pointing data for each axis
         for axisname in axis_names:
             if axisname not in pointing_dat['data'].keys(): continue
             self.pointing_data[axisname]['VALUE'] = pointing_dat['data'][axisname][position_key[axisname]] + position_offset[axisname]
@@ -1612,18 +1564,6 @@ def FLL_State(self):
     fll_state = self.hk[hktype][fllkey]
     fll_timestamps = self.hk[hktype]['GPSDate']
     return fll_timestamps,fll_state
-
-def calsource(self):
-    '''
-    return the calibration source data
-    '''    
-    if 'CALSOURCE' not in self.hk.keys():
-        self.printmsg('No calibration source data',verbosity=2)
-        return None, None
-    
-    t_src = self.hk['CALSOURCE']['timestamp']
-    data_src = self.hk['CALSOURCE']['Value']
-    return t_src,data_src
 
 def infotext(self,TES=None):
     '''

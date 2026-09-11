@@ -13,7 +13,7 @@ these utilities are also used by class obsmount in package qubichw
 '''
 import os
 import numpy as np
-from qubicpack.utilities import fmt_translation
+from .utilities import fmt_translation
 
 # position offsets measured
 # 'EL': 49.315, # see elog: https://elog-qubic.in2p3.fr/demo/1296

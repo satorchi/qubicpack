@@ -47,6 +47,11 @@ obsmount_plc_implemented = dt.datetime.strptime('2025-12-17 17:49:58','%Y-%m-%d 
 #  do not rely on the PLC clock
 obsmount_fastdump_v2_implemented = dt.datetime.strptime('2026-04-06 13:15:22','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
 
+# 2026-09-08 21:41:39  PLC clock synchronized to GPS, use TIMESTAMP1 from now on
+#obsmount_plc_synchronized = dt.datetime.strptime('2026-09-08 21:41:39','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
+# 2026-09-11 11:14:56 I was too optimistic.  The issue is not yet resolved.  Using a future date as a placeholder
+obsmount_plc_synchronized = dt.datetime.strptime('2036-09-08 21:41:39','%Y-%m-%d %H:%M:%S').replace(tzinfo=TZUTC)
+
 # number of pixels in the QUBIC detector matrix per ASIC
 NPIXELS = 128
 

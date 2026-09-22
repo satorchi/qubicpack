@@ -64,7 +64,7 @@ v4_header_keys = ['TIMESTAMP1',
                   'NTP_RESULT',
                   'SET_RTC_RESULT']
 v4_rec_header_names = ','.join(['RX_TIMESTAMP']+v4_header_keys)
-v4_rec_header_format_list = ['float64','float64','float64','uint8','uint8','uint8','int16','int16','int16']
+v4_rec_header_format_list = ['float64','float64','float64','uint8','uint8','uint8','int32','int32','int32']
 v4_rec_header_format = ','.join(v4_rec_header_format_list)
 
 

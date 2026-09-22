@@ -26,6 +26,7 @@ class qubicfp:
     from .tools import\
         debugmsg,\
         printmsg,\
+        read_comment_file,\
         read_fits_field,\
         read_fits,\
         find_hornswitch,\
@@ -85,7 +86,8 @@ class qubicfp:
         calsource_info,\
         calsource_infotext,\
         find_calsource,\
-        read_calsource_fits
+        read_calsource_fits,\
+        read_calsource_infofile
         
     from .fpmethods import\
         assign_verbosity,\

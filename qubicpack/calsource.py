@@ -29,6 +29,31 @@ def read_calsource_fits(self,hdu):
     
     return
 
+def read_calsource_infofile(self,datadir):
+    '''
+    read the calsource information from CALINFO.txt
+    we set this up in a way that is compatible with earlier versions
+    '''
+    calinfo_file = os.sep.join([datadir,'Hks','CALINFO.txt'])
+    if not os.path.isfile(calinfo_file):
+        self.printmsg('WARNING! Did not find calsource information file: %s' % calinfo_file,verbosity=1)
+        return False
+
+    h = open(calinfo_file,'r')
+    calinfo_rawtxt = h.read()
+    h.close()
+
+    # replace newlines
+    calinfo_txt = calinfo_rawtxt.replace('\n',' ')
+
+    if 'CALSOURCE-CONF' not in self.hk.keys():
+        self.hk['CALSOURCE-CONF'] = {}
+    if 'MsgStr' not in self.hk['CALSOURCE-CONF'].keys():
+        self.hk['CALSOURCE-CONF']['MsgStr'] = ['INIT MSG STR']
+
+    self.hk['CALSOURCE-CONF']['MsgStr'][0] = calinfo_txt
+    return True
+
 def calsource_oldinfo(self):
     '''
     return calsource info for data before the implementation of MsgStr
@@ -142,10 +167,33 @@ def calsource_info(self):
             
     info = {}
 
-    info_tstamp = float(info_rawlist[0])
-    info_date = utcfromtimestamp(info_tstamp)
-    info['date'] = info_date
+    # get the various timestamps:  info received, info sent, command received
+    # date is considered to be "info sent"
+    date_list = []
+    for tstamp_str in info_rawlist:
+        if tstamp_str.find(':')>=0: continue
+        try:
+            tstamp = float(tstamp_str)
+        except:
+            info[tstamp_str] = 'incomplete'
+            continue
+        date = utcfromtimestamp(tstamp)
+        date_list.append(date)
 
+    start_idx = len(date_list)
+    if len(date_list)==2:
+        info['date'] = date_list[0]
+        info['command received'] = date_list[1]
+    elif len(date_list)>=3:
+        info['date'] = date_list[1]
+        info['command received'] = date_list[2]
+        info['info received'] = date_list[0]
+    elif len(date_list)==0:
+        info['date'] = self.obsdate
+    else:
+        info['date'] = date_list[0]
+
+    # create dictionaries for each device
     for dev in device_list:
         info[dev] = {}
 
@@ -156,10 +204,8 @@ def calsource_info(self):
 
     munits = ['mHz','mVpp','mVdc']
     units = ['GHz','HZ','Hz','hz','Vpp','Vdc','V','%']
-    for item in info_rawlist[2:]:
-        if item.find(':')<0:
-            info[item] = 'incomplete'
-            continue
+    for item in info_rawlist:
+        if item.find(':')<0: continue
         
         cols = item.split(':')
 
@@ -168,8 +214,10 @@ def calsource_info(self):
             continue
         
         dev = cols[0]
-        if dev=='lamp' or dev=='arduino' or dev=='synthesiser' or dev=='synthesizer':
-            continue
+
+        #### 2026-09-22 14:58:46 I don't remember why I skipped all these.
+        # if dev=='lamp' or dev=='arduino' or dev=='synthesiser' or dev=='synthesizer':
+        #    continue
 
         val_list = cols[1].split('=')
         if len(val_list)==1:
@@ -196,7 +244,10 @@ def calsource_info(self):
         if goto_next_item: continue
         
         if parm=='gain':
-            info[dev][parm] = int(val)
+            try:
+                info[dev][parm] = int(val)
+            except:
+                info[dev][parm] = val
             continue
 
         if parm=='duty_cycle':

@@ -126,7 +126,22 @@ def output_filename(self,rootname):
 
     return filename
 
+def read_comment_file(self,datadir):
+    '''
+    read the comments that are saved in COMMENT.txt
+    there is a "comment" available in QubicStudio, but it seems it is not saved in the dataset
+    '''
+    comment_file = os.sep.join([datadir,'Hks','COMMENT.txt'])
+    if not os.path.isfile(comment_file):
+        self.printmsg('WARNING! Did not find any comments: %s' % comment_file,verbosity=1)
+        return False
 
+    h = open(comment_file,'r')
+    comment_txt = h.read()
+    h.close()
+    self.hk['COMMENT'] = comment_txt
+    return True
+ 
 def keyvals(self):
     '''
     assign the FITS keyword values for the primary header
@@ -561,6 +576,12 @@ def read_qubicstudio_dataset(self,datadir,asic=None):
 
     # assign pointing data
     self.assign_pointing_data(datadir)
+
+    # read the calibration source information
+    self.read_calsource_infofile(datadir)
+
+    # read the comment if any
+    self.read_comment_file(datadir)
     
     return True
 

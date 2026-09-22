@@ -1300,7 +1300,7 @@ def assign_pointing_data(self,datadir):
         headernames = pointing_dat['header'].dtype.names
         timestamp_assigned = False
 
-        # after 2026-09-08, the PLC clock was synchronized
+        # after 2026-09-22, the PLC clock was synchronized (hopefully)
         if self.obsdate>=obsmount_plc_synchronized and 'TIMESTAMP1' in headernames:
             self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP1
             timestamp_assigned = True

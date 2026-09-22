@@ -10,7 +10,7 @@ $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 utilities for dealing with QUBIC housekeeping data
 '''
-import os,re
+import os,re,subprocess
 import datetime as dt
 TZUTC = dt.timezone.utc
 
@@ -279,7 +279,8 @@ def download_hk(basenames,hk_dir,remote_machine='qubic'):
         cmd = 'rsync -Pavtz %s:%s/%s %s' % (remote_machine,qc_hk_dir,filenames[0], hk_dir)
     else:
         cmd = 'rsync -Pavtz %s:%s/{%s} %s' % (remote_machine,qc_hk_dir,','.join(filenames), hk_dir)
-    os.system(cmd)
+    #os.system(cmd)
+    subprocess.run(cmd, shell=True, executable='/bin/bash')
     print('[%s] files downloaded' % dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     return

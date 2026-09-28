@@ -321,5 +321,14 @@ def read_gps_bindat(filename,verbosity=0):
     rec_names = "STX,timestamp,rpN,rpE,rpD,roll,yaw,pitchIMU,rollIMU,temperature,checksum"
     return read_bindat(filename,names=rec_names,fmt=rec_fmt,STX=0xAA,verbosity=verbosity)
 
+def read_calbox_temperature_bindat(filename,verbosity=0):
+    '''
+    read the binary data file acquired from the calibration box
+    '''
+    rec_fmt = '<Bdffff'
+    rec_names = "STX,timestamp,calsource,heater,amplifier,outside"
+    return read_bindat(filename,names=rec_names,fmt=rec_fmt,STX=0xAA,verbosity=verbosity)
+    
+
 
     

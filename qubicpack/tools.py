@@ -139,7 +139,11 @@ def read_comment_file(self,datadir):
     h = open(comment_file,'r')
     comment_txt = h.read()
     h.close()
-    self.hk['COMMENT'] = comment_txt
+    # remove final newline
+    if comment_txt[-1]=='\n':
+        self.hk['COMMENT'] = comment_txt[:-1]
+    else:
+        self.hk['COMMENT'] = comment_txt
     return True
  
 def keyvals(self):

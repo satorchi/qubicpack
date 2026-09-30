@@ -1358,18 +1358,22 @@ def assign_pointing_data(self,datadir):
 
     # the red mount used at APC and in Salta 2018 to 2022
     self.printmsg('Looking for redmount pointing data',verbosity=3)
-    if 'INTERN_HK' in self.hk.keys():
+    azredmount = self.azimuth_redmount()
+    if azredmount is not None:
         self.pointing_data['TIMESTAMP'] = self.timeaxis(datatype='INTERN_HK')
-        if 'Platform-Azimut' in self.hk['INTERN_HK'].keys():
-            self.pointing_data['AZ']['VALUE'] = self.azimuth_redmount()
-            self.pointing_data['AZ']['ok'] = True
-            axis_n_ok += 1
-        if 'Platform-Elevation' in self.hk['INTERN_HK'].keys():
-            self.pointing_data['EL']['VALUE'] = self.elevation_redmount()
-            self.pointing_data['EL']['ok'] = True
-            axis_n_ok += 1
+        self.pointing_data['AZ']['VALUE'] = azredmount
+        self.pointing_data['AZ']['ok'] = True
+        axis_n_ok += 1
+
+    elredmount = self.elevation_redmount()
+    if elredmount is not None:
+        self.pointing_data['EL']['VALUE'] = elredmount
+        self.pointing_data['EL']['ok'] = True
+        axis_n_ok += 1
+
+    if axis_n_ok>0:
         self.pointing_data['ok'] = self.pointing_data['AZ']['ok'] and self.pointing_data['EL']['ok']
-        if axis_n_ok>0: return self.pointing_data['ok']
+        return self.pointing_data['ok']
 
     # pointing acquisition used with the observation mount raspberry pi "motor cortex"
     for axisname in axis_names:
@@ -1414,15 +1418,20 @@ def azimuth_redmount(self):
     '''
     hktype = 'INTERN_HK'
     if hktype not in self.hk.keys():
-        self.printmsg('No platform data!')
+        self.printmsg('No redmount data!')
         return None
 
     azkey = 'Platform-Azimut'
     if azkey not in self.hk[hktype].keys():
-        self.printmsg('No Azimuth data!')
+        self.printmsg('No redmount azimuth data!')
         return None
 
     azRaw = self.hk[hktype][azkey]
+    goodvals = (azRaw!=0)
+    if goodvals.sum()==0:
+        self.printmsg('Bad data for redmount azimuth!')
+        return None
+    
     az = (azRaw.astype(int) - 2**15) * 360.0/2**16
     return az
 
@@ -1459,15 +1468,20 @@ def elevation_redmount(self):
     '''
     hktype = 'INTERN_HK'
     if hktype not in self.hk.keys():
-        self.printmsg('No platform data!')
+        self.printmsg('No redmount data!')
         return None
 
     elkey = 'Platform-Elevation'
     if elkey not in self.hk[hktype].keys():
-        self.printmsg('No Elevation data!')
+        self.printmsg('No redmount elevation data!')
         return None
 
     elRaw = self.hk[hktype][elkey]
+    goodvals = (elRaw!=0)
+    if goodvals.sum()==0:
+        self.printmsg('Bad data for redmount elevation!')
+        return None
+    
     # offset is deduced from beam synthesis mapping on 2019-04-06
     offset = 10131.591
     el = (elRaw.astype(int) - offset) * 360.0/2**16

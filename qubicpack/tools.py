@@ -1325,6 +1325,10 @@ def assign_pointing_data(self,datadir):
         headernames = pointing_dat['header'].dtype.names
         timestamp_assigned = False
 
+        # copy all header values including all the possible timestamps
+        for hdr in headernames:
+            self.pointing_data[hdr] = pointing_dat['header'][hdr]
+
         # after 2026-09-22, the PLC clock was synchronized (hopefully)
         if self.obsdate>=obsmount_plc_synchronized and 'TIMESTAMP1' in headernames:
             self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP1
@@ -1336,11 +1340,9 @@ def assign_pointing_data(self,datadir):
                 self.pointing_data['TIMESTAMP'] = pointing_dat['header'].RX_TIMESTAMP
                 timestamp_assigned = True
 
-        # finally, the original keyword was TIMESTAMP
+        # finally, the original keyword was TIMESTAMP (already assigned above)
         if not timestamp_assigned and 'TIMESTAMP' in headernames:
-            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP
             timestamp_assigned = True
-
 
         # if we haven't found the timestamp, we have a problem!
         if not timestamp_assigned:

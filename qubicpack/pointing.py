@@ -2,6 +2,9 @@
 $Id: pointing.py
 $auth: Steve Torchinsky <satorchi@apc.in2p3.fr>
 $created: Mon 22 Dec 2025 11:12:57 CET
+$auth: Mattia Bianchessi <mbianchess@apc.in2p3.fr>
+$date: Wed 07 Oct 2026 14:48:42 CEST starting from commit 
+
 $license: GPLv3 or later, see https://www.gnu.org/licenses/gpl-3.0.txt
 
           This is free software: you are free to change and
@@ -13,7 +16,6 @@ these utilities are also used by class obsmount in package qubichw
 '''
 import os
 import numpy as np
-from .utilities import fmt_translation
 
 # position offsets measured
 # 'EL': 49.315, # see elog: https://elog-qubic.in2p3.fr/demo/1296
@@ -64,7 +66,7 @@ v4_header_keys = ['TIMESTAMP1',
                   'NTP_RESULT',
                   'SET_RTC_RESULT']
 v4_rec_header_names = ','.join(['RX_TIMESTAMP']+v4_header_keys)
-v4_rec_header_format_list = ['float64','float64','float64','uint8','uint8','uint8','int32','int32','int32']
+v4_rec_header_format_list = ['float64','float64','float64','uint8','uint8','uint8','int16','int16','int16']
 v4_rec_header_format = ','.join(v4_rec_header_format_list)
 
 
@@ -92,6 +94,7 @@ n_data_keys = len(data_keys)
 
 delimiter = ':'
 STX = bytearray([0xaa,0xaa])
+
 
 def interpret_pointing_chunk(dat):
     '''
@@ -123,17 +126,18 @@ def interpret_pointing_chunk(dat):
             axis = col[0]
             axis_data = {}
             for subidx,val_str in enumerate(col[1:]):
+                # data_keys[0] is the axis name, so values start from index 1
                 idx = subidx + 1
                 if idx<n_data_keys:
                     key = data_keys[idx]
                 else:
                     key = 'UNKNOWN%02i' % idx
-                    
+
                 try:
-                    val = eval(val_str)
-                except:
+                    val = float(val_str)
+                except ValueError:
                     val = val_str
-                    
+                
                 axis_data[key] = val
             packet[axis] = axis_data
             continue
@@ -151,8 +155,8 @@ def interpret_pointing_chunk(dat):
         for idx,val_str in enumerate(col):
             key = header_keys[idx]
             try:
-                packet[key] = eval(val_str)
-            except:
+                packet[key] = float(val_str)
+            except ValueError:
                 packet[key] = val_str
 
     # PLC data packet has timestamp in milliseconds
@@ -162,6 +166,7 @@ def interpret_pointing_chunk(dat):
             
     packet['ok'] = True
     return packet
+
 
 def read_pointing_bindat(filename):
     '''
@@ -185,6 +190,7 @@ def read_pointing_bindat(filename):
     chunk_list = dat_bytes.split(STXv2)
     npts = len(chunk_list) - 1
     if npts>1:
+        # the format version is read once, from the first packet
         first_chunk = chunk_list[1].split(v2_separator)[-1]
         packet = interpret_pointing_chunk(first_chunk)
         print('PLC data first chunk packet is version: %i' % packet['version'])
@@ -212,53 +218,78 @@ def read_pointing_bindat(filename):
         header_keys = v1_header_keys
 
     print('PLC data format version: %i' % pointing_file_version)
-    headerdat = np.recarray(names=rechdr_names,formats=rechdr_fmts,shape=(npts))
-    axdat = {}
-    for axname in axis_names:
-        axdat[axname] = np.recarray(names=rec_data_names,formats=rec_data_format,shape=(npts))
 
-    idx = 0
+    # column names of the header recarray (RX_TIMESTAMP exists only in v2+)
+    header_cols = rechdr_names.split(',')
+    data_cols = data_keys[1:]
+
+    # one list of values per valid packet; the recarrays are built after the loop
+    header_rows = []
+    axis_rows = {axname: [] for axname in axis_names}
+
     for chunk in chunk_list:
+        rx_timestamp = None
         if pointing_file_version>1:
+            # split the reception timestamp from the PLC payload
             chunks = chunk.split(v2_separator)
             if len(chunks)<2: continue
             chunk = chunks[-1]
             try:
-                rx_timestamp_str = chunks[0].decode()
-            except:
+                rx_timestamp = float(chunks[0].decode())
+            except ValueError:
                 continue
-
-            try:
-                rx_timestamp = eval(rx_timestamp_str)
-            except:
-                continue
-
-            headerdat[idx].RX_TIMESTAMP = rx_timestamp
-
+        
         # from here, both v1 and v2 are the same
         packet = interpret_pointing_chunk(chunk)
         if not packet['ok']:
             print('packet not okay: %s' % packet['error'])
             continue
 
-        for header in header_keys:
-            cmd = 'headerdat[idx].%s = packet[header]' % header
-            exec(cmd)
+        # build all rows first, so that an incomplete packet is discarded as a whole
+        try:
+            hrow = [packet[key] for key in header_keys]
+            arows = {axname: [packet[axname][key] for key in data_cols] for axname in axis_names}
+        except KeyError as err:
+            print('packet not okay: missing field %s' % err)
+            continue
 
+        header_rows.append(([rx_timestamp] if rx_timestamp is not None else []) + hrow)
         for axname in axis_names:
-            for datname in data_keys[1:]:
-                if datname not in packet[axname].keys():
-                    # print('ERROR! Invalid key for packet: %s' % datname)
-                    continue
-                cmd = 'axdat[axname][idx].%s = packet[axname][datname]' % datname
-                exec(cmd)
-        idx += 1
-                
-    dat['header'] = headerdat[0:idx]
+            axis_rows[axname].append(arows[axname])
+
+    npts_valid = len(header_rows)
+    if npts_valid==0:
+        print('ERROR!  No valid packets in %s' % filename)
+        return dat
+
+    # allocate the recarrays at their final size and fill them column by column;
+    hmat = np.array(header_rows,dtype='float64')
+    headerdat = np.recarray(names=rechdr_names,formats=rechdr_fmts,shape=(npts_valid,))
+    for icol,name in enumerate(header_cols):
+        headerdat[name] = hmat[:,icol]
+
     final_axdat = {}
     for axname in axis_names:
-        final_axdat[axname] = axdat[axname][0:idx]
-        
+        amat = np.array(axis_rows[axname],dtype='float64')
+        final_axdat[axname] = np.recarray(names=rec_data_names,formats=rec_data_format,shape=(npts_valid,))
+        for icol,name in enumerate(data_cols):
+            final_axdat[axname][name] = amat[:,icol]
+
+    dat['header'] = headerdat
     dat['data'] = final_axdat
     dat['ok'] = True
     return dat
+
+
+def compare_pointing_dat(dat_old, dat_new):
+    '''
+    check that two outputs of read_pointing_bindat* are identical in dtype, shape and values
+    '''
+    pairs = [('header', dat_old['header'], dat_new['header'])]
+    pairs += [(ax, dat_old['data'][ax], dat_new['data'][ax]) for ax in axis_names]
+    for label,a,b in pairs:
+        assert a.dtype==b.dtype, '%s: dtype mismatch' % label
+        assert a.shape==b.shape, '%s: shape mismatch %s vs %s' % (label,a.shape,b.shape)
+        for name in a.dtype.names:
+            assert np.array_equal(a[name],b[name],equal_nan=True), '%s.%s: values differ' % (label,name)
+    print('identical')

@@ -49,9 +49,11 @@ def read_calsource_infofile(self,datadir):
     if 'CALSOURCE-CONF' not in self.hk.keys():
         self.hk['CALSOURCE-CONF'] = {}
     if 'MsgStr' not in self.hk['CALSOURCE-CONF'].keys():
-        self.hk['CALSOURCE-CONF']['MsgStr'] = ['INIT MSG STR']
+        self.hk['CALSOURCE-CONF']['MsgStr'] = [calinfo_txt]
+        return True
 
-    self.hk['CALSOURCE-CONF']['MsgStr'][0] = calinfo_txt
+    # replace MsgStr in the dictionary created by QubicStudio
+    self.hk['CALSOURCE-CONF']['MsgStr'] = [calinfo_txt]
     return True
 
 def calsource_oldinfo(self):
@@ -276,17 +278,54 @@ def calsource_info(self):
 
 def calsource_infotext(self):
     '''
-    return a calsource info in a string suitable for plot subtitle
+    return calsource info in a string suitable for plot subtitle
+    '''
+    info = self.calsource_info()
+    if 'calsource_150' not in info.keys(): return self.calsource_oldinfotext()
+    
+    if info is None:
+        return 'Calsource: No information'
+
+    calsources = ['calsource_150','calsource_220','cf']
+    modulator = {}
+    modulator['calsource_150'] = 'modulator_ch1'
+    modulator['calsource_220'] = 'modulator_ch2'
+    
+
+    lines = []
+    txt_list = []
+    for src in calsources:
+        if src not in info.keys(): continue
+        txt_list.append('%s %s' % (src,info[src]['status']))
+    lines.append(', '.join(txt_list))
+
+    for src in calsources:
+        if info[src]['status']=='OFF': continue
+        configtxt_list = ['%s:' % src]
+        if 'frequency' in info[src].keys():
+            configtxt_list.append('freq=%.2fGHz' % info[src]['frequency'])
+        if src in modulator.keys():
+            modchan = modulator[src]
+            configtxt_list.append('modulation:')
+            configtxt_list.append('freq=%.2fHz' % info[modchan]['frequency'])
+            configtxt_list.append('amplitude=%.2fV' % info[modchan]['amplitude'])
+            configtxt_list.append('offset=%.2fV' % info[modchan]['offset'])
+        lines.append(' '.join(configtxt_list))
+        
+
+    txt = '\n'.join(lines)
+    return txt
+        
+
+def calsource_oldinfotext(self):
+    '''
+    return calsource info in a string suitable for a plot subtitle
+    this is before we implemented the 220GHz calibration source, and the separate carbon fibre modulator
     '''
     info = self.calsource_info()
     if info is None:
         return 'Calsource: No information'
-
-    if info['calsource']['status'] == 'OFF':
-        return 'Calsource %s' % info['calsource']['status']
-
     
-    calsrc_txt = 'Calsource: '
     if info['calsource']['status'] == 'UNKNOWN':
         calsrc_txt = 'Calsource:UNKNOWN '
 
@@ -296,6 +335,9 @@ def calsource_infotext(self):
         calsrc_txt += 'frequency=UNKNOWN'
 
         
+
+    if info['calsource']['status'] == 'OFF':
+        return 'Calsource %s' % info['calsource']['status']
 
     modulator_units = {'frequency':'%.3fHz', 'shape':'%s','amplitude':'%.3fVpp','offset':'%.3fVdc','duty_cycle':'%.1f%%'}
     if info['modulator']['status'] == 'OFF':

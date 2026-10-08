@@ -85,7 +85,8 @@ data_keys = ['AXIS',
              'FAULT']
 #position_key = {'AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
 ### 2026-09-04 19:14:00 discussion with Luciano
-position_key = {'AZ':'ACT_POS_ENC', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
+### 2026-10-08 18:56:34 discussion with Luciano:  use the resolver until we figure out what's wrong with the encoder
+position_key = {'AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
 rec_data_names = ','.join(data_keys[1:])
 rec_data_format_list = ['float64','float64','float64','float64','float64','uint8','uint8','uint8','uint8','uint8','uint8','uint8']
 rec_data_format = ','.join(rec_data_format_list)

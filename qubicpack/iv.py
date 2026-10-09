@@ -105,7 +105,7 @@ def ADU2I(self,ADU, offset=None, R1adjust=1.0,asic=None, flip=False):
     # since QubicStudio 3.5 (2019-01-29), and perhaps before, the masking is taken into account by QubicStudio
     # n_masked=self.n_masked()
     # I = 1e6 * (ADU / 2**7) * (q_ADC/G_FLL) * (self.nsamples - n_masked) * R1adjust
-    I = 1e6 * (ADU / 2**7) * (q_ADC/G_FLL) * R1adjust
+    I = (1e6 / 2**7 * q_ADC/G_FLL * R1adjust) * ADU
     if flip:
         I = -I
     if offset is not None:

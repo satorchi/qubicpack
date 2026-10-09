@@ -138,8 +138,6 @@ class qubicasic:
         ntimelines,\
         timeline,\
         timeline_array,\
-        amplitude2DAC,\
-        bias_offset2DAC,\
         sample_period,\
         timeline_npts,\
         timeline_timeaxis,\

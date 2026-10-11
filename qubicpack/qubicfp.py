@@ -85,6 +85,7 @@ class qubicfp:
         calsource_oldinfo,\
         calsource_info,\
         calsource_infotext,\
+        calsource_oldinfotext,\
         find_calsource,\
         read_calsource_fits,\
         read_calsource_infofile

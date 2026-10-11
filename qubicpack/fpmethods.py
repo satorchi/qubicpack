@@ -13,15 +13,14 @@ methods for the QUBIC focal plane class qubicfp
 import numpy as np
 import datetime as dt
 TZUTC = dt.timezone.utc
-import sys,os,time,re
 from copy import copy
 
 from qubicpack.qubicasic import qubicasic
 from qubicpack.plot_fp import plot_fp
-from qubicpack.utilities import NPIXELS,TES_index
+from qubicpack.utilities import NPIXELS
 from qubicpack.pixel_translation import make_id_focalplane
 
-from satorchipy.datefunctions import tstamp2dt, utcfromtimestamp
+from satorchipy.datefunctions import tstamp2dt
 
 def assign_defaults(self):
     '''default values for object variables

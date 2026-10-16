@@ -13,16 +13,16 @@ tools for reading/writing and organizing data
 
 """
 import numpy as np
-import sys,os,time,subprocess,struct,re
+import sys,os,subprocess,struct,re
 import datetime as dt
 TZUTC = dt.timezone.utc
 from glob import glob
-import pickle
 from collections import OrderedDict
 from astropy.io import fits as pyfits
-from .utilities import obsmount_implemented, obsmount_plc_implemented, obsmount_plc_synchronized, read_obsmount_bindat, interpret_rawmask
+from .utilities import obsmount_plc_synchronized, read_obsmount_bindat, interpret_rawmask
 from .pointing import read_pointing_bindat, position_offset, position_key, axis_names
 from satorchipy.datefunctions import utcnow, utcfromtimestamp, str2dt
+import polars as pl
 
 qubicasic_hk_keys = ['Apol',
                      'CN',
@@ -323,11 +323,7 @@ def read_fits_field(self,hdu,fieldname):
     '''
     check if a field exists, and if so read the data
     '''
-    nfields = hdu.header['TFIELDS']
-    fieldnames = []
-    for field_idx in range(nfields):
-        fieldno = field_idx+1
-        fieldnames.append(hdu.header['TTYPE%i' % fieldno].strip())
+    fieldnames = [name.strip() for name in hdu.columns.names]
 
     if fieldname in fieldnames:
         field_idx = fieldnames.index(fieldname)
@@ -634,7 +630,6 @@ def read_qubicstudio_fits(self,hdulist):
         hdulist.close()
         return chk
         
-
     if extname=='EXTERN_HK':
         chk = self.read_qubicstudio_hkextern_fits(hdu)
         hdulist.close()
@@ -678,6 +673,7 @@ def read_qubicstudio_science_fits(self,hdu):
     # read the science data
     npts = hdu.header['NAXIS2']
     adu = np.zeros((self.NPIXELS,npts))
+
     for pix_idx in range(self.NPIXELS):
         pix_no = pix_idx+1
         fieldname = 'pixel%i' % pix_no
@@ -771,9 +767,7 @@ def read_qubicstudio_science_fits(self,hdu):
         self.hk[extname]['ComputerDate'] = np.concatenate((self.hk[extname]['ComputerDate'],timestamp))
         self.printmsg('concatenating ComputerDate to pre-existing',verbosity=2)
                                                  
-        
-    for tstamp in timestamp:
-        dateobs.append(utcfromtimestamp(tstamp))
+    dateobs = pl.from_epoch(timestamp, time_unit="s").dt.replace_time_zone("utc")
 
     if 'DATE-OBS' not in tdata.keys():
         tdata['DATE-OBS'] = dateobs
@@ -844,8 +838,7 @@ def read_qubicstudio_asic_fits(self,hdulist):
         msg="ERROR!  Bad GPS data!"
         tdata['WARNING'].append(msg)
     npts = len(timestamp)
-    for tstamp in timestamp:
-        dateobs.append(utcfromtimestamp(tstamp))
+    dateobs = pl.from_epoch(timestamp, time_unit="s").dt.replace_time_zone("utc")
     if npts==0:
         tdata['ASICDATE'] = None
         tdata['BEGASIC%i' % asic] = None

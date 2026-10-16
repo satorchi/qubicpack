@@ -488,7 +488,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
         newplot = False
         
     ax.set_xlabel('date UT',fontsize=fontsize)
-    ax.set_ylabel('Current  /  $\\mu$A',fontsize=fontsize)
+    ax.set_ylabel('TES response  /  Arbitrary Data Units',fontsize=fontsize)
     ax.tick_params(axis='both',labelsize=fontsize)
     if warning_str:
         boxprops = {}
@@ -500,7 +500,6 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     
     TES_idx=TES_index(TES)
     timeline=self.timeline(TES,timeline_index)
-    current=self.ADU2I(timeline) # uAmps
     timeline_npts=len(timeline)
 
     self.printmsg('DEBUG: calling timeline_timeaxis from plot_timeline() with axistype=%s' % timeaxis,verbosity=4)
@@ -562,13 +561,12 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     peak0_date = time_axis_date[ipeak0]
     peak1_date = time_axis_date[ipeak1]
     
-    curve1=ax.plot(time_axis_date,current,label='TES current',color='blue')
+    curve1=ax.plot(time_axis_date,timeline,label='TES response',color='blue')
 
-    #ymax=max([current[ipeak0],current[ipeak1]])
-    ymax=np.nanmax(current)
+    ymax=np.nanmax(timeline)
     if np.isnan(ymax):
         ymax = 1.0
-    ymin=np.nanmin(current)
+    ymin=np.nanmin(timeline)
     if np.isnan(ymin):
         ymin = 1.0
     yrange=ymax-ymin

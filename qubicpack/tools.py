@@ -381,8 +381,10 @@ def assign_bath_temperature(self):
     assign the TES bath temperature from the housekeeping data
     '''
     # the bath temperature probes, in order of preference
-    bath_probes = ['MMR3_CH2_R','MGC3_PID_0_Mes','TES stage']
-    for probe in bath_probes:
+    bath_probe = {'MMR3_CH2_R': None,'MGC3_PID_0_Mes': None,'TES stage': None}
+    best_probe = 'MMR3_CH2_R'
+    best_mean = 400
+    for probe in bath_probe.keys():
         testemp = None
         hkdat = self.get_hk(probe)
         if hkdat is None: continue
@@ -401,11 +403,22 @@ def assign_bath_temperature(self):
         else:
             testemp = hkdat
 
-        if testemp is not None: break
+        bath_probe[probe] = testemp
 
+        # verification for iMACRT which is not working: https://elog-qubic.in2p3.fr/demo/1396 (July 2026)
+        if testemp is not None:
+            bath_mean = testemp.mean()
+            if bath_mean < best_mean:
+                best_mean = bath_mean
+                best_probe = probe
+                
+    # assign bath temperature using the best probe
+    probe = best_probe
+    testemp = bath_probe[best_probe]
+    
     # we need the time axis to make the clean Tbath array
-    self.printmsg('assign_bath_temperature using probe: %s' % probe,verbosity=2)
-    hktstamps = self.timeaxis(datatype=probe)
+    self.printmsg('assign_bath_temperature using probe: %s' % best_probe,verbosity=2)
+    hktstamps = self.timeaxis(datatype=best_probe)
 
     # filter spike artefacts in the HK data
     if testemp is not None:

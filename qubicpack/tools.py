@@ -1314,11 +1314,14 @@ def assign_pointing_data(self,datadir):
     axis_n_ok = 0
 
     # pointing acquisition with observation mount PLC implemented December 2025
+    pointing_file_ok = False
     pointing_file = os.sep.join([datadir,'Hks','POINTING.dat'])
     self.printmsg('Looking for %s' % pointing_file,verbosity=3)
     if os.path.isfile(pointing_file):
         pointing_dat = read_pointing_bindat(pointing_file)
+        pointing_file_ok = pointing_dat['ok']
 
+    if pointing_file_ok:
         # assign the 'ok' flag before possibly overriding it regarding TIMESTAMP
         self.pointing_data['ok'] = pointing_dat['ok']
         
@@ -1356,7 +1359,7 @@ def assign_pointing_data(self,datadir):
             self.pointing_data[axisname]['VALUE'] = pointing_dat['data'][axisname][position_key[axisname]] + position_offset[axisname]
             self.pointing_data[axisname]['ok'] = True
             axis_n_ok += 1        
-        return pointing_dat['ok']
+        if pointing_dat['ok']: return pointing_dat['ok']
 
     # the red mount used at APC and in Salta 2018 to 2022
     self.printmsg('Looking for redmount pointing data',verbosity=3)

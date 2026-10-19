@@ -1551,6 +1551,20 @@ def hwp_position(self):
     hwp_pos = self.hk[hktype][key]
     return hwp_pos
 
+def assign_physical_units(self):
+    '''
+    assign Ptes, Ites, and Vtes in physical units (Watts, Amps, Volts)
+    '''
+    if self.timeline_Ptes is not None and self.timeline_Ites is not None and self.timeline_Vtes is not None:
+        return True
+
+    ADU = self.timeline_array()
+    self.timeline_Ites = self.ADU2I(ADU, flip=False)
+    self.timeline_Vtes = self.Vbias2Vtes(self.timeline_vbias,self.timeline_Ites)
+    self.timeline_Ptes = self.timeline_Ites*self.timeline_Vtes
+    
+    return True
+
 def bias_phase(self):
     '''
     return the bias voltage phase when in Sine mode
@@ -1592,11 +1606,7 @@ def bias_phase(self):
         self.printmsg('DEBUG: bias_phase() : scaling vbias to max/min bias',verbosity=4)
         self.timeline_vbias = amplitude*sinephase + offset
 
-
-        ADU = self.timeline_array()
-        self.timeline_Ites = self.ADU2I(ADU, flip=False)
-        self.timeline_Vtes = self.Vbias2Vtes(self.timeline_vbias,self.timeline_Ites)
-        self.timeline_Ptes = self.timeline_Ites*self.timeline_Vtes
+        #2026-10-19 11:47:41 removing assigning physical units which is called only if required
     
     return sinephase
 

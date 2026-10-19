@@ -653,8 +653,12 @@ def tod(self,axistype='pps',indextype='TES',units='ADU'):
         self.printmsg('asic index = %i, asic counter = %i, asic = %i' % (asic_idx,asic_ctr,asic),verbosity=3)
 
         if unit_type=='Watt':
+            if self.asic(asic).timeline_Ptes is None:
+                self.assign_physical_units()
             tline_array = self.asic(asic).timeline_Ptes
         elif unit_type=='Amp':
+            if self.asic(asic).timeline_Ites is None:
+                self.assign_physical_units()
             tline_array = self.asic(asic).timeline_Ites
         else:            
             tline_array = self.asic(asic).timeline_array()

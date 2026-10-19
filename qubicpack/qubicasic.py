@@ -60,6 +60,7 @@ class qubicasic:
         get_hk,\
         gps,\
         pps,\
+        assign_physical_units,\
         bias_phase,\
         infotext,\
         qubicstudio_filetype_truename,\

@@ -789,7 +789,8 @@ def read_qubicstudio_science_fits(self,hdu):
         else:
             tdata['BEG-OBS'] = dateobs[0]
     else:
-        tdata['DATE-OBS'] += dateobs
+        #tdata['DATE-OBS'] += dateobs
+        tdata['DATE-OBS'] = pl.concat([tdata['DATE-OBS'], dateobs])
         
     self.obsdate = tdata['BEG-OBS']
     if len(dateobs)==0:

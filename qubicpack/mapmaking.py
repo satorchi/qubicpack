@@ -138,7 +138,7 @@ def make_map_no_modulation(self,
     # azimuth and elevation
     el_raw = self.elevation()
     az_raw = self.azimuth()
-    position_timeaxis = self.timeaxis(datatype='position')
+    position_timeaxis = self.timeaxis(datatype='position').copy()
 
     if hk_timeoffset is not None:
         position_timeaxis += hk_timeoffset

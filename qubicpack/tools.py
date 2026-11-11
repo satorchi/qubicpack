@@ -20,7 +20,7 @@ from glob import glob
 from collections import OrderedDict
 from astropy.io import fits as pyfits
 from .utilities import obsmount_plc_synchronized, read_obsmount_bindat, interpret_rawmask
-from .pointing import read_pointing_bindat, position_offset, position_key, axis_names
+from .pointing import read_pointing_bindat, position_offset, get_position_key, axis_names
 from satorchipy.datefunctions import utcnow, utcfromtimestamp, str2dt
 import polars as pl
 
@@ -1313,6 +1313,7 @@ def assign_pointing_data(self,datadir):
     determine where to find the pointing data, and load it
     we try in order of preference, and return when we've got it
     '''
+    position_key = get_position_key(self.obsdate)
     self.pointing_data = {}
     self.pointing_data['ok'] = False
     for axis_name in axis_names:
@@ -1334,24 +1335,28 @@ def assign_pointing_data(self,datadir):
         
         headernames = pointing_dat['header'].dtype.names
         timestamp_assigned = False
+        timestamp_key = None
 
         # copy all header values including all the possible timestamps
         for hdr in headernames:
             self.pointing_data[hdr] = pointing_dat['header'][hdr]
 
-        # after 2026-09-22, the PLC clock was synchronized (hopefully)
-        if self.obsdate>=obsmount_plc_synchronized and 'TIMESTAMP1' in headernames:
-            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP1
+        # after 2026-11-04, the PLC clock was synchronized (hopefully)
+        if self.obsdate>=obsmount_plc_synchronized and 'TIMESTAMP2' in headernames:
+            timestamp_key = 'TIMESTAMP2'
+            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP2
             timestamp_assigned = True
                 
         # otherwise, we use the timestamp of reception because the PLC clock is not synchronized
         if not timestamp_assigned:
             if 'RX_TIMESTAMP' in headernames:
+                timestamp_key = 'RX_TIMESTAMP'
                 self.pointing_data['TIMESTAMP'] = pointing_dat['header'].RX_TIMESTAMP
                 timestamp_assigned = True
 
         # finally, the original keyword was TIMESTAMP (already assigned above)
         if not timestamp_assigned and 'TIMESTAMP' in headernames:
+            timestamp_key = 'TIMESTAMP'
             timestamp_assigned = True
 
         # if we haven't found the timestamp, we have a problem!
@@ -1359,6 +1364,9 @@ def assign_pointing_data(self,datadir):
             self.pointing_data['TIMESTAMP'] = None # this will raise an error somewhere down the line!
             self.printmsg('ERROR!  No timestamps in the POINTING.dat?!!',verbosity=0)
             self.pointing_data['ok'] = False
+
+        self.printmsg('OBSMOUNT TIME:  Using %s' % timestamp_key, verbosity=2)
+
 
         # assign the pointing data for each axis
         for axisname in axis_names:

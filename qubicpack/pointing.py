@@ -16,6 +16,8 @@ these utilities are also used by class obsmount in package qubichw
 '''
 import os
 import numpy as np
+from satorchipy.datefunctions import utcnow
+from qubicpack.utilities import obsmount_azimuth_encoder_working
 
 # position offsets measured
 # 'EL': 49.315, # see elog: https://elog-qubic.in2p3.fr/demo/1296
@@ -83,10 +85,6 @@ data_keys = ['AXIS',
              'IS_MOVING',
              'IS_OUTOFRANGE',
              'FAULT']
-#position_key = {'AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
-### 2026-09-04 19:14:00 discussion with Luciano
-### 2026-10-08 18:56:34 discussion with Luciano:  use the resolver until we figure out what's wrong with the encoder
-position_key = {'AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
 rec_data_names = ','.join(data_keys[1:])
 rec_data_format_list = ['float64','float64','float64','float64','float64','uint8','uint8','uint8','uint8','uint8','uint8','uint8']
 rec_data_format = ','.join(rec_data_format_list)
@@ -96,6 +94,25 @@ n_data_keys = len(data_keys)
 delimiter = ':'
 STX = bytearray([0xaa,0xaa])
 
+def get_position_key(date=None):
+    '''
+    which is the key to use for position info.  The azimuth encoder was properly implemented 2026-11-04
+
+    #position_key = {'AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
+    ### 2026-09-04 19:14:00 discussion with Luciano
+    ### 2026-10-08 18:56:34 discussion with Luciano:  use the resolver until we figure out what's wrong with the encoder
+    ### 2026-11-05 after repairs of the encoder
+    
+    '''
+    if date is None:
+        date = utcnow()
+
+    if date > obsmount_azimuth_encoder_working:
+        position_key = {'AZ':'ACT_POS_ENC', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
+    else:
+        position_key = {'AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
+    print('OBSMOUNT AZIMUTH ENCODER:  Using %s' % position_key['AZ'])
+    return position_key
 
 def interpret_pointing_chunk(dat):
     '''

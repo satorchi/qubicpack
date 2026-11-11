@@ -26,7 +26,7 @@ from qubicpack.utilities import obsmount_azimuth_encoder_working
 position_offset = {'AZ': 9.0, 
                    'EL': 49.935,
                    'RO': 0.0,
-                   'TR': -8.92
+                   'TR': 8.92
                    }
 
 axis_fullname = {'AZ': 'azimuth', 'EL': 'elevation', 'RO': 'boresight rotation', 'TR': 'Little Train'}

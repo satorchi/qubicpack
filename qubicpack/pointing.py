@@ -108,9 +108,9 @@ def get_position_key(date=None):
         date = utcnow()
 
     if date > obsmount_azimuth_encoder_working:
-        position_key = {'AZ':'ACT_POS_ENC', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
+        position_key = {'AZ':'ACT_POS_ENC', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_RES'}
     else:
-        position_key = {'AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_ENC'}
+        position_key = {'AZ':'ACT_POS_RES', 'EL':'ACT_POS_ENC', 'RO':'ACT_POS_ENC', 'TR':'ACT_POS_RES'}
     print('OBSMOUNT AZIMUTH ENCODER:  Using %s' % position_key['AZ'])
     return position_key
 

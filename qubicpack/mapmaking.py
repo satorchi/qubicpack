@@ -134,6 +134,7 @@ def make_map_no_modulation(self,
     TES,asic = args
     
     retval = {} # dictionary with all kinds of stuff to return
+    retval['hk_timeoffset'] = hk_timeoffset
 
     # azimuth and elevation
     el_raw = self.elevation()
@@ -245,7 +246,9 @@ def make_map_no_modulation(self,
         calstr = '%.3fGHz' % calinfo['calsource']['frequency']
     ttl = '%s %s, ASIC=%i, TES=%i' % (self.obsdate.strftime('%Y-%m-%d-%H:%M:%S'),calstr,asic,TES)
     if tau is not None:
-        ttl += ' with time constant $\\tau=%.1f$ms' % (tau*1000)
+        ttl += '\nwith time constant $\\tau=%.1f$msec' % (tau*1000)
+    if hk_timeoffset is not None:
+        ttl += '\nobsmount time offset = %.1f msec' % (hk_timeoffset*1000)
     retval['title'] = ttl
     retval['obsdate'] = self.obsdate
     retval['asic'] = asic

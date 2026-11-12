@@ -12,7 +12,7 @@ methods for reading/interpreting the calibration source and the carbon fibre dat
 
 most of these were originally in tools.py and fpmethods.py
 '''
-import os
+import os,re
 import datetime as dt
 from glob import glob
 from .utilities import TZUTC

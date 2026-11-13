@@ -20,6 +20,7 @@ Final mapmaking will be more sophisticated and will be implemented in qubicsoft 
 '''
 import numpy as np
 import healpy as hp
+from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
 from qubicpack.plot_fp import plot_fp
 
@@ -106,6 +107,36 @@ def project2healpix(img,az,el,nside=256):
     return m
     
 
+def poly3(x,c0,c1,c2,c3):
+    y = c0 + c1*x + c2*x**2 + c3*x**3
+    return y
+
+def simple_smooth(raw_taxis,raw_tline):
+    '''
+    smooth with a polynomial fit, iterated twice
+    '''
+
+    # curve fit doesn't work well with the big timestamp numbers
+    taxis = raw_taxis - raw_taxis[0]
+
+    # fit to a polynomial
+    firstguess = (raw_tline.mean(),0,0,0)
+    popt,pcov = curve_fit(poly3,taxis,raw_tline,p0=firstguess)
+    bline0 = poly3(taxis,popt[0],popt[1],popt[2],popt[3])
+    tline = raw_tline - bline0
+    std = tline.std()
+
+    # subtract the first fit and then do it again
+    mask = tline < std
+    firstguess = (tline.mean(),0,0,0)
+    popt,pcov = curve_fit(poly3,taxis,tline,p0=firstguess)
+    bline1 = poly3(taxis,popt[0],popt[1],popt[2],popt[3])
+    
+    smoothed = tline - bline1
+    
+    return smoothed
+
+
 def make_map_no_modulation(self,
                            TES=None,
                            asic=None,
@@ -114,7 +145,9 @@ def make_map_no_modulation(self,
                            backforth=True,
                            tau=None,
                            hk_timeoffset=None,
-                           debug=False):
+                           debug=False,
+                           do_smooth=False,
+                           do_flip=False):
     '''
     make a map from scan data which does not use source modulation
 
@@ -157,6 +190,15 @@ def make_map_no_modulation(self,
         signal = data_raw + derivative*tau
     else:
         signal = data_raw
+
+    # smooth is requested
+    if do_smooth:
+        signal = simple_smooth(sci_timeaxis,signal)
+
+    # flip if requested
+    if do_flip:
+        signal = -signal
+        
         
     # interpolate hk data to science data
     data = signal

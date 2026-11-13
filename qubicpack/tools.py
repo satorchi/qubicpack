@@ -408,6 +408,7 @@ def assign_bath_temperature(self):
         # verification for iMACRT which is not working: https://elog-qubic.in2p3.fr/demo/1396 (July 2026)
         if testemp is not None:
             bath_mean = testemp.mean()
+            if bath_mean<0.2: continue
             if bath_mean < best_mean:
                 best_mean = bath_mean
                 best_probe = probe

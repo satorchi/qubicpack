@@ -1343,9 +1343,9 @@ def assign_pointing_data(self,datadir):
             self.pointing_data[hdr] = pointing_dat['header'][hdr]
 
         # after 2026-11-04, the PLC clock was synchronized (hopefully)
-        if self.obsdate>=obsmount_plc_synchronized and 'TIMESTAMP2' in headernames:
-            timestamp_key = 'TIMESTAMP2'
-            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP2
+        if self.obsdate>=obsmount_plc_synchronized and 'TIMESTAMP1' in headernames:
+            timestamp_key = 'TIMESTAMP1'
+            self.pointing_data['TIMESTAMP'] = pointing_dat['header'].TIMESTAMP1
             timestamp_assigned = True
                 
         # otherwise, we use the timestamp of reception because the PLC clock is not synchronized

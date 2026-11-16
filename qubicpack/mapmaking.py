@@ -110,31 +110,33 @@ def project2healpix(img,az,el,nside=256):
 def poly3(x,c0,c1,c2,c3):
     y = c0 + c1*x + c2*x**2 + c3*x**3
     return y
+def poly4(x,c0,c1,c2,c3,c4):
+    y = c0 + c1*x + c2*x**2 + c3*x**3 + c4*x**4
+    return y
 
-def simple_smooth(raw_taxis,raw_tline):
+def get_baseline(raw_taxis,raw_tline,sigma_cut=None):
     '''
-    smooth with a polynomial fit, iterated twice
+    remove baseline with a polynomial fit, iterated twice
     '''
+    if sigma_cut is None: sigma_cut = 1
 
     # curve fit doesn't work well with the big timestamp numbers
     taxis = raw_taxis - raw_taxis[0]
 
     # fit to a polynomial
-    firstguess = (raw_tline.mean(),0,0,0)
-    popt,pcov = curve_fit(poly3,taxis,raw_tline,p0=firstguess)
-    bline0 = poly3(taxis,popt[0],popt[1],popt[2],popt[3])
+    firstguess = (raw_tline.mean(),0,0,0,0)
+    popt,pcov = curve_fit(poly4,taxis,raw_tline,p0=firstguess)
+    bline0 = poly4(taxis,popt[0],popt[1],popt[2],popt[3],popt[4])
     tline = raw_tline - bline0
     std = tline.std()
 
     # subtract the first fit and then do it again
-    mask = tline < std
-    firstguess = (tline.mean(),0,0,0)
-    popt,pcov = curve_fit(poly3,taxis,tline,p0=firstguess)
-    bline1 = poly3(taxis,popt[0],popt[1],popt[2],popt[3])
+    mask = tline < sigma_cut*std
+    firstguess = (raw_tline[mask].mean(),0,0,0,0)
+    popt,pcov = curve_fit(poly4,taxis[mask],raw_tline[mask],p0=firstguess)
+    bline1 = poly4(taxis,popt[0],popt[1],popt[2],popt[3],popt[4])
     
-    smoothed = tline - bline1
-    
-    return smoothed
+    return bline1
 
 
 def make_map_no_modulation(self,
@@ -146,7 +148,8 @@ def make_map_no_modulation(self,
                            tau=None,
                            hk_timeoffset=None,
                            debug=False,
-                           do_smooth=False,
+                           do_baseline=False,
+                           sigma_cut=None,
                            do_flip=False):
     '''
     make a map from scan data which does not use source modulation
@@ -160,6 +163,9 @@ def make_map_no_modulation(self,
          backforth = True/False did we go back and forth in azimuth on the same elevation?
          tau = time constant (None if not applying the deconvolution)
          debug = True/False should we make a plot of the azimuth scans?
+         do_baseline = True/False remove baseline
+         sigma_cut = clip TOD at this level before fitting baseline
+         do_flip = True/False invert the signal 
 
     '''
     args =self.args_ok(TES,asic,allow_multiple_TES=False)
@@ -168,6 +174,7 @@ def make_map_no_modulation(self,
     
     retval = {} # dictionary with all kinds of stuff to return
     retval['hk_timeoffset'] = hk_timeoffset
+    retval['baseline'] = None
 
     # azimuth and elevation
     el_raw = self.elevation()
@@ -189,11 +196,13 @@ def make_map_no_modulation(self,
         ### Well known proxy for exponential deconvolution (JCH)
         signal = data_raw + derivative*tau
     else:
-        signal = data_raw
+        signal = data_raw.copy()
 
     # smooth is requested
-    if do_smooth:
-        signal = simple_smooth(sci_timeaxis,signal)
+    if do_baseline:
+        bline = get_baseline(sci_timeaxis,signal,sigma_cut)
+        signal = signal - bline
+        retval['baseline'] = bline
 
     # flip if requested
     if do_flip:
@@ -201,7 +210,6 @@ def make_map_no_modulation(self,
         
         
     # interpolate hk data to science data
-    data = signal
     az = np.interp(sci_timeaxis,position_timeaxis,az_raw)
     el = np.interp(sci_timeaxis,position_timeaxis,el_raw)
 
@@ -251,14 +259,14 @@ def make_map_no_modulation(self,
 
         azpts_scan1 = azpts_full[az_idx_crossover:]
         az_npts_scan1[idx] = azpts_scan1.size
-        datapts_interp = interpolate_azscan(az_axis,azpts_scan1,-data[el_indexes][az_idx_crossover:],debug=debug1)
+        datapts_interp = interpolate_azscan(az_axis,azpts_scan1,-signal[el_indexes][az_idx_crossover:],debug=debug1)
         if datapts_interp is not None:
             img_scan1[idx,:] = datapts_interp
             
 
         azpts_scan2 = azpts_full[:az_idx_crossover]
         az_npts_scan2[idx] = azpts_scan2.size
-        datapts_interp = interpolate_azscan(az_axis,azpts_scan2,-data[el_indexes][:az_idx_crossover],debug=debug2)
+        datapts_interp = interpolate_azscan(az_axis,azpts_scan2,-signal[el_indexes][:az_idx_crossover],debug=debug2)
         if datapts_interp is not None:
             img_scan2[idx,:] = datapts_interp
 
@@ -317,7 +325,9 @@ def make_all_maps(self,
                   backforth=True,
                   tau=None,
                   hk_timeoffset=None,
-                  debug=False):
+                  debug=False,
+                  do_smooth=False,
+                  do_flip=False):
     '''
     make all the maps for the focal plane and return a list of mapinfo
 
@@ -341,7 +351,9 @@ def make_all_maps(self,
                                               backforth=backforth,
                                               tau=tau,
                                               hk_timeoffset=hk_timeoffset,
-                                              debug=debug)
+                                              debug=debug,
+                                              do_smooth=do_smooth,
+                                              do_flip=do_flip)
         mapinfo_list.append(mapinfo)
         self.mapinfo_list = mapinfo_list
     
@@ -462,10 +474,10 @@ def plot_map(mapinfo,ax=None,plot_image=None,separate_figs=True,projected=True,v
         else:
             ax.get_yaxis().set_visible(False)
         if new_fig and separate_figs:
-            fig.savefig(filename,format='png',dpi=100,bbox_inches='tight')
+            fig.savefig(filename,format='png',dpi=100)
     if new_fig and not separate_figs:
         filename = '%s.png' % fileprefix
-        fig.savefig(filename,format='png',dpi=100,bbox_inches='tight')
+        fig.savefig(filename,format='png',dpi=100)
     return
 
 def plot_maps_focalplane(self,projected=True,plot_image=None):

@@ -561,7 +561,7 @@ def plot_timeline(self,TES,timeline_index=None,fit=False,ipeak0=None,ipeak1=None
     peak0_date = time_axis_date[ipeak0]
     peak1_date = time_axis_date[ipeak1]
     
-    curve1=ax.plot(time_axis_date,timeline,label='TES response',color='blue')
+    curve1=ax.plot(time_axis_date,timeline,label='ASIC %i TES %i' % (self.asic,TES),color='blue')
 
     ymax=np.nanmax(timeline)
     if np.isnan(ymax):
